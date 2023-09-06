@@ -34,6 +34,7 @@ if ($backendPath && $frontendPath) {
     $backendPath = "\\/backend"; // Standardpfad, falls nichts in der Datenbank gefunden wird
 }
 
+/*
 // Füge einige Routen hinzu
 $router->add($frontendPath . '\\/{page}?', array ( // Verwenden Sie geschweifte Klammern für das dynamische Segment
     'controller' => 'HomeController',
@@ -43,6 +44,7 @@ $router->add($backendPath.'\\/{page}?', array ( // Verwenden Sie geschweifte Kla
     'controller' => 'AdminController',
     'action' => 'index'
 ), array ('GET', 'POST'));
+*/
 
 /*
 // Verwende den Router, um Routen zu definieren
