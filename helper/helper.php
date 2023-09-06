@@ -86,38 +86,7 @@ function sortArray($array, $order, $view = null) {
     return $array;
 }
 
-include __DIR__ . '/array.php';
+//include __DIR__ . '/array.php';
 
-
-// Prüfe, ob die Erweiterung php_tensorflow geladen ist
-if (extension_loaded('php_tensorflow')) {
-    echo "Die Erweiterung php_tensorflow ist geladen.\n";
-} else {
-    echo "Die Erweiterung php_tensorflow ist nicht geladen.\n";
-}
-
-// Importiere das Modul TensorFlow
-use TensorFlow\Tensor;
-use TensorFlow\Graph;
-use TensorFlow\Session;
-
-// Erstelle einen Graphen
-$graph = new Graph();
-
-// Erstelle zwei Konstanten
-$a = $graph->constant(3.0);
-$b = $graph->constant(4.0);
-
-// Führe eine Addition aus
-$c = $graph->add($a, $b);
-
-// Erstelle eine Sitzung
-$session = new Session($graph);
-
-// Führe den Graphen aus und erhalte das Ergebnis
-$result = $session->run($c);
-
-// Gib das Ergebnis aus
-echo "Das Ergebnis ist: {$result[0][0]}\n";
 
 ?>

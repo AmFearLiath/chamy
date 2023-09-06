@@ -24,9 +24,6 @@ require_once __DIR__ . '/vendor/autoload.php';
 // Registriere den Autoloader
 \Core\Classes\Autoloader::register();
 
-// Lade die Konfigurationsdatei
-require_once __DIR__ . '/config/config.php';
-
 // Lade die Pfadkonfigurationsdatei
 require_once __DIR__ . '/config/paths.php';
 
