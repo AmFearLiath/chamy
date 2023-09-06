@@ -28,47 +28,81 @@ class Router {
     // Eine Methode, die eine Route hinzufügt
     public function add($route, $params)
     {
-        echo "<h1>\$router->add wurde aufgerufen:</h1><p>$route</p>";
-        echo "<p>\Parameter:</p>";
-        parse($params);
-
         // Ersetzen Sie alle dynamischen Segmente mit regulären Ausdrücken
-        $route = preg_replace('/\{([a-z]+)\}/', '(?P<\1>[a-z-]+)', $route); // Verwenden Sie den gleichen regulären Ausdruck wie in der Route
+        $route = preg_replace('/\{([a-z]+)\}/', '(?P<\1>[a-z-]+)', $route);
+        $route = preg_replace('/\?/', '\?', $route);
 
-        // Fügen Sie einen Start- und Endbegrenzer hinzu und ignorieren Sie die Groß-/Kleinschreibung
-        $route = '/^' . $route . '$/i';
-
-        // Fügen Sie die Route und die Parameter zum Array hinzu
+        $route = '/^' . $route . '/i';
         $this->routes[$route] = $params;
-        echo "<br>Route hinzugefügt: $route";
-        echo "<br>Routen Objekt: ";
-        parse($this->routes);
     }
 
     // Eine Methode, die die Anfrage an die entsprechende Route weiterleitet
-    public function dispatch($url)
-    {
-        echo "<h1>dispatch wurde aufgerufen: $url</h1>";
-        echo "<br><br><br>URL vor trim: $url";
-        
+    public function dispatch($url) {
+
+        echo "<p>URL: $url</p>";
+
+        // Zerlege die URL in ihre Bestandteile
+        $url_parts = parse_url($url);
+        echo '<br>URL Parts';
+        parse($url_parts);
+
+        // Extrahiere den Pfad aus der URL
+        $url_path = $url_parts['path'];
+        echo '<br>URL Path';
+        parse($url_path);
+
+        // Extrahiere die Parameter aus der URL
+        $url_params = array();
+        if (isset($url_parts['query'])) {
+            parse_str($url_parts['query'], $url_params);
+        }
+
+        foreach ($this->routes as $route => $params) {
+            $action = $params['action'];
+            echo '<br><br><br>Durchlaufe Routen';
+            echo "<br>Route: $route";
+            echo "<br>Url-Path: $url_path";
+            if (preg_match($route, $url_path, $matches)) {
+                echo "<h1>Routen:</h1>";
+                parse($this->routes);
+                foreach ($matches as $key => $match) {
+                    if (is_string($key)) {
+                        $params[$key] = $match;
+                    }
+                }
+
+                // Füge die zusätzlichen Parameter aus der URL hinzu
+                $params = array_merge($params, $url_params);
+
+                $controller = 'App\\Controllers\\' . $params['controller'];
+                echo "<p>Controller: $controller</p>";
+                echo "<p>Method: $action</p>";
+                $controller = new $controller;
+
+                if (method_exists($controller, $action)) {
+                call_user_func_array([$controller, $action], array_slice($params, 2));
+                } else {
+                    throw new \Exception("No such action: {$action}");
+                }
+                break;
+            }
+        }
+    }
+    
+    public function dispatch_($url)
+    {        
         // Entfernen Sie alle führenden und nachfolgenden Schrägstriche aus der URL
-        $url = trim($url, '/');
-
-        echo "<br>URL nach trim: $url";
-
-        echo "<p>Schleife Routen durch</p>";
-        parse($this->routes);
+        //$url = trim($url, '/');
 
         // Überprüfen Sie, ob die URL mit einer der Routen übereinstimmt
-        foreach ($this->routes as $route => $params) { 
+        foreach ($this->routes as $route => $params) {
 
-            echo "<br>\$route: $route";
-            echo "<br>\$params";
-            parse($params);
+            $action = $params['action'];
 
             if (preg_match($route, $url, $matches)) {
-                echo "<br>Extrahierte Route: ";
+                echo "<h1>Routen:</h1>";
                 parse($this->routes);
+
                 // Extrahieren Sie die benannten Parameter aus den Übereinstimmungen
                 foreach ($matches as $key => $match) {
                     if (is_string($key)) {
@@ -78,18 +112,18 @@ class Router {
 
                 // Erstellen Sie ein Controller-Objekt basierend auf dem Controller-Namen in den Parametern
                 $controller = 'App\\Controllers\\' . $params['controller'];
-                echo "Lade Controller: $controller";
+                echo "<p>Controller: $controller</p>";
+                echo "<p>Method: $action</p>";
                 $controller = new $controller;
 
                 // Überprüfen Sie, ob der Controller eine Methode hat, die dem Aktionsnamen in den Parametern entspricht
-                if (method_exists($controller, $params['action'])) {
-                    $action = $params['action'];
-                    echo "<br>Controller: $controller - Methode: $action";
+                if (method_exists($controller, $action)) {
+                    //echo "<br>Controller: $controller - Methode: $action";
                     // Rufen Sie die Methode auf und übergeben Sie ihr alle verbleibenden Parameter als Argumente
-                    call_user_func_array([$controller, $params['action']], array_slice($params, 2));
+                    call_user_func_array([$controller, $action], array_slice($params, 2));
                 } else {
                     // Werfen Sie eine Ausnahme, wenn die Methode nicht existiert
-                    throw new \Exception("No such action: {$params['action']}");
+                    throw new \Exception("No such action: {$action}");
                 }
 
                 // Beenden Sie die Schleife, wenn eine Übereinstimmung gefunden wurde
