@@ -34,25 +34,11 @@ if ($backendPath && $frontendPath) {
 }
 
 // Füge einige Routen hinzu
-$router->add($frontendPath . '\/{page}?', array ( // Verwenden Sie geschweifte Klammern für das dynamische Segment
+$router->add($frontendPath . '\/{page}?', array (
     'controller' => 'HomeController',
     'action' => 'index'
 ), array ('GET', 'POST'));
-$router->add($backendPath.'\/{page}?', array ( // Verwenden Sie geschweifte Klammern für das dynamische Segment
+$router->add($backendPath.'\/{page}?', array (
     'controller' => 'AdminController',
     'action' => 'index'
 ), array ('GET', 'POST'));
-
-/*
-// Verwende den Router, um Routen zu definieren
-\Core\Classes\Router::get($frontendPath . '/', 'HomeController', 'index');
-\Core\Classes\Router::get($frontendPath . '/register', 'UserController', 'register');
-\Core\Classes\Router::get($frontendPath . '/login', 'UserController', 'login');
-\Core\Classes\Router::get($frontendPath . '/logout', 'UserController', 'logout');
-\Core\Classes\Router::get($frontendPath . '/user/{username}', 'UserController', 'profile');
-\Core\Classes\Router::get($frontendPath . '/settings/{name}', 'SettingsController', 'getSetting');
-
-// Neue Route für das Backend mit dem dynamischen Pfad
-\Core\Classes\Router::get($backendPath, 'AdminController', 'index');
-\Core\Classes\Router::get($backendPath.'/', 'AdminController', 'index');
-*/
