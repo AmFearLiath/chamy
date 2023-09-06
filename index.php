@@ -19,6 +19,7 @@
 
 // Lade die Autoloader-Klasse
 require_once __DIR__ . '/core/classes/Autoloader.php';
+require_once __DIR__ . '/vendor/autoload.php';
 
 // Registriere den Autoloader
 \Core\Classes\Autoloader::register();
@@ -33,5 +34,5 @@ require_once __DIR__ . '/config/paths.php';
 require_once __DIR__ . '/app/routes.php';
 
 // Starte die Router-Verarbeitung
-\Core\Classes\Router::dispatch();
-
+global $router;
+$router->dispatch($_SERVER['REQUEST_URI']);
