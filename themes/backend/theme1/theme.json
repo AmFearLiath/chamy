@@ -1,0 +1,10 @@
+{ 
+    "Datei": "themes/backend/theme1/theme.json",
+    "Themename": "Theme 1",
+    "Themepath": "theme1",
+    "Themeversion": "1.0",
+    "ChamyVersion": "1.0",
+    "Author": "Markus",
+    "Description": "Simple Bootstrap-based backend theme"
+  }
+  
