@@ -33,7 +33,7 @@ class Router {
         parse($params);
 
         // Ersetzen Sie alle dynamischen Segmente mit regulären Ausdrücken
-        $route = preg_replace('/\{([a-z]+)\}/', '(?P<\1>[a-z-]+)', $route);
+        $route = preg_replace('/\{([a-z]+)\}/', '(?P<\1>[a-z-]+)', $route); // Verwenden Sie den gleichen regulären Ausdruck wie in der Route
 
         // Fügen Sie einen Start- und Endbegrenzer hinzu und ignorieren Sie die Groß-/Kleinschreibung
         $route = '/^' . $route . '$/i';
@@ -48,7 +48,7 @@ class Router {
     // Eine Methode, die die Anfrage an die entsprechende Route weiterleitet
     public function dispatch($url)
     {
-        echo "<h1>dispatch wurde aufgerufen: $url";
+        echo "<h1>dispatch wurde aufgerufen: $url</h1>";
         echo "<br><br><br>URL vor trim: $url";
         
         // Entfernen Sie alle führenden und nachfolgenden Schrägstriche aus der URL
@@ -61,6 +61,11 @@ class Router {
 
         // Überprüfen Sie, ob die URL mit einer der Routen übereinstimmt
         foreach ($this->routes as $route => $params) { 
+
+            echo "<br>\$route: $route";
+            echo "<br>\$params";
+            parse($params);
+
             if (preg_match($route, $url, $matches)) {
                 echo "<br>Extrahierte Route: ";
                 parse($this->routes);
@@ -72,10 +77,14 @@ class Router {
                 }
 
                 // Erstellen Sie ein Controller-Objekt basierend auf dem Controller-Namen in den Parametern
-                $controller = new $params['controller'];
+                $controller = 'App\\Controllers\\' . $params['controller'];
+                echo "Lade Controller: $controller";
+                $controller = new $controller;
 
                 // Überprüfen Sie, ob der Controller eine Methode hat, die dem Aktionsnamen in den Parametern entspricht
                 if (method_exists($controller, $params['action'])) {
+                    $action = $params['action'];
+                    echo "<br>Controller: $controller - Methode: $action";
                     // Rufen Sie die Methode auf und übergeben Sie ihr alle verbleibenden Parameter als Argumente
                     call_user_func_array([$controller, $params['action']], array_slice($params, 2));
                 } else {

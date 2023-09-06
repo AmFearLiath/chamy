@@ -44,7 +44,7 @@ class HomeController extends Controller {
 
         // Further logic and data processing here 
         echo "<h1>\$homeController->index() wurde aufgerufen</h1>";
-
+        parse($_REQUEST);
         // Create an instance of the ThemeManager
         $themeManager = new ThemeManager();
         

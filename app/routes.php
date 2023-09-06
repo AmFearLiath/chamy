@@ -22,23 +22,23 @@ $frontendPath = $database->getSetting('frontend_path');
 $backendPath = $database->getSetting('backend_path');
 
 if ($frontendPath) {
-    $frontendPath = $frontendPath;
+    $frontendPath = "\\$frontendPath";
 } else {
-    $frontendPath = '';
+    $frontendPath = "\\";
 }
 
 if ($backendPath && $frontendPath) {
-    $backendPath = $frontendPath.$backendPath;
+    $backendPath = "$frontendPath\\$backendPath";
 } else {
-    $backendPath = '/backend'; // Standardpfad, falls nichts in der Datenbank gefunden wird
+    $backendPath = '\/backend'; // Standardpfad, falls nichts in der Datenbank gefunden wird
 }
 
-// Fügen Sie einige Routen hinzu
-$router->add($frontendPath . '\/[:page]?', array (
+// Füge einige Routen hinzu
+$router->add($frontendPath . '\/{page}?', array ( // Verwenden Sie geschweifte Klammern für das dynamische Segment
     'controller' => 'HomeController',
     'action' => 'index'
 ), array ('GET', 'POST'));
-$router->add($backendPath.'\/[:page]?', array (
+$router->add($backendPath.'\/{page}?', array ( // Verwenden Sie geschweifte Klammern für das dynamische Segment
     'controller' => 'AdminController',
     'action' => 'index'
 ), array ('GET', 'POST'));
