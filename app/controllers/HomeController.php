@@ -43,6 +43,7 @@ class HomeController extends Controller {
     public function index() {
 
         // Further logic and data processing here 
+        echo "<h1>\$homeController->index() wurde aufgerufen</h1>";
 
         // Create an instance of the ThemeManager
         $themeManager = new ThemeManager();
