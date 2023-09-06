@@ -32,4 +32,4 @@ require_once __DIR__ . '/app/routes.php';
 
 // Starte die Router-Verarbeitung
 global $router;
-$router->dispatch($_SERVER['REQUEST_URI']);
+$router->dispatch($_SERVER['REQUEST_URI'] . "/");
