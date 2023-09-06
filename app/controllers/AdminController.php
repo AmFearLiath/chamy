@@ -28,6 +28,7 @@ class AdminController extends Controller {
     public function index() {
 
         // Weitere Logik und Datenverarbeitung hier
+        echo "<h1>\$adminController->index() wurde aufgerufen</h1>";
 
         // Erstelle eine Instanz des ThemeManagers
         $themeManager = new ThemeManager();
