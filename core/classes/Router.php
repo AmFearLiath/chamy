@@ -24,15 +24,32 @@ class Router {
     // Ein Array, das die Routen speichert
     private $routes = [];
     //private static $routes = [];
-
-    // Eine Methode, die eine Route hinzufügt
-    public function add($route, $params)
+    public function add_______($route, $params)
     {
         // Ersetzen Sie alle dynamischen Segmente mit regulären Ausdrücken
         $route = preg_replace('/\{([a-z]+)\}/', '(?P<\1>[a-z-]+)', $route);
         $route = preg_replace('/\?/', '\?', $route);
 
         $route = '/^' . $route . '/i';
+        $this->routes[$route] = $params;
+    }
+
+    // Eine Methode, die eine Route hinzufügt
+    public function add($route, $params = [])
+    {
+        // Konvertiere die Route zu einem regulären Ausdruck: entkomme Schrägstrichen
+        $route = preg_replace('/\//', '\\/', $route);
+
+        // Konvertiere Variablen z.B. {controller}
+        $route = preg_replace('/\{([a-z]+)\}/', '(?P<\1>[a-z-]+)', $route);
+
+        // Konvertiere Variablen mit benutzerdefinierten regulären Ausdrücken z.B. {id:\d+}
+        $route = preg_replace('/\{([a-z]+):([^\}]+)\}/', '(?P<\1>\2)', $route);
+
+        // Füge Start- und Endzeichen hinzu und markiere den Parameter als optional
+        $route = '/^' . $route . '((\\?P[a-z-]+)\?)?$/i';
+
+        // Füge die Route zum Array der Routen hinzu
         $this->routes[$route] = $params;
     }
 
