@@ -115,9 +115,14 @@ document.addEventListener('DOMContentLoaded', function () {
     pwd.addEventListener('input', function () {
       var s = scorePassword(pwd.value);
       var pct = Math.round((s / 5) * 100);
-      meterBar.style.width = pct + '%';
-      // adjust class
-      meterBar.className = 'password-meter-bar meter-' + s;
+      console.debug('install-wizard: password score', s, 'pct', pct);
+      if (meterBar) {
+        meterBar.style.width = pct + '%';
+        // adjust class
+        meterBar.className = 'password-meter-bar meter-' + s;
+      } else {
+        console.warn('install-wizard: meterBar not found');
+      }
     });
   } catch (e) {
     console.warn('install-wizard: password-meter init failed', e);

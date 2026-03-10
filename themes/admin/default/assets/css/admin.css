@@ -387,14 +387,14 @@ body::before {
 .field > div { padding:10px 12px; border-radius:8px; background: var(--surface-150); border:1px solid var(--border-color); color:var(--text-primary); }
 
 /* Password strength meter (visual only) */
-.password-meter { margin-top:8px; height:8px; background: var(--surface-150); border-radius:8px; overflow:hidden; border:1px solid var(--border-color); }
-.password-meter-bar { height:100%; width:0%; transition: width var(--transition-fast), background-color var(--transition-fast); }
+.password-meter { margin-top:8px; height:10px; background: color-mix(in srgb, var(--surface-150) 85%, transparent); border-radius:8px; overflow:hidden; border:1px solid var(--border-color); }
+.password-meter-bar { display:block; height:100%; width:0%; min-width:2px; transition: width var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast); box-shadow: inset 0 0 6px rgba(0,0,0,0.25); }
 .password-meter-bar.meter-0 { background: linear-gradient(90deg, color-mix(in srgb, var(--danger) 10%, transparent), transparent); }
-.password-meter-bar.meter-1 { background: linear-gradient(90deg, #ff6b6b, #ff8b6b); }
-.password-meter-bar.meter-2 { background: linear-gradient(90deg, #ffb86b, #ffd86b); }
-.password-meter-bar.meter-3 { background: linear-gradient(90deg, #d8ff6b, #a8ff6b); }
-.password-meter-bar.meter-4 { background: linear-gradient(90deg, #6bffb8, #3dff9a); }
-.password-meter-bar.meter-5 { background: linear-gradient(90deg, var(--accent), var(--neon-green)); }
+.password-meter-bar.meter-1 { background: linear-gradient(90deg, #ff6b6b, #ff8b6b); box-shadow: 0 0 6px rgba(255,107,107,0.25); }
+.password-meter-bar.meter-2 { background: linear-gradient(90deg, #ffb86b, #ffd86b); box-shadow: 0 0 6px rgba(255,184,107,0.2); }
+.password-meter-bar.meter-3 { background: linear-gradient(90deg, #d8ff6b, #a8ff6b); box-shadow: 0 0 6px rgba(216,255,107,0.2); }
+.password-meter-bar.meter-4 { background: linear-gradient(90deg, #6bffb8, #3dff9a); box-shadow: 0 0 8px rgba(107,255,184,0.25); }
+.password-meter-bar.meter-5 { background: linear-gradient(90deg, var(--accent), var(--neon-green)); box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 40%, transparent); }
 
 
 .sidebar-header {
