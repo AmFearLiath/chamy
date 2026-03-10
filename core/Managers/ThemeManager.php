@@ -178,6 +178,14 @@ final class ThemeManager implements ManagerInterface
             return false;
         }
 
+        // Prevent uninstalling the active theme for the area. Require switching to another theme first.
+        if ($area === 'admin' && $this->adminThemeId === $id) {
+            return ['error' => 'Cannot delete active admin theme. Set another theme as default before uninstalling.'];
+        }
+        if ($area === 'frontend' && $this->frontendThemeId === $id) {
+            return ['error' => 'Cannot delete active frontend theme. Set another theme as default before uninstalling.'];
+        }
+
         // Prevent accidental deletes outside themes folders
         $base = $area === 'admin' ? $this->kernel->path('themes', 'admin') : $this->kernel->path('themes', 'frontend');
         $realBase = realpath($base) ?: $base;
