@@ -274,45 +274,28 @@ function envQuote(string $value): string
         }
         * { box-sizing: border-box; }
         body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: radial-gradient(circle at 0% 0%, #162536, var(--bg) 35%); color: var(--text); }
-        <?php
-            // Use the reusable InstallWizard component to render the multistep form
-            require_once $basePath . '/core/Components/InstallWizard.php';
-            \Chamy\Core\Components\InstallWizard::render($values, $errors, $csrf);
-        ?>
-                </div>
-                <div class="field">
-                    <label>Admin E-Mail</label>
-                    <input name="admin_email" type="email" value="<?= h($values['admin_email']) ?>" required>
-                </div>
-                <div class="field">
-                    <label>Admin Anzeigename</label>
-                    <input name="admin_display_name" value="<?= h($values['admin_display_name']) ?>" required>
-                    <small>Min 2, Max 120 Zeichen.</small>
-                </div>
-                <div class="field">
-                    <label>Admin Passwort</label>
-                    <input name="admin_password" type="password" required>
-                    <small>Min 8, Max 72 Zeichen. Empfehlung: Passwortmanager verwenden.</small>
-                </div>
-                <div class="field full">
-                    <label>Passwort bestätigen</label>
-                    <input name="admin_password_confirm" type="password" required>
-                </div>
-            </div>
-        </div>
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="head">
+        <h1>Chamy Installationsmanager</h1>
+        <p class="muted">Geführte Installation mit Pflichtfeldern, Validierung, Beispielen, Min/Max-Werten und automatischer Grundkonfiguration.</p>
+    </div>
 
+    <?php if ($success): ?>
         <div class="card">
-            <h2 class="section-title">4) Was passiert bei "Installation starten"?</h2>
-            <ul class="list">
-                <li>Datenbankverbindung wird geprüft.</li>
-                <li>Alle Migrationen werden ausgeführt.</li>
-                <li>Admin-Benutzer wird erstellt oder aktualisiert.</li>
-                <li><code>.env</code> wird geschrieben und ggf. als Backup gesichert.</li>
-                <li><code>storage/install.lock</code> wird angelegt (Installer wird dann deaktiviert).</li>
-            </ul>
-            <p style="margin-top:12px;"><button class="btn" type="submit">Installation starten</button></p>
+            <div class="ok"><?= h($successMessage) ?></div>
+            <p class="help">Nächster Schritt: <a href="/admin/login" style="color:#86c5ff;">Zum Admin-Login</a></p>
         </div>
-    </form>
+    <?php else: ?>
+
+    <?php
+        // Render the reusable InstallWizard component here
+        require_once $basePath . '/core/Components/InstallWizard.php';
+        \Chamy\Core\Components\InstallWizard::render($values, $errors, $csrf);
+    ?>
+
     <?php endif; ?>
 </div>
 </body>
