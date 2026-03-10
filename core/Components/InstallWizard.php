@@ -46,7 +46,20 @@ class InstallWizard
             <?php endif; ?>
         <?php endif; ?>
 
-        <script defer src="/assets/install-wizard.js"></script>
+        <?php
+        // Inline the wizard JS to avoid incorrect static routing returning HTML.
+        $wizardJsPath = $projectRoot . '/public/assets/install-wizard.js';
+        if (is_file($wizardJsPath)) {
+            $wizJs = @file_get_contents($wizardJsPath);
+            if ($wizJs !== false) {
+                echo "<script>\n" . $wizJs . "\n</script>";
+            } else {
+                echo '<script src="/assets/install-wizard.js" defer></script>';
+            }
+        } else {
+            echo '<script src="/assets/install-wizard.js" defer></script>';
+        }
+        ?>
 
         <?php if ($errors !== []): ?>
             <div class="card">
@@ -60,6 +73,16 @@ class InstallWizard
             <input type="hidden" name="csrf_token" value="<?= $h($csrf) ?>">
 
             <div class="card">
+                <div class="wizard-title">
+                    <div class="login-logo">
+                        <?php if (file_exists(dirname(__DIR__,2) . '/public/assets/admin-logo.png')): ?>
+                            <img src="/assets/admin-logo.png" class="login-logo-img" alt="logo">
+                        <?php endif; ?>
+                        <div class="login-logo-title">Chamy Installationsmanager</div>
+                    </div>
+                    <div class="page-subtitle">Geführte Installation mit Pflichtfeldern, Validierung, Beispielen und automatischer Grundkonfiguration.</div>
+                </div>
+
                 <div class="wizard-header">
                     <div class="wizard-steps" data-steps>
                         <div class="step active" data-step="1">1<br><small>Project</small></div>
@@ -151,6 +174,9 @@ class InstallWizard
                             <div class="field">
                                 <label>Admin Password</label>
                                 <input name="admin_password" type="password" required>
+                                <div class="password-meter" aria-hidden="true">
+                                    <div class="password-meter-bar meter-0"></div>
+                                </div>
                             </div>
                             <div class="field full">
                                 <label>Confirm Password</label>

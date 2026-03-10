@@ -278,10 +278,6 @@ function envQuote(string $value): string
 </head>
 <body>
 <div class="wrap">
-    <div class="head">
-        <h1>Chamy Installationsmanager</h1>
-        <p class="muted">Geführte Installation mit Pflichtfeldern, Validierung, Beispielen, Min/Max-Werten und automatischer Grundkonfiguration.</p>
-    </div>
 
     <?php if ($success): ?>
         <div class="card">

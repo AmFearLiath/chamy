@@ -322,6 +322,81 @@ body::before {
     .modal-grid::before { display:none; }
 }
 
+/* ---------- Installer Wizard Styles ---------- */
+/* Targets the install wizard form `#chamy-wizard` and keeps styles scoped
+   so existing modals/components are unaffected. Produces a centered,
+   guided dialog with readable labels, helper text and form controls. */
+#chamy-wizard {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 36px 20px;
+}
+
+#chamy-wizard .card {
+    width: min(1000px, 96%);
+    background: linear-gradient(180deg, var(--surface-200), color-mix(in srgb, var(--surface-200) 85%, transparent));
+    border: 1px solid var(--border-color);
+    border-radius: var(--card-radius);
+    box-shadow: var(--shadow-lg);
+    padding: 18px;
+}
+
+.wizard-header { display:flex; align-items:center; justify-content:space-between; gap:16px; padding-bottom:12px; border-bottom:1px solid var(--border-color); }
+.wizard-steps { display:flex; gap:10px; align-items:center; }
+.wizard-steps .step { width:56px; height:56px; border-radius:10px; background:var(--surface-150); color:var(--text-secondary); display:flex; flex-direction:column; align-items:center; justify-content:center; font-weight:700; border:1px solid var(--border-color); text-align:center; font-size:13px; }
+.wizard-steps .step { cursor: pointer; }
+.wizard-steps .step small { display:block; font-size:11px; font-weight:600; color:var(--text-muted); margin-top:4px; }
+.wizard-steps .step.active { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 14%, transparent), var(--surface-150)); color:var(--text-primary); box-shadow: var(--accent-glow); border-color: color-mix(in srgb, var(--accent) 20%, transparent); }
+
+.wizard-progress { height:10px; background:var(--surface-150); border-radius:8px; overflow:hidden; flex:1; margin-left:16px; }
+.wizard-progress::after { content:''; display:block; height:100%; width:var(--wizard-progress,25%); background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width var(--transition-base); }
+
+.wizard-body { padding:18px 0; }
+.wizard-panel { display:none; }
+.wizard-panel:not([hidden]) { display:block; }
+
+/* Centered title / logo for installer */
+.wizard-title { text-align:center; margin-bottom:12px; }
+.wizard-title .login-logo { display:inline-flex; align-items:center; gap:12px; }
+.wizard-title .login-logo-img { height:56px; width:56px; object-fit:cover; border-radius:10px; box-shadow:var(--shadow-sm); }
+.wizard-title .login-logo-title { font-size:20px; font-weight:800; color:var(--text-primary); }
+.wizard-title .page-subtitle { margin-top:6px; color:var(--text-secondary); font-size:13px; }
+.section-title { font-size:16px; font-weight:700; color:var(--text-primary); margin-bottom:12px; }
+.help { color:var(--text-secondary); margin-bottom:12px; }
+
+.grid { display:grid; grid-template-columns: 1fr 1fr; gap:14px; align-items:start; }
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+.field { background: transparent; }
+.field label { display:block; font-size:13px; color:var(--text-secondary); margin-bottom:6px; font-weight:600; }
+.field input, .field select, .field textarea { width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-150); color:var(--text-primary); outline:none; transition: box-shadow var(--transition-fast), border-color var(--transition-fast); }
+.field input:focus, .field select:focus, .field textarea:focus { box-shadow: var(--accent-glow-strong); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+.field small { display:block; color:var(--text-muted); font-size:12px; margin-top:6px; }
+.field.full { grid-column: 1 / -1; }
+
+.wizard-footer { display:flex; gap:8px; justify-content:flex-end; padding-top:12px; border-top:1px solid var(--border-color); }
+.btn { padding:8px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-150); color:var(--text-primary); cursor:pointer; font-weight:600; }
+.btn:hover { box-shadow: var(--accent-glow); }
+.btn.btn-secondary { background:transparent; color:var(--text-primary); border:1px solid var(--border-color); }
+
+.error { background: color-mix(in srgb, var(--danger) 10%, transparent); color:var(--text-primary); padding:10px; border-radius:8px; margin-bottom:12px; border:1px solid var(--border-color); }
+
+/* small utility to visually separate review values */
+.field > div { padding:10px 12px; border-radius:8px; background: var(--surface-150); border:1px solid var(--border-color); color:var(--text-primary); }
+
+/* Password strength meter (visual only) */
+.password-meter { margin-top:8px; height:8px; background: var(--surface-150); border-radius:8px; overflow:hidden; border:1px solid var(--border-color); }
+.password-meter-bar { height:100%; width:0%; transition: width var(--transition-fast), background-color var(--transition-fast); }
+.password-meter-bar.meter-0 { background: linear-gradient(90deg, color-mix(in srgb, var(--danger) 10%, transparent), transparent); }
+.password-meter-bar.meter-1 { background: linear-gradient(90deg, #ff6b6b, #ff8b6b); }
+.password-meter-bar.meter-2 { background: linear-gradient(90deg, #ffb86b, #ffd86b); }
+.password-meter-bar.meter-3 { background: linear-gradient(90deg, #d8ff6b, #a8ff6b); }
+.password-meter-bar.meter-4 { background: linear-gradient(90deg, #6bffb8, #3dff9a); }
+.password-meter-bar.meter-5 { background: linear-gradient(90deg, var(--accent), var(--neon-green)); }
+
+
 .sidebar-header {
     padding: 7px 0px 4px 22px;
     border-bottom: 1px solid var(--border-color);
