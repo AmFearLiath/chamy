@@ -30,7 +30,7 @@ $defaults = [
     'db_password' => '',
     'db_charset' => 'utf8mb4',
     'db_collation' => 'utf8mb4_unicode_ci',
-    'db_prefix' => 'chamy_',
+    'db_prefix' => '',
     'session_lifetime' => '120',
     'admin_username' => 'admin',
     'admin_email' => 'admin@example.com',
@@ -86,8 +86,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors['db_username'] = 'DB_USERNAME ist erforderlich (max. 128 Zeichen).';
     }
 
-    if (!preg_match('/^[a-zA-Z0-9_]{1,20}$/', $values['db_prefix'])) {
-        $errors['db_prefix'] = 'DB_PREFIX darf nur a-z, A-Z, 0-9 und _ enthalten (1-20 Zeichen).';
+    // DB prefix is optional. If provided, validate characters and length.
+    if ($values['db_prefix'] !== '' && !preg_match('/^[a-zA-Z0-9_]{1,20}$/', $values['db_prefix'])) {
+        $errors['db_prefix'] = 'DB_PREFIX darf nur a-z, A-Z, 0-9 und _ enthalten (1-20 Zeichen), oder leer sein.';
     }
 
     $sessionLifetime = (int) $values['session_lifetime'];
@@ -401,9 +402,9 @@ function envQuote(string $value): string
                     <small>Leer nur lokal, wenn euer DB-User kein Passwort hat.</small>
                 </div>
                 <div class="field">
-                    <label>DB_PREFIX</label>
-                    <input name="db_prefix" value="<?= h($values['db_prefix']) ?>" required>
-                    <small>1-20 Zeichen, nur a-z/A-Z/0-9/_ . Beispiel: <code>chamy_</code>.</small>
+                    <label>DB_PREFIX (optional)</label>
+                    <input name="db_prefix" value="<?= h($values['db_prefix']) ?>">
+                    <small>Optional: 1-20 Zeichen, nur a-z/A-Z/0-9/_ . Leave empty for no prefix. Beispiel: <code>chamy_</code>.</small>
                 </div>
                 <div class="field">
                     <label>SESSION_LIFETIME (Minuten)</label>
