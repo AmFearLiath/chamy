@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function () {
     panels[i].hidden = false;
     steps[i].classList.add('active');
     const percent = ((i) / (panels.length - 1)) * 100;
-    if (progress) progress.style.width = percent + '%';
+    if (progress) progress.style.setProperty('--progress', percent + '%');
     btnPrev.hidden = i === 0;
     btnNext.hidden = i === panels.length - 1;
     btnInstall.hidden = i !== panels.length - 1;

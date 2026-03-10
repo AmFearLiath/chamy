@@ -1,20 +1,27 @@
 /* Minimal styles for the install wizard stepper */
-.wizard-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-.wizard-steps{display:flex;gap:8px}
-.wizard-steps .step{width:56px;height:56px;border-radius:8px;background:#0f141b;border:1px solid #2a3340;color:#cfe6ff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700}
-.wizard-steps .step small{font-weight:400;font-size:10px;color:#8fa9bf}
-.wizard-steps .step.active{background:linear-gradient(180deg,#295fbd,#12447a);color:#fff}
-.wizard-progress{height:6px;background:#0f141b;border-radius:6px;flex:1;position:relative;overflow:hidden}
-.wizard-progress::after{content:'';position:absolute;left:0;top:0;height:100%;width:0;background:linear-gradient(90deg,#4da3ff,#6be7ff);transition:width .25s}
-.wizard-progress[style]{/* allow inline width */}
-.wizard-body{margin-top:8px}
+.wizard-header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+.wizard-steps{display:flex;gap:10px}
+.wizard-steps .step{min-width:64px;height:64px;border-radius:10px;background:#0f141b;border:1px solid #23303a;color:#cfe6ff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;padding:6px}
+.wizard-steps .step small{font-weight:400;font-size:11px;color:#8fa9bf;margin-top:4px}
+.wizard-steps .step.active{background:linear-gradient(180deg,#295fbd,#12447a);color:#fff;box-shadow:0 6px 18px rgba(18,68,122,.18)}
+.wizard-progress{height:8px;background:#0f141b;border-radius:8px;flex:1;position:relative;overflow:hidden;--progress:0%}
+.wizard-progress::after{content:'';position:absolute;left:0;top:0;height:100%;width:var(--progress);background:linear-gradient(90deg,#4da3ff,#6be7ff);transition:width .28s ease}
+.wizard-body{margin-top:12px}
 .wizard-panel{display:block}
-.wizard-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
-.btn-secondary{background:#2e3a49;color:#fff;border-radius:8px;padding:8px 12px;border:0}
-.btn{background:#4da3ff;color:#00142d;border-radius:8px;padding:8px 12px;border:0}
+.wizard-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+.btn-secondary{background:#2e3a49;color:#fff;border-radius:10px;padding:10px 14px;border:0}
+.btn{background:#4da3ff;color:#00142d;border-radius:10px;padding:10px 14px;border:0}
 
-/* reuse some existing classes */
-.card .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+/* reuse some existing classes and enhance spacing */
+.card .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
 .card .field{display:flex;flex-direction:column}
+.card .field label{color:#dbeffb}
+.card .field input, .card .field select{min-height:40px}
+.wizard-panel .help{margin-bottom:10px}
+
+.wrap{max-width:980px;margin:0 auto;padding:28px}
+.head h1{font-size:28px;margin-bottom:6px}
+
+.error{margin-bottom:10px}
 
 @media (max-width:900px){.card .grid{grid-template-columns:1fr}}
