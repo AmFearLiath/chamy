@@ -1,0 +1,30 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Serve static files directly (theme assets, media, etc.)
+    RewriteCond %{REQUEST_URI} ^/themes/ [OR]
+    RewriteCond %{REQUEST_URI} ^/assets/
+    RewriteRule ^(.+)$ ../\$1 [L]
+
+    # Route all non-file/non-dir requests to index.php
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Security: Deny access to sensitive file types
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "\.(env|json|lock|md|log|yml|yaml|xml|ini|dist|bak)$">
+    Require all denied
+</FilesMatch>

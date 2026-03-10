@@ -1,0 +1,163 @@
+{% extends 'base.twig' %}
+
+{% block title %}{{ t('admin.themes')|default('Themes') }} – Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">{{ t('admin.dashboard')|default('Dashboard') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ t('admin.themes')|default('Themes') }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ t('admin.themes')|default('Themes') }}</h1>
+        <span class="page-badge">{{ t('themes.dashboard')|default('Dashboard') }}</span>
+    </div>
+    <div class="page-header-right">
+        <a href="/admin/themes/installed" class="btn btn-secondary">{{ t('themes.installed_tab')|default('Installierte Themes') }}</a>
+        <a href="/admin/themes/marketplace" class="btn btn-primary">{{ t('themes.marketplace_tab')|default('Marketplace') }}</a>
+        <a href="/admin/themes/config" class="btn btn-ghost">{{ t('themes.config_tab')|default('Konfiguration') }}</a>
+    </div>
+</div>
+
+{% if not can_manage_themes %}
+<div class="alert alert-warning" style="margin-bottom: 1rem;">
+    {{ t('admin.read_only_themes_hint')|default('Lesemodus: Ohne Berechtigung können Themes angesehen, aber nicht verändert werden.') }}
+</div>
+{% endif %}
+
+<div class="theme-stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">{{ t('themes.admin_installed_label')|default('Installierte Admin-Themes') }}</div>
+        <div class="stat-value stat-value-multi">
+            <div class="stat-number">{{ admin_themes|length }}</div>
+            <div class="stat-meta">{{ t('themes.active')|default('Aktiv') }}:<br><strong>{{ active_admin_theme }}</strong></div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">{{ t('themes.frontend_installed_label')|default('Installierte Frontend-Themes') }}</div>
+        <div class="stat-value stat-value-multi">
+            <div class="stat-number">{{ frontend_themes|length }}</div>
+            <div class="stat-meta">{{ t('themes.active')|default('Aktiv') }}:<br><strong>{{ active_frontend_theme }}</strong></div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">{{ t('themes.marketplace_label')|default('Marketplace Themes') }}</div>
+        <div class="stat-value stat-value-multi">
+            <div class="stat-number">{{ marketplace.counts.all }}</div>
+            <div class="stat-meta">{{ t('themes.marketplace_counts')|default('Kostenlos') }}: {{ marketplace.counts.free }} / {{ t('themes.paid')|default('Bezahlt') }}: {{ marketplace.counts.paid }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="theme-dashboard-grid">
+    <section class="card">
+        <div class="card-header">
+            <h3 class="card-title">{{ t('themes.installed_tab')|default('Installierte Themes') }}</h3>
+            <a href="/admin/themes/installed" class="btn btn-sm btn-ghost">{{ t('themes.details')|default('Details') }}</a>
+        </div>
+        <div class="card-body">
+            <div class="theme-list-compact">
+                {% for id, th in admin_themes|slice(0, 2) %}
+                {% set short_id = id|split('/')|last %}
+                <article class="theme-row">
+                    <div class="theme-row-preview" style="--preview:#1f8ef1"></div>
+                    <div>
+                        <strong>{{ th.name|default(id) }}</strong>
+                        <div class="text-muted">{{ t('themes.area_admin')|default('Admin') }} · v{{ th.version|default('?') }}</div>
+                    </div>
+                    <div class="theme-row-actions">
+                        <button type="button" class="btn btn-sm {{ short_id == active_admin_theme ? 'btn-secondary' : 'btn-ghost' }}" {{ not can_manage_themes ? 'disabled' : '' }} data-confirm="{{ t('themes.confirm_status_toggle')|default('Möchten Sie den Theme-Status ändern?') }}">{{ short_id == active_admin_theme ? t('themes.enabled')|default('Aktiviert') : t('themes.disabled')|default('Deaktiviert') }}</button>
+                        <button type="button" class="btn btn-sm btn-danger" {{ not can_manage_themes ? 'disabled' : '' }} data-confirm-double="1" data-confirm="{{ t('themes.confirm_uninstall_step1')|default('Möchten Sie dieses Theme wirklich deinstallieren?') }}" data-confirm-second="{{ t('themes.confirm_uninstall_step2')|default('Achtung: Dadurch werden Theme-Dateien entfernt. Bitte bestätigen Sie die Deinstallation erneut.') }}">{{ t('themes.uninstall')|default('Deinstallieren') }}</button>
+                        <a class="btn btn-sm btn-secondary" href="/admin/themes/installed/admin/{{ short_id }}">{{ t('themes.edit')|default('Bearbeiten') }}</a>
+                        <a class="btn btn-sm btn-ghost" href="/admin/themes/config?area=admin&theme={{ short_id }}">{{ t('themes.configure')|default('Konfigurieren') }}</a>
+                    </div>
+                </article>
+                {% endfor %}
+
+                {% for id, th in frontend_themes|slice(0, 2) %}
+                {% set short_id = id|split('/')|last %}
+                <article class="theme-row">
+                    <div class="theme-row-preview" style="--preview:#14c9a5"></div>
+                    <div>
+                        <strong>{{ th.name|default(id) }}</strong>
+                        <div class="text-muted">{{ t('themes.area_frontend')|default('Frontend') }} · v{{ th.version|default('?') }}</div>
+                    </div>
+                    <div class="theme-row-actions">
+                        <button type="button" class="btn btn-sm {{ short_id == active_frontend_theme ? 'btn-secondary' : 'btn-ghost' }}" {{ not can_manage_themes ? 'disabled' : '' }} data-confirm="{{ t('themes.confirm_status_toggle')|default('Möchten Sie den Theme-Status ändern?') }}">{{ short_id == active_frontend_theme ? t('themes.enabled')|default('Aktiviert') : t('themes.disabled')|default('Deaktiviert') }}</button>
+                        <button type="button" class="btn btn-sm btn-danger" {{ not can_manage_themes ? 'disabled' : '' }} data-confirm-double="1" data-confirm="{{ t('themes.confirm_uninstall_step1')|default('Möchten Sie dieses Theme wirklich deinstallieren?') }}" data-confirm-second="{{ t('themes.confirm_uninstall_step2')|default('Achtung: Dadurch werden Theme-Dateien entfernt. Bitte bestätigen Sie die Deinstallation erneut.') }}">{{ t('themes.uninstall')|default('Deinstallieren') }}</button>
+                        <a class="btn btn-sm btn-secondary" href="/admin/themes/installed/frontend/{{ short_id }}">{{ t('themes.edit')|default('Bearbeiten') }}</a>
+                        <a class="btn btn-sm btn-ghost" href="/admin/themes/config?area=frontend&theme={{ short_id }}">{{ t('themes.configure')|default('Konfigurieren') }}</a>
+                    </div>
+                </article>
+                {% endfor %}
+
+                {% if admin_themes|length == 0 and frontend_themes|length == 0 %}
+                <div class="text-muted">{{ t('themes.no_installed')|default('Keine installierten Themes gefunden.') }}</div>
+                {% endif %}
+            </div>
+            <div style="margin-top:1rem;">
+                <p class="text-muted">{{ t('themes.install_rule_text')|default('Alle installierten Themes können verwaltet werden. Live ist jeweils nur das aktivierte Theme je Bereich.') }}</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-header">
+            <h3 class="card-title">{{ t('themes.marketplace_title')|default('Theme-Marktplatz') }}</h3>
+            <a href="/admin/themes/marketplace" class="btn btn-sm btn-ghost">{{ t('themes.details')|default('Details') }}</a>
+        </div>
+        <div class="card-body">
+            <div class="theme-list-compact">
+                {% for item in marketplace.items|slice(0, 4) %}
+                <article class="theme-row">
+                    <div class="theme-row-preview" style="--preview:{{ item.preview_color|default('#4d7aff') }}"></div>
+                    <div>
+                        <strong>{{ item.name }}</strong>
+                        <div class="text-muted">{{ item.area == 'admin' ? t('themes.area_admin')|default('Admin') : t('themes.area_frontend')|default('Frontend') }} · {{ item.pricing == 'free' ? t('themes.free')|default('Kostenlos') : item.price ~ ' ' ~ item.currency }}</div>
+                    </div>
+                    <a class="btn btn-sm btn-secondary" href="/admin/themes/marketplace/{{ item.id }}">{{ t('themes.preview')|default('Vorschau') }}</a>
+                </article>
+                {% endfor %}
+                {% if marketplace.items|length == 0 %}
+                <div class="text-muted">{{ t('themes.no_marketplace_filtered')|default('Keine Marketplace-Themes für die gewählten Filter.') }}</div>
+                {% endif %}
+            </div>
+            <div style="margin-top:1rem;">
+                <p class="text-muted">{{ t('themes.marketplace_subhint')|default('Sortierung, Filter und Details stehen auf der Marketplace-Unterseite bereit.') }}</p>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="theme-subnav-grid">
+    <a href="/admin/themes/installed" class="theme-subnav-card">
+        <h4>{{ t('themes.subnav_installed_title')|default('Installierte Themes im Detail') }}</h4>
+        <p>{{ t('themes.subnav_installed_text')|default('Manager, Einstellungen, technische Daten und Live-Status für jedes Theme.') }}</p>
+        <span class="theme-subnav-link">{{ t('themes.open_subpage')|default('Unterseite öffnen') }}</span>
+    </a>
+    <a href="/admin/themes/marketplace" class="theme-subnav-card">
+        <h4>{{ t('themes.subnav_marketplace_title')|default('Marketplace im Detail') }}</h4>
+        <p>{{ t('themes.subnav_marketplace_text')|default('Filter und Sortierung für Admin-/Frontend-Themes sowie kostenlose/bezahlte Pakete.') }}</p>
+        <span class="theme-subnav-link">{{ t('themes.open_subpage')|default('Unterseite öffnen') }}</span>
+    </a>
+    <a href="/admin/themes/marketplace/config" class="theme-subnav-card">
+        <h4>{{ t('themes.subnav_marketplace_config_title')|default('Marketplace konfigurieren') }}</h4>
+        <p>{{ t('themes.subnav_marketplace_config_text')|default('Katalog-Sichtbarkeit, Standardfilter und Installationsrichtlinien festlegen.') }}</p>
+        <span class="theme-subnav-link">{{ t('themes.open_subpage')|default('Unterseite öffnen') }}</span>
+    </a>
+    <a href="/admin/settings" class="theme-subnav-card">
+        <h4>{{ t('themes.subnav_settings_title')|default('Settings bereinigt') }}</h4>
+        <p>{{ t('themes.subnav_settings_text')|default('Theme-spezifische Einstellungen wurden aus den globalen Einstellungen entfernt.') }}</p>
+        <span class="theme-subnav-link">{{ t('themes.to_settings')|default('Zu Settings') }}</span>
+    </a>
+</div>
+
+<div class="card" style="margin-top: 1.25rem;">
+    <div class="card-body">
+        <h3 style="margin:0 0 .6rem 0;">{{ t('themes.install_rule_title')|default('Installations-Regel') }}</h3>
+        <p class="text-muted" style="margin:0;">{{ t('themes.install_rule_footer')|default('Alle Themes können jederzeit installiert werden. Live aktiv ist pro Bereich immer nur das aktuell aktivierte Theme.') }}</p>
+    </div>
+</div>
+{% endblock %}

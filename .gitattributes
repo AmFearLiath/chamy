@@ -1,0 +1,10 @@
+# Keep public export slim (archives and export tooling)
+/docs export-ignore
+/tests export-ignore
+/.vscode export-ignore
+/.idea export-ignore
+/.phpunit.cache export-ignore
+/phpunit.xml export-ignore
+/storage export-ignore
+/.env export-ignore
+/.env.bak.* export-ignore

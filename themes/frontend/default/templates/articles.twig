@@ -1,0 +1,40 @@
+{% extends 'base.twig' %}
+
+{% block title %}Artikel – {{ site_name|default('Chamy CMS') }}{% endblock %}
+{% block body_class %}page-articles{% endblock %}
+
+{% block body %}
+<section class="container" style="padding-top: 3rem;">
+    <h1>Artikel</h1>
+
+    {% if entries|length > 0 %}
+    <div class="content-grid">
+        {% for entry in entries %}
+        <div class="card">
+            <div class="card-meta">{{ entry.created_at|date('d.m.Y') }}</div>
+            <h3><a href="/artikel/{{ entry.slug }}">{{ entry.title }}</a></h3>
+            <p>{{ entry.excerpt|default(entry.body|default('')|striptags|slice(0,140) ~ '…') }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if pages > 1 %}
+    <div class="pagination">
+        {% for p in 1..pages %}
+            {% if p == current_page %}
+                <span class="active">{{ p }}</span>
+            {% else %}
+                <a href="/artikel?page={{ p }}">{{ p }}</a>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+        <h2>Noch keine Artikel</h2>
+        <p>Erstelle deinen ersten Artikel im Admin-Bereich.</p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

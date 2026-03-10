@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="{{ app_locale|default('de') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Chamy CMS{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/themes/admin/default/assets/css/admin.css">
+    {% for css in head_styles|default([]) %}
+    <link rel="stylesheet" href="{{ css }}">
+    {% endfor %}
+    <link rel="icon" href="/docs/logo.png" type="image/png">
+    {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}" data-theme="{{ user.theme|default('dark') }}">
+
+{% block body %}
+<div class="admin-layout">
+
+    {# ─── Sidebar ─── #}
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="/admin" class="sidebar-logo">
+                <img src="/docs/logo.png" alt="Chamy" class="sidebar-logo-img">
+            </a>
+            {# Collapsed-state logo that slides in when sidebar is collapsed #}
+            <a href="/admin" class="sidebar-logo-collapsed" aria-hidden="true">
+                <img src="/docs/logo-collapsed.png" alt="Chamy" class="sidebar-logo-img sidebar-logo-collapsed-img">
+            </a>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-label">{{ t('admin.nav.main')|default('Hauptmenü') }}</div>
+
+                <a href="/admin" class="nav-item {{ current_route == 'dashboard' ? 'active' : '' }}">
+                    <span class="nav-item-icon">⊞</span>
+                    <span>{{ t('admin.dashboard')|default('Dashboard') }}</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-label">{{ t('admin.nav.content')|default('Inhalte') }}</div>
+
+                {% for type_key, type in content_types|default({}) %}
+                <a href="/admin/content/{{ type_key }}" class="nav-item {{ current_route == 'content.' ~ type_key ? 'active' : '' }}">
+                    <span class="nav-item-icon">◉</span>
+                    <span>{{ type.label_plural|default(type_key) }}</span>
+                </a>
+                {% endfor %}
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-label">{{ t('admin.nav.system')|default('System') }}</div>
+
+                <a href="/admin/modules" class="nav-item {{ current_route == 'modules' ? 'active' : '' }}">
+                    <span class="nav-item-icon">⧉</span>
+                    <span>{{ t('admin.modules')|default('Module') }}</span>
+                </a>
+
+                <a href="/admin/themes" class="nav-item {{ current_route == 'themes' ? 'active' : '' }}">
+                    <span class="nav-item-icon">◈</span>
+                    <span>{{ t('admin.themes')|default('Themes') }}</span>
+                </a>
+
+                <a href="/admin/users" class="nav-item {{ current_route == 'users' ? 'active' : '' }}">
+                    <span class="nav-item-icon">◎</span>
+                    <span>{{ t('admin.users')|default('Benutzer') }}</span>
+                </a>
+
+                <a href="/admin/settings" class="nav-item {{ current_route == 'settings' ? 'active' : '' }}">
+                    <span class="nav-item-icon">⚙</span>
+                    <span>{{ t('admin.settings')|default('Einstellungen') }}</span>
+                </a>
+
+                <a href="/admin/trash" class="nav-item {{ current_route == 'trash' ? 'active' : '' }}">
+                    <span class="nav-item-icon">🗑</span>
+                    <span>{{ t('admin.trash')|default('Papierkorb') }}</span>
+                </a>
+            </div>
+        </nav>
+
+        {# Sidebar footer intentionally left without profile; profile moved to topbar #}
+    </aside>
+
+    {# ─── Main ─── #}
+    <main class="main-content">
+
+        {# Topbar #}
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="topbar-btn" data-toggle-sidebar title="Sidebar">☰</button>
+                <div class="topbar-breadcrumb">
+                    {% block breadcrumb %}
+                    <a href="/admin">Dashboard</a>
+                    {% endblock %}
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-btn" data-theme-toggle title="Dark / Light umschalten">◐</button>
+                <button class="topbar-btn" title="{{ t('admin.clear_cache')|default('Cache leeren') }}">⟳</button>
+
+                {# Profile moved from sidebar to header (right-aligned) #}
+                <div class="topbar-profile" data-dropdown>
+                    <button class="topbar-btn" title="{{ user.username|default('Admin') }}">
+                        <span class="topbar-avatar">{{ user.username|default('A')|first|upper }}</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <div class="dropdown-profile-header">
+                            <div class="dropdown-avatar">{{ user.username|default('A')|first|upper }}</div>
+                            <div class="dropdown-userinfo">
+                                <div class="dropdown-name">{{ user.display_name|default(user.username|default('Admin')) }}</div>
+                                <div class="dropdown-email">{{ user.email|default('') }}</div>
+                            </div>
+                        </div>
+                        <div class="dropdown-actions">
+                            <a class="dropdown-item" href="/admin/profile">{{ t('admin.profile')|default('Profil') }}</a>
+                            <a class="dropdown-item" href="/admin/settings">{{ t('admin.settings')|default('Einstellungen') }}</a>
+                            <button class="dropdown-item" data-theme-toggle>{{ t('admin.toggle_theme')|default('Design wechseln') }}</button>
+                            <div class="dropdown-sep"></div>
+                            <a class="dropdown-item logout" href="/admin/logout">{{ t('admin.logout')|default('Abmelden') }}</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        {# Flash Messages #}
+        {% for type, message in flash_messages|default({}) %}
+        <div class="alert alert-{{ type }}" data-auto-dismiss="5000">{{ message }}</div>
+        {% endfor %}
+
+        {# Page Content #}
+        <div class="page-container">
+            {% block content %}{% endblock %}
+        </div>
+
+    </main>
+</div>
+{% endblock %}
+
+<script src="/themes/admin/default/assets/js/admin.js"></script>
+{% for js in footer_scripts|default([]) %}
+<script src="{{ js }}"></script>
+{% endfor %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

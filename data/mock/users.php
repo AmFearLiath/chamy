@@ -1,0 +1,43 @@
+<?php
+
+return [
+    [
+        'id'              => 1,
+        'uuid'            => 'a1b2c3d4-e5f6-4a1b-8c2d-3e4f5a6b7c8d',
+        'username'        => 'admin',
+        'email'           => 'admin@chamy.local',
+        'display_name'    => 'Administrator',
+        'password_hash'   => '$2y$10$erXO2/Ok5WEUmfC8x3WIpezVwU5zksZYwc5zEvdee3ONwv.p1qEk6',
+        'role'            => 'admin',
+        'roles'           => ['admin'],
+        'is_active'       => 1,
+        'last_login_at'   => '2025-01-15 10:30:00',
+        'created_at'      => '2025-01-01 00:00:00',
+    ],
+    [
+        'id'              => 2,
+        'uuid'            => 'b2c3d4e5-f6a7-4b2c-9d3e-4f5a6b7c8d9e',
+        'username'        => 'redakteur',
+        'email'           => 'redakteur@chamy.local',
+        'display_name'    => 'Max Mustermann',
+        'password_hash'   => '$2y$10$fupMFjCHqOifdmqStRqe3u5TSzmHS3EqQhpRfiRmeg7GEVuC/spnW',
+        'role'            => 'editor',
+        'roles'           => ['editor'],
+        'is_active'       => 1,
+        'last_login_at'   => '2025-01-14 14:22:00',
+        'created_at'      => '2025-01-02 09:00:00',
+    ],
+    [
+        'id'              => 3,
+        'uuid'            => 'c3d4e5f6-a7b8-4c3d-ae4f-5a6b7c8d9e0f',
+        'username'        => 'autor',
+        'email'           => 'autor@chamy.local',
+        'display_name'    => 'Erika Musterfrau',
+        'password_hash'   => '$2y$10$qdyNLMEqqD4Uc3Lz.oVgfO6t5W3ogO9bE4Z6Eu.7u8Uwdu3lqGdDO',
+        'role'            => 'author',
+        'roles'           => ['author'],
+        'is_active'       => 1,
+        'last_login_at'   => null,
+        'created_at'      => '2025-01-05 11:30:00',
+    ],
+];

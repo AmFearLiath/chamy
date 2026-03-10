@@ -1,0 +1,140 @@
+{% extends 'base.twig' %}
+
+{% block title %}{{ t('admin.trash')|default('Papierkorb') }} - Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">{{ t('admin.dashboard')|default('Dashboard') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ t('admin.trash')|default('Papierkorb') }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ t('admin.trash')|default('Papierkorb') }}</h1>
+        <p class="text-muted">{{ t('trash.global_hint')|default('Globaler Papierkorb für alle gelöschten Elemente (Inhalte, Benutzer, Rollen, Berechtigungen, Themes, Module).') }}</p>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom:1rem;">
+    <div class="card-body">
+        <form method="get" action="/admin/trash" class="form-grid" style="display:grid;grid-template-columns:repeat(5,minmax(140px,1fr));gap:0.75rem;">
+            <div>
+                <label class="form-label">{{ t('trash.filter_status')|default('Status') }}</label>
+                <select class="form-control" name="status">
+                    <option value="trashed" {{ trash_filters.status == 'trashed' ? 'selected' : '' }}>{{ t('trash.status_trashed')|default('Im Papierkorb') }}</option>
+                    <option value="restored" {{ trash_filters.status == 'restored' ? 'selected' : '' }}>{{ t('trash.status_restored')|default('Wiederhergestellt') }}</option>
+                    <option value="purged" {{ trash_filters.status == 'purged' ? 'selected' : '' }}>{{ t('trash.status_purged')|default('Endgültig entfernt') }}</option>
+                    <option value="all" {{ trash_filters.status == 'all' ? 'selected' : '' }}>{{ t('trash.all')|default('Alle') }}</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">{{ t('trash.filter_category')|default('Kategorie') }}</label>
+                <select class="form-control" name="category">
+                    <option value="all" {{ trash_filters.category == 'all' ? 'selected' : '' }}>{{ t('trash.all')|default('Alle') }}</option>
+                    {% for category, count in trash_stats.categories|default({}) %}
+                    <option value="{{ category }}" {{ trash_filters.category == category ? 'selected' : '' }}>{{ category }} ({{ count }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">{{ t('trash.filter_type')|default('Typ') }}</label>
+                <select class="form-control" name="entity_type">
+                    <option value="all" {{ trash_filters.entity_type == 'all' ? 'selected' : '' }}>{{ t('trash.all')|default('Alle') }}</option>
+                    {% for entity_type, count in trash_stats.types|default({}) %}
+                    <option value="{{ entity_type }}" {{ trash_filters.entity_type == entity_type ? 'selected' : '' }}>{{ entity_type }} ({{ count }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">{{ t('trash.filter_sort')|default('Sortierung') }}</label>
+                <select class="form-control" name="sort">
+                    <option value="deleted_desc" {{ trash_filters.sort == 'deleted_desc' ? 'selected' : '' }}>{{ t('trash.sort_deleted_desc')|default('Neueste zuerst') }}</option>
+                    <option value="deleted_asc" {{ trash_filters.sort == 'deleted_asc' ? 'selected' : '' }}>{{ t('trash.sort_deleted_asc')|default('Älteste zuerst') }}</option>
+                    <option value="name_asc" {{ trash_filters.sort == 'name_asc' ? 'selected' : '' }}>{{ t('trash.sort_name_asc')|default('Name A-Z') }}</option>
+                    <option value="name_desc" {{ trash_filters.sort == 'name_desc' ? 'selected' : '' }}>{{ t('trash.sort_name_desc')|default('Name Z-A') }}</option>
+                </select>
+            </div>
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.75rem;">
+                <div>
+                    <label class="form-label">{{ t('trash.search')|default('Suche') }}</label>
+                    <input class="form-control" type="text" name="q" value="{{ trash_filters.q|default('') }}" placeholder="{{ t('trash.search_placeholder')|default('Key, Name, Typ ...') }}">
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-primary">{{ t('trash.filter_apply')|default('Filtern') }}</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="theme-stats-grid" style="margin-bottom:1rem;">
+    <article class="stat-card"><span class="stat-label">{{ t('trash.total')|default('Gesamt') }}</span><span class="stat-number">{{ trash_stats.total|default(0) }}</span></article>
+    <article class="stat-card"><span class="stat-label">{{ t('trash.trashed')|default('Im Papierkorb') }}</span><span class="stat-number">{{ trash_stats.trashed|default(0) }}</span></article>
+    <article class="stat-card"><span class="stat-label">{{ t('trash.restored')|default('Wiederhergestellt') }}</span><span class="stat-number">{{ trash_stats.restored|default(0) }}</span></article>
+    <article class="stat-card"><span class="stat-label">{{ t('trash.purged')|default('Endgultig entfernt') }}</span><span class="stat-number">{{ trash_stats.purged|default(0) }}</span></article>
+</div>
+
+<div class="card">
+    <div class="card-body" style="padding:0;overflow:auto;">
+        <table class="table" style="margin:0;">
+            <thead>
+                <tr>
+                    <th>{{ t('trash.when')|default('Geloscht am') }}</th>
+                    <th>{{ t('trash.category')|default('Kategorie') }}</th>
+                    <th>{{ t('trash.type')|default('Typ') }}</th>
+                    <th>{{ t('trash.name')|default('Name') }}</th>
+                    <th>{{ t('trash.key')|default('Key') }}</th>
+                    <th>{{ t('trash.status')|default('Status') }}</th>
+                    <th style="text-align:right;">{{ t('trash.actions')|default('Aktionen') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in trash_items %}
+                {% set payload = item.payload|default({}) %}
+                {% set itemName = payload.name|default(payload.title|default(payload.username|default(item.entity_key))) %}
+                <tr>
+                    <td>{{ item.deleted_at|default('-') }}</td>
+                    <td><span class="badge badge-draft">{{ item.category }}</span></td>
+                    <td>{{ item.entity_type }}</td>
+                    <td>{{ itemName }}</td>
+                    <td><code>{{ item.entity_key }}</code></td>
+                    <td>
+                        {% if item.status == 'trashed' %}
+                        <span class="badge badge-pending">{{ t('trash.status_trashed_short')|default('Trashed') }}</span>
+                        {% elseif item.status == 'restored' %}
+                        <span class="badge badge-published">{{ t('trash.status_restored_short')|default('Restored') }}</span>
+                        {% else %}
+                        <span class="badge badge-draft">{{ t('trash.status_purged_short')|default('Purged') }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:right;white-space:nowrap;">
+                        {% if can_manage_trash and item.status == 'trashed' %}
+                        <form action="{{ route('admin.trash.restore', {'id': item.id}) }}" method="post" style="display:inline-block">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-primary" data-confirm="{{ t('trash.confirm_restore')|default('Eintrag wirklich wiederherstellen?') }}">{{ t('trash.restore')|default('Wiederherstellen') }}</button>
+                        </form>
+                        {% else %}
+                        <button type="button" class="btn btn-sm btn-primary" disabled>{{ t('trash.restore')|default('Wiederherstellen') }}</button>
+                        {% endif %}
+
+                        {% if can_manage_trash %}
+                        <form action="{{ route('admin.trash.purge', {'id': item.id}) }}" method="post" style="display:inline-block">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-danger" data-confirm-double="1" data-confirm="{{ t('trash.confirm_purge_step1')|default('Eintrag endgultig entfernen?') }}" data-confirm-second="{{ t('trash.confirm_purge_step2')|default('Diese Aktion kann nicht ruckgangig gemacht werden.') }}">{{ t('trash.purge')|default('Endgultig entfernen') }}</button>
+                        </form>
+                        {% else %}
+                        <button type="button" class="btn btn-sm btn-danger" disabled>{{ t('trash.purge')|default('Endgultig entfernen') }}</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-muted" style="padding:1rem;">{{ t('trash.empty')|default('Keine Eintrage im Papierkorb.') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

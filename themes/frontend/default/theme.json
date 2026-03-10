@@ -1,0 +1,9 @@
+{
+  "id": "default",
+  "name": "Chamy Default",
+  "version": "1.0.0",
+  "author": "Chamy CMS",
+  "description": "Minimalistisches, dunkles Frontend-Theme",
+  "type": "frontend",
+  "supports": ["pages", "articles", "components"]
+}

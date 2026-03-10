@@ -1,0 +1,39 @@
+{% extends 'base.twig' %}
+
+{% block title %}Seiten – {{ site_name|default('Chamy CMS') }}{% endblock %}
+{% block body_class %}page-pages{% endblock %}
+
+{% block body %}
+<section class="container" style="padding-top: 3rem;">
+    <h1>Seiten</h1>
+
+    {% if entries|length > 0 %}
+    <div class="content-grid">
+        {% for entry in entries %}
+        <div class="card">
+            <h3><a href="/seite/{{ entry.slug }}">{{ entry.title }}</a></h3>
+            <p>{{ entry.excerpt|default('') }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if pages > 1 %}
+    <div class="pagination">
+        {% for p in 1..pages %}
+            {% if p == current_page %}
+                <span class="active">{{ p }}</span>
+            {% else %}
+                <a href="/seiten?page={{ p }}">{{ p }}</a>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+        <h2>Noch keine Seiten</h2>
+        <p>Erstelle deine erste Seite im Admin-Bereich.</p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

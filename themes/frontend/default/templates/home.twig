@@ -1,0 +1,46 @@
+{% extends 'base.twig' %}
+
+{% block title %}Startseite – {{ site_name|default('Chamy CMS') }}{% endblock %}
+{% block body_class %}page-home{% endblock %}
+
+{% block body %}
+<section class="hero">
+    <div class="container">
+        <h1>Willkommen bei <span>{{ site_name|default('Chamy') }}</span></h1>
+        <p>Ein modulares, erweiterbares Content-Management-System — gebaut für Entwickler und Redakteure.</p>
+        <div class="hero-actions">
+            <a href="/seiten" class="btn btn-primary">Seiten ansehen</a>
+            <a href="/artikel" class="btn btn-outline">Artikel lesen</a>
+        </div>
+    </div>
+</section>
+
+{% if recent_articles|length > 0 %}
+<section class="container">
+    <h2>Neueste Artikel</h2>
+    <div class="content-grid">
+        {% for article in recent_articles %}
+        <div class="card">
+            <div class="card-meta">{{ article.created_at|date('d.m.Y') }}</div>
+            <h3><a href="/artikel/{{ article.slug }}">{{ article.title }}</a></h3>
+            <p>{{ article.excerpt|default(article.body|striptags|slice(0,140) ~ '…') }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if recent_pages|length > 0 %}
+<section class="container" style="padding-bottom: 3rem;">
+    <h2>Seiten</h2>
+    <div class="content-grid">
+        {% for page in recent_pages %}
+        <div class="card">
+            <h3><a href="/seite/{{ page.slug }}">{{ page.title }}</a></h3>
+            <p>{{ page.excerpt|default('') }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}

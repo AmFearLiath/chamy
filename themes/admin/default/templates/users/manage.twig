@@ -1,0 +1,348 @@
+{% extends 'base.twig' %}
+
+{% block title %}{{ t('admin.users')|default('Benutzer') }} – Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">Dashboard</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ t('admin.users')|default('Benutzer') }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ t('admin.users')|default('Benutzer') }}</h1>
+        <span class="page-badge">{{ users|length }} {{ t('admin.total')|default('gesamt') }}</span>
+    </div>
+    {# Page header right moved into tab actions so buttons appear in the tab bar #}
+</div>
+
+<div class="card">
+    <div class="tabs-bar">
+        <div class="tabs">
+            {% if management_access.can_manage_users %}
+            <button class="tab-btn {{ default_management_tab == 'users' ? 'active' : '' }}" data-tab="users">{{ t('admin.tab_users')|default('Benutzer') }}</button>
+            {% endif %}
+            {% if management_access.can_manage_roles %}
+            <button class="tab-btn {{ default_management_tab == 'roles' ? 'active' : '' }}" data-tab="roles">{{ t('admin.tab_roles')|default('Rollen') }}</button>
+            {% endif %}
+            {% if management_access.can_manage_permissions %}
+            <button class="tab-btn {{ default_management_tab == 'permissions' ? 'active' : '' }}" data-tab="permissions">{{ t('admin.tab_permissions')|default('Berechtigungen') }}</button>
+            {% endif %}
+        </div>
+        <div class="tab-actions">
+            {% if management_access.can_manage_permissions %}
+            <a href="#" class="btn btn-primary tab-action" data-for-tab="permissions" data-modal-target="modal-permission-create" data-modal-title="{{ t('admin.create_permission')|default('+ Berechtigung erstellen') }}">{{ t('admin.create_permission')|default('+ Berechtigung erstellen') }}</a>
+            {% endif %}
+            {% if management_access.can_manage_roles %}
+            <a href="#" class="btn btn-primary tab-action" data-for-tab="roles" data-modal-target="modal-role-create" data-modal-title="{{ t('admin.create_role')|default('+ Rolle erstellen') }}">{{ t('admin.create_role')|default('+ Rolle erstellen') }}</a>
+            {% endif %}
+            {% if management_access.can_manage_users %}
+            <a href="#" class="btn btn-primary tab-action" data-for-tab="users" data-modal-target="modal-user-create" data-modal-title="{{ t('admin.new_user')|default('+ Neuer Benutzer') }}">{{ t('admin.new_user')|default('+ Neuer Benutzer') }}</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="tab-panels">
+        {% if management_access.can_manage_users %}
+        <div id="tab-users" class="tab-panel {{ default_management_tab == 'users' ? 'active' : '' }}">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width:6%;">{{ t('admin.id')|default('ID') }}</th>
+                            <th style="width:22%;">{{ t('admin.username')|default('Benutzername') }}</th>
+                            <th style="width:44%;">{{ t('admin.email')|default('E-Mail') }}</th>
+                            <th style="width:8%;">{{ t('admin.role')|default('Rolle') }}</th>
+                            <th style="width:8%;">{{ t('admin.display_name')|default('Anzeigename') }}</th>
+                            <th style="width:12%;">{{ t('admin.actions')|default('Aktionen') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td>{{ u.id }}</td>
+                            <td><a href="/admin/users/{{ u.id }}/edit" class="row-link"><strong>{{ u.username }}</strong></a></td>
+                            <td>{{ u.email }}</td>
+                            <td>
+                                {% set rlist = u.roles is defined and u.roles ? u.roles : [u.role] %}
+                                {% for rk in rlist %}
+                                    <span class="state-badge state-{{ rk|lower }}">{{ rk }}</span>
+                                {% endfor %}
+                            </td>
+                            <td>{{ u.display_name }}</td>
+                            <td class="table-actions">
+                                <form method="post" action="/admin/users/{{ u.id }}/toggle-status" style="display:inline; margin:6px;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="status-toggle {{ u.is_active ? 'active' : 'inactive' }}" title="{{ u.is_active ? t('admin.active')|default('Aktiv') : t('admin.inactive')|default('Inaktiv') }}"></button>
+                                </form>
+                                <a href="/admin/users/{{ u.id }}/edit" class="btn btn-sm btn-outline" title="{{ t('admin.edit')|default('Bearbeiten') }}">✎</a>
+                                {% if u.id != user.id %}
+                                <form method="post" action="/admin/users/{{ u.id }}/delete" style="display:inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-danger" data-confirm="{{ t('admin.confirm_delete_user')|default('Benutzer wirklich löschen?') }}" title="{{ t('admin.delete')|default('Löschen') }}">🗑</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">{{ t('admin.no_users')|default('Keine Benutzer vorhanden.') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if management_access.can_manage_roles %}
+        <div id="tab-roles" class="tab-panel {{ default_management_tab == 'roles' ? 'active' : '' }}">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width:6%;">{{ t('admin.id')|default('ID') }}</th>
+                            <th style="width:22%;">{{ t('admin.name')|default('Name') }}</th>
+                            <th style="width:44%;">{{ t('admin.description')|default('Beschreibung') }}</th>
+                            <th style="width:8%;">{{ t('admin.users')|default('Benutzer') }}</th>
+                            <th style="width:8%;">{{ t('admin.tab_permissions')|default('Berechtigungen') }}</th>
+                            <th style="width:12%;">{{ t('admin.actions')|default('Aktionen') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in roles %}
+                        <tr>
+                            <td>{{ r.id }}</td>
+                            <td><a href="/admin/roles/{{ r.id }}/edit" class="row-link">{{ r.name }}</a></td>
+                            <td>{{ r.description }}</td>
+                            <td>{{ r.users_count|default(0) }}</td>
+                            <td>{{ r.permission_keys|length }}</td>
+                            <td class="table-actions">
+                                <a href="/admin/roles/{{ r.id }}/edit" class="btn btn-sm btn-outline" title="{{ t('admin.edit')|default('Bearbeiten') }}">✎</a>
+                                <form method="post" action="/admin/roles/{{ r.id }}/delete" style="display:inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-danger" data-confirm="{{ t('admin.confirm_delete_role')|default('Rolle wirklich löschen?') }}" title="{{ t('admin.delete')|default('Löschen') }}">🗑</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">{{ t('admin.no_roles')|default('Keine Rollen vorhanden.') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if management_access.can_manage_permissions %}
+        <div id="tab-permissions" class="tab-panel {{ default_management_tab == 'permissions' ? 'active' : '' }}">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width:6%;">{{ t('admin.id')|default('ID') }}</th>
+                            <th style="width:22%;">{{ t('admin.key')|default('Key') }}</th>
+                            <th style="width:44%;">{{ t('admin.description')|default('Beschreibung') }}</th>
+                            <th style="width:8%;">{{ t('admin.group')|default('Gruppe') }}</th>
+                            <th style="width:8%;">{{ t('admin.tab_roles')|default('Rollen') }}</th>
+                            <th style="width:12%;">{{ t('admin.actions')|default('Aktionen') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in permissions %}
+                        <tr>
+                            <td>{{ p.id }}</td>
+                            <td><a href="/admin/permissions/{{ p.id }}/edit" class="row-link"><code>{{ p.key }}</code></a></td>
+                            <td><a href="/admin/permissions/{{ p.id }}/edit" class="row-link">{{ p.description }}</a></td>
+                            <td>{{ p.group }}</td>
+                            <td>{{ p.roles_count|default(0) }}</td>
+                            <td class="table-actions">
+                                <a href="/admin/permissions/{{ p.id }}/edit" class="btn btn-sm btn-outline" title="{{ t('admin.edit')|default('Bearbeiten') }}">✎</a>
+                                <form method="post" action="/admin/permissions/{{ p.id }}/delete" style="display:inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-danger" data-confirm="{{ t('admin.confirm_delete_permission')|default('Berechtigung wirklich löschen?') }}" title="{{ t('admin.delete')|default('Löschen') }}">🗑</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">{{ t('admin.no_permissions')|default('Keine Berechtigungen vorhanden.') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# Hidden modal templates (rendered server-side so forms have CSRF + data) #}
+<template id="modal-user-create">
+    <form method="post" action="/admin/users/store">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-grid">
+            <div>
+                <div class="form-group">
+                    <label class="form-label">{{ t('admin.username')|default('Benutzername') }}</label>
+                    <input class="form-input" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ t('admin.email')|default('E-Mail') }}</label>
+                    <input class="form-input" type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ t('admin.password')|default('Passwort') }}</label>
+                    <input class="form-input" type="password" name="password" required>
+                </div>
+            </div>
+            <div>
+                <div class="form-group">
+                    <label class="form-label">{{ t('admin.display_name')|default('Anzeigename') }}</label>
+                    <input class="form-input" name="display_name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ t('admin.role')|default('Rolle') }}</label>
+                    <select class="form-select" name="roles[]" multiple size="4">
+                        {% for r in roles %}
+                        <option value="{{ r.key }}">{{ r.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-hint text-muted">{{ t('admin.hold_ctrl_to_select_multiple')|default('Strg/Cmd gedrückt halten, um mehrere Rollen auszuwählen') }}</small>
+                </div>
+                <div class="form-group modal-footer-actions">
+                    <button type="submit" class="btn btn-primary">{{ t('admin.create')|default('Erstellen') }}</button>
+                    <button type="button" class="btn btn-ghost modal-close-btn">{{ t('admin.cancel')|default('Abbrechen') }}</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</template>
+
+<template id="modal-role-create">
+    <form method="post" action="/admin/roles/store">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- Row 2: Key/Name (left) | Beschreibung (right) -->
+        <div class="row-columns" style="margin-bottom:12px;">
+            <div>
+                <div class="form-group">
+                    <label class="form-label">{{ t('admin.key')|default('Key') }}</label>
+                    <input class="form-input" name="key" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ t('admin.name')|default('Name') }}</label>
+                    <input class="form-input" name="name" required>
+                </div>
+            </div>
+            <div>
+                <div class="form-group">
+                    <label class="form-label">{{ t('admin.description')|default('Beschreibung') }}</label>
+                    <textarea class="form-textarea" name="description"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 3: Berechtigungen (einzeilig mit Popup, komma-getrennt) -->
+        <div class="form-group">
+            <label class="form-label">{{ t('admin.assign_permissions')|default('Berechtigungen zuweisen') }}</label>
+            <div class="multi-select-container" data-popup-template="tpl-permission-options" data-hidden-name="permission_keys">
+                <input type="hidden" name="permission_keys" value="">
+                <input class="multi-select-input" placeholder="{{ t('admin.comma_separated_permissions')|default('z. B. users.manage, content.edit') }}" readonly>
+                <button type="button" class="multi-select-add" aria-label="Hinzufügen">+</button>
+            </div>
+            <div class="muted small">{{ t('admin.click_to_add_permissions')|default('Klicken, um Berechtigungen hinzuzufügen') }}</div>
+        </div>
+
+        <!-- Row 4: Buttons (rechtsbündig) -->
+        <div class="form-group modal-footer-actions" style="justify-content:flex-end;">
+            <button type="submit" class="btn btn-primary">{{ t('admin.create')|default('Erstellen') }}</button>
+            <button type="button" class="btn btn-ghost modal-close-btn">{{ t('admin.cancel')|default('Abbrechen') }}</button>
+        </div>
+    </form>
+</template>
+
+<template id="modal-permission-create">
+    <form method="post" action="/admin/permissions/store">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-grid">
+            <div>
+                <div class="form-group">
+                    <label class="form-label">{{ t('admin.key')|default('Key') }}</label>
+                    <input class="form-input" name="key" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ t('admin.group')|default('Gruppe') }}</label>
+                    <input class="form-input" name="group">
+                </div>
+            </div>
+            <div>
+                <div class="form-group">
+                    <label class="form-label">{{ t('admin.description')|default('Beschreibung') }}</label>
+                    <textarea class="form-textarea" name="description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ t('admin.assign_roles')|default('Rollen zuweisen') }}</label>
+                    <div class="multi-select-container" data-popup-template="tpl-role-options" data-hidden-name="role_ids">
+                        <input type="hidden" name="role_ids" value="">
+                        <input class="multi-select-input" placeholder="{{ t('admin.comma_separated_roles')|default('z. B. 1,2,3') }}" readonly>
+                        <button type="button" class="multi-select-add" aria-label="Hinzufügen">+</button>
+                    </div>
+                    <div class="muted small">{{ t('admin.click_to_add_roles')|default('Klicken, um Rollen hinzuzufügen') }}</div>
+                </div>
+                <div class="form-group modal-footer-actions">
+                    <button type="submit" class="btn btn-primary">{{ t('admin.create')|default('Erstellen') }}</button>
+                    <button type="button" class="btn btn-ghost modal-close-btn">{{ t('admin.cancel')|default('Abbrechen') }}</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</template>
+{# Popup option lists used by multi-select inputs #}
+<template id="tpl-permission-options">
+    <div class="multi-select-popup-list">
+        {% for p in permissions %}
+        <button type="button" class="multi-select-option" data-value="{{ p.key }}">{{ p.key }}</button>
+        {% endfor %}
+    </div>
+</template>
+
+<template id="tpl-role-options">
+    <div class="multi-select-popup-list">
+        {% for r in roles %}
+        <button type="button" class="multi-select-option" data-value="{{ r.id }}">{{ r.name }}</button>
+        {% endfor %}
+    </div>
+</template>
+{% endblock %}
+
+{% block scripts %}
+    {{ parent() }}
+    <script>
+    (function(){
+        function updateTabActions(){
+            var activeBtn = document.querySelector('.tabs-bar .tabs .tab-btn.active');
+            var activeTab = activeBtn ? activeBtn.getAttribute('data-tab') : null;
+            document.querySelectorAll('.tab-action').forEach(function(a){
+                if(activeTab && a.getAttribute('data-for-tab') === activeTab){
+                    a.style.display = '';
+                } else {
+                    a.style.display = 'none';
+                }
+            });
+        }
+        document.addEventListener('DOMContentLoaded', function(){
+            updateTabActions();
+            document.querySelectorAll('.tabs-bar .tabs .tab-btn').forEach(function(btn){
+                btn.addEventListener('click', function(){
+                    // allow any existing tab logic to run first
+                    setTimeout(updateTabActions, 10);
+                });
+            });
+        });
+    })();
+    </script>
+{% endblock %}

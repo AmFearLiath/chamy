@@ -1,0 +1,62 @@
+{% extends 'base.twig' %}
+
+{% block title %}{{ t('admin.modules')|default('Module') }} – Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">Dashboard</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ t('admin.modules')|default('Module') }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ t('admin.modules')|default('Module') }}</h1>
+        <span class="page-badge">{{ modules|length }} {{ t('admin.installed')|default('installiert') }}</span>
+    </div>
+</div>
+
+{% if not can_manage_modules %}
+<div class="alert alert-warning" style="margin-bottom: 1rem;">
+    {{ t('admin.read_only_modules_hint')|default('Lesemodus: Ohne Berechtigung können Module angesehen, aber nicht verändert werden.') }}
+</div>
+{% endif %}
+
+{% if modules|length > 0 %}
+<div class="grid grid-3">
+    {% for id, mod in modules %}
+    <div class="card module-card">
+        <div class="card-body">
+            <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:.75rem;">
+                <span style="font-size:1.8rem;">⧉</span>
+                <div>
+                    <h3 style="margin:0; font-size:1.05rem;">{{ mod.name|default(id) }}</h3>
+                    <small class="text-muted">v{{ mod.version|default('?') }}</small>
+                </div>
+            </div>
+
+            <p class="text-muted" style="font-size:.9rem; margin: .5rem 0;">
+                {{ mod.description|default(t('admin.no_description')|default('Keine Beschreibung')) }}
+            </p>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 1rem;">
+                <span class="text-muted" style="font-size:.8rem;">{{ mod.author|default('–') }}</span>
+                {% if active[id] is defined %}
+                    <span class="state-badge state-published">{{ t('admin.active')|default('Aktiv') }}</span>
+                {% else %}
+                    <span class="state-badge state-draft">{{ t('admin.inactive')|default('Inaktiv') }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center text-muted" style="padding:3rem;">
+        <p style="font-size:1.2rem; margin-bottom:.5rem;">{{ t('admin.no_modules')|default('Keine Module installiert') }}</p>
+        <p>{{ t('admin.no_modules_hint')|default('Lege ein Modul unter <code>modules/</code> mit einer <code>manifest.json</code> ab.')|raw }}</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

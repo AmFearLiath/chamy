@@ -1,0 +1,161 @@
+{% extends 'base.twig' %}
+
+{% block title %}{{ t('themes.details')|default('Details') }} - Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">{{ t('admin.dashboard')|default('Dashboard') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/admin/themes">{{ t('admin.themes')|default('Themes') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/admin/themes/installed">{{ t('themes.installed_tab')|default('Installierte Themes') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ theme.name|default(theme_key) }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ theme.name|default(theme_key) }}</h1>
+        <span class="page-badge">{{ theme_area == 'admin' ? t('themes.admin_theme')|default('Admin-Theme') : t('themes.frontend_theme')|default('Frontend-Theme') }}</span>
+    </div>
+    <div class="page-header-right">
+        <a href="/admin/themes/installed" class="btn btn-ghost">{{ t('themes.back_to_list')|default('Zur Liste') }}</a>
+        {% if can_manage_themes %}
+        <form action="{{ route('admin.themes.installed.activate', {'area': theme_area, 'id': theme.id|default(theme_key|split('/')|last)}) }}" method="post" style="display:inline-block">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-primary" {{ is_active_theme ? 'disabled' : '' }} data-confirm="{{ t('themes.confirm_activate')|default('Möchten Sie dieses Theme aktivieren?') }}">{{ is_active_theme ? t('themes.already_active')|default('Bereits aktiv') : t('themes.activate_now')|default('Jetzt aktivieren') }}</button>
+        </form>
+        {% else %}
+        <button class="btn btn-primary" disabled>{{ t('themes.activate_now')|default('Jetzt aktivieren') }}</button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="theme-detail-layout">
+    <section class="card">
+        <div class="card-header"><h3 class="card-title">{{ t('themes.preview_details')|default('Vorschau & Details') }}</h3></div>
+        <div class="card-body">
+            <div class="theme-detail-preview {{ theme_area == 'admin' ? 'preview-admin' : 'preview-frontend' }}">
+                <div>
+                    <strong>{{ theme.name|default(theme_key) }}</strong>
+                    <p>{{ theme.description|default(t('themes.no_description')|default('Keine Beschreibung vorhanden.')) }}</p>
+                </div>
+            </div>
+
+            <div class="theme-meta-line" style="margin-top:.8rem;">
+                <span class="badge {{ is_active_theme ? 'badge-published' : 'badge-draft' }}">{{ is_active_theme ? t('themes.live')|default('Live') : t('themes.installed')|default('Installiert') }}</span>
+                <span class="text-muted">v{{ theme.version|default('?') }}</span>
+                <span class="text-muted">{{ theme.author|default(t('themes.unknown_author')|default('Unbekannt')) }}</span>
+                {% if theme.parent is defined and theme.parent %}
+                <span class="badge badge-pending">{{ t('themes.child_of')|default('Child von') }}: {{ theme.parent }}</span>
+                {% endif %}
+            </div>
+
+            <table class="data-table" style="margin-top:12px;">
+                <tbody>
+                    <tr><td>ID</td><td><code>{{ theme.id|default(theme_key) }}</code></td></tr>
+                    <tr><td>{{ t('themes.area')|default('Bereich') }}</td><td>{{ theme_area }}</td></tr>
+                    <tr><td>{{ t('themes.status')|default('Status') }}</td><td>{{ is_active_theme ? t('themes.status_active_live')|default('Aktiv (Live)') : t('themes.status_installed_not_live')|default('Installiert (nicht live)') }}</td></tr>
+                    <tr><td>{{ t('themes.parent_theme')|default('Parent-Theme') }}</td><td>{{ theme.parent|default('-') }}</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-header"><h3 class="card-title">{{ t('themes.actions_and_config')|default('Aktionen & Konfiguration') }}</h3></div>
+        <div class="card-body">
+            {% if can_manage_themes %}
+            <div class="theme-card-actions" style="margin-top:0;">
+                <form action="{{ route('admin.themes.installed.toggle_status', {'area': theme_area, 'id': theme.id|default(theme_key|split('/')|last)}) }}" method="post" style="display:inline-block">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-ghost" data-confirm="{{ t('themes.confirm_status_toggle')|default('Möchten Sie den Theme-Status ändern?') }}">{{ t('themes.status')|default('Status') }}</button>
+                </form>
+                <form action="{{ route('admin.themes.installed.uninstall', {'area': theme_area, 'id': theme.id|default(theme_key|split('/')|last)}) }}" method="post" style="display:inline-block">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-danger" data-confirm-double="1" data-confirm="{{ t('themes.confirm_uninstall_step1')|default('Möchten Sie dieses Theme wirklich deinstallieren?') }}" data-confirm-second="{{ t('themes.confirm_uninstall_step2')|default('Achtung: Dadurch werden Theme-Dateien entfernt. Bitte bestätigen Sie erneut.') }}">{{ t('themes.uninstall')|default('Deinstallieren') }}</button>
+                </form>
+            </div>
+
+            <hr class="divider" style="margin:14px 0;">
+
+            <form action="{{ route('admin.themes.installed.detail.update', {'area': theme_area, 'id': theme.id|default(theme_key|split('/')|last)}) }}" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-grid" style="display:grid;grid-template-columns:1fr;gap:10px;">
+                    <div>
+                        <label class="form-label">{{ t('themes.name')|default('Name') }}</label>
+                        <input class="form-control" type="text" name="name" value="{{ theme.name|default('') }}">
+                    </div>
+                    <div>
+                        <label class="form-label">{{ t('themes.description')|default('Beschreibung') }}</label>
+                        <textarea class="form-control" name="description" rows="3">{{ theme.description|default('') }}</textarea>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                        <div>
+                            <label class="form-label">{{ t('themes.author')|default('Autor') }}</label>
+                            <input class="form-control" type="text" name="author" value="{{ theme.author|default('') }}">
+                        </div>
+                        <div>
+                            <label class="form-label">{{ t('themes.version')|default('Version') }}</label>
+                            <input class="form-control" type="text" name="version" value="{{ theme.version|default('') }}">
+                        </div>
+                    </div>
+                    <label class="form-check" style="display:flex;gap:8px;align-items:center;">
+                        <input type="checkbox" name="disabled" value="1" {{ theme.disabled ? 'checked' : '' }}>
+                        <span>{{ t('themes.disabled')|default('Deaktiviert') }}</span>
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top:10px;">{{ t('themes.save_theme_details')|default('Theme-Details speichern') }}</button>
+            </form>
+            {% else %}
+            <p class="text-muted">{{ t('themes.read_only_hint')|default('Lesemodus: Theme-Manager und Einstellungen können betrachtet, aber nicht geändert werden.') }}</p>
+            {% endif %}
+        </div>
+    </section>
+</div>
+
+<div class="card" style="margin-top:1rem;">
+    <div class="card-header"><h3 class="card-title">{{ t('themes.child_support')|default('Child-Support') }}</h3></div>
+    <div class="card-body">
+        <p class="text-muted">{{ t('themes.child_support_hint')|default('Child-Themes können auf Basis dieses Themes erstellt und separat angepasst werden.') }}</p>
+
+        {% if child_themes|length > 0 %}
+        <div class="theme-selection-list" style="margin-bottom:12px;">
+            {% for child in child_themes %}
+            <a class="theme-selection-item" href="/admin/themes/installed/{{ theme_area }}/{{ child.id|default('') }}">
+                <span class="theme-selection-name">{{ child.name|default(child.id|default('child')) }}</span>
+                <span class="theme-selection-meta">{{ t('themes.child_theme')|default('Child-Theme') }}: {{ child.id|default('') }}</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted" style="margin-bottom:12px;">{{ t('themes.no_children')|default('Noch keine Child-Themes vorhanden.') }}</p>
+        {% endif %}
+
+        {% if can_manage_themes %}
+        <form action="{{ route('admin.themes.installed.create_child', {'area': theme_area, 'id': theme.id|default(theme_key|split('/')|last)}) }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">
+                <div>
+                    <label class="form-label">{{ t('themes.child_id')|default('Child-ID') }}</label>
+                    <input class="form-control" type="text" name="child_id" placeholder="my-child-theme" required>
+                </div>
+                <div>
+                    <label class="form-label">{{ t('themes.child_name')|default('Child-Name') }}</label>
+                    <input class="form-control" type="text" name="child_name" placeholder="My Child Theme" required>
+                </div>
+                <div>
+                    <label class="form-label">{{ t('themes.author')|default('Autor') }}</label>
+                    <input class="form-control" type="text" name="child_author" placeholder="Team / Author">
+                </div>
+                <div>
+                    <label class="form-label">{{ t('themes.description')|default('Beschreibung') }}</label>
+                    <input class="form-control" type="text" name="child_description" placeholder="Optional">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-secondary" style="margin-top:10px;">{{ t('themes.create_child')|default('Child-Theme erstellen') }}</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

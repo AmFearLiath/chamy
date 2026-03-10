@@ -1,0 +1,154 @@
+{% extends "base.twig" %}
+
+{% block title %}
+{{ entry.id is defined ? (t('admin.edit')|default('Bearbeiten')) : (t('admin.create')|default('Erstellen')) }} {{ type.label|default(type_key) }} – Chamy CMS
+{% endblock %}
+
+{% block breadcrumb %}
+<a href="/admin">Dashboard</a>
+<span>›</span>
+<a href="/admin/content/{{ type_key }}">{{ type.label_plural|default(type_key) }}</a>
+<span>›</span>
+<span class="current">{{ entry.id is defined ? (t('admin.edit')|default('Bearbeiten')) : (t('admin.create_new')|default('Neu erstellen')) }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            {{ entry.id is defined ? (t('admin.edit')|default('Bearbeiten')) : (t('admin.create_new')|default('Neu erstellen')) }}:
+            {{ type.label|default(type_key) }}
+        </h1>
+    </div>
+    <div class="flex gap-2">
+        <a href="/admin/content/{{ type_key }}" class="btn btn-ghost">← {{ t('admin.back')|default('Zurück') }}</a>
+    </div>
+</div>
+
+<form method="POST" action="{{ entry.id is defined ? '/admin/content/' ~ type_key ~ '/' ~ entry.id ~ '/update' : '/admin/content/' ~ type_key ~ '/store' }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;">
+
+        {# Main fields #}
+        <div>
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">{{ t('admin.content_fields')|default('Inhaltsfelder') }}</span>
+                </div>
+                <div class="card-body">
+                    {% for field_key, field in type.fields|default({}) %}
+
+                    {% if field.type|default('text') == 'textarea' or field.type|default('text') == 'richtext' %}
+                    <div class="form-group">
+                        <label class="form-label" for="field_{{ field_key }}">
+                            {{ field.label|default(field_key) }}
+                            {% if field.required|default(false) %}<span class="text-magenta">*</span>{% endif %}
+                        </label>
+                        <textarea class="form-textarea" id="field_{{ field_key }}" name="data[{{ field_key }}]"
+                                  rows="{{ field.rows|default(6) }}"
+                                  {% if field.required|default(false) %}required{% endif %}
+                                  >{{ entry_data[field_key]|default('') }}</textarea>
+                    </div>
+
+                    {% elseif field.type|default('text') == 'select' %}
+                    <div class="form-group">
+                        <label class="form-label" for="field_{{ field_key }}">
+                            {{ field.label|default(field_key) }}
+                        </label>
+                        <select class="form-select" id="field_{{ field_key }}" name="data[{{ field_key }}]">
+                            {% for optval, optlabel in field.options|default({}) %}
+                            <option value="{{ optval }}" {{ entry_data[field_key]|default('') == optval ? 'selected' : '' }}>
+                                {{ optlabel }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    {% else %}
+                    <div class="form-group">
+                        <label class="form-label" for="field_{{ field_key }}">
+                            {{ field.label|default(field_key) }}
+                            {% if field.required|default(false) %}<span class="text-magenta">*</span>{% endif %}
+                        </label>
+                        <input class="form-input" type="{{ field.input_type|default('text') }}"
+                               id="field_{{ field_key }}" name="data[{{ field_key }}]"
+                               value="{{ entry_data[field_key]|default('') }}"
+                               {% if field.required|default(false) %}required{% endif %}
+                               {% if field_key == 'title' %}data-slug-source{% endif %}
+                               {% if field_key == 'slug' %}data-slug-target{% endif %}
+                               >
+                    </div>
+                    {% endif %}
+
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        {# Sidebar: Meta & State #}
+        <div>
+            {# State card #}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <span class="card-title">{{ t('admin.state')|default('Status') }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label class="form-label" for="state">{{ t('admin.current_state')|default('Aktueller Status') }}</label>
+                        <select class="form-select" id="state" name="state">
+                            <option value="draft" {{ entry.state|default('draft') == 'draft' ? 'selected' : '' }}>
+                                {{ t('content_types.draft')|default('Entwurf') }}
+                            </option>
+                            <option value="review" {{ entry.state|default('') == 'review' ? 'selected' : '' }}>
+                                {{ t('content_types.review')|default('In Prüfung') }}
+                            </option>
+                            <option value="published" {{ entry.state|default('') == 'published' ? 'selected' : '' }}>
+                                {{ t('content_types.published')|default('Veröffentlicht') }}
+                            </option>
+                            <option value="archived" {{ entry.state|default('') == 'archived' ? 'selected' : '' }}>
+                                {{ t('content_types.archived')|default('Archiviert') }}
+                            </option>
+                        </select>
+                    </div>
+
+                    {% if entry.id is defined %}
+                    <div style="font-size:11px;color:var(--text-muted);line-height:1.8;">
+                        {{ t('admin.created')|default('Erstellt') }}: {{ entry.created_at|default('–') }}<br>
+                        {{ t('admin.updated')|default('Aktualisiert') }}: {{ entry.updated_at|default('–') }}<br>
+                        ID: <code style="color:var(--neon-cyan);font-size:10px;">{{ entry.id }}</code>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer" style="display:flex;gap:8px;">
+                    <button type="submit" class="btn btn-primary" style="flex:1;">
+                        {{ entry.id is defined ? (t('admin.save')|default('Speichern')) : (t('admin.create')|default('Erstellen')) }}
+                    </button>
+                </div>
+            </div>
+
+            {# Versions card #}
+            {% if versions|default([])|length > 0 %}
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">{{ t('admin.versions')|default('Versionen') }}</span>
+                </div>
+                <div class="card-body" style="padding:0;">
+                    <table>
+                        <tbody>
+                            {% for v in versions %}
+                            <tr>
+                                <td style="font-size:12px;">v{{ v.version_number }}</td>
+                                <td class="text-muted" style="font-size:11px;">{{ v.created_at }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+</form>
+{% endblock %}

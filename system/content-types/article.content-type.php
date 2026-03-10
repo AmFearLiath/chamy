@@ -1,0 +1,85 @@
+<?php
+
+return [
+    'id'                    => 'article',
+    'label'                 => 'Artikel',
+    'description'           => 'Redaktionelle Artikel und Beiträge',
+    'source'                => 'system',
+    'version'               => '1.0.0',
+    'group'                 => 'editorial',
+    'is_translatable'       => true,
+    'is_revisionable'       => true,
+    'is_publicly_queryable' => true,
+    'fields' => [
+        'title' => [
+            'type'         => 'text',
+            'label'        => 'Titel',
+            'required'     => true,
+            'translatable' => true,
+            'searchable'   => true,
+            'max_length'   => 255,
+        ],
+        'slug' => [
+            'type'         => 'slug',
+            'label'        => 'Slug',
+            'required'     => true,
+            'unique'       => true,
+            'translatable' => true,
+        ],
+        'teaser' => [
+            'type'         => 'textarea',
+            'label'        => 'Teaser',
+            'required'     => false,
+            'translatable' => true,
+            'max_length'   => 500,
+        ],
+        'body' => [
+            'type'         => 'richtext',
+            'label'        => 'Haupttext',
+            'required'     => false,
+            'translatable' => true,
+            'searchable'   => true,
+        ],
+        'featured_image' => [
+            'type'         => 'media',
+            'label'        => 'Titelbild',
+            'required'     => false,
+        ],
+        'author' => [
+            'type'         => 'user-reference',
+            'label'        => 'Autor',
+            'required'     => false,
+        ],
+        'published_at' => [
+            'type'         => 'datetime',
+            'label'        => 'Veröffentlichungsdatum',
+            'required'     => false,
+        ],
+        'category' => [
+            'type'         => 'select',
+            'label'        => 'Kategorie',
+            'required'     => false,
+            'translatable' => true,
+        ],
+        'tags' => [
+            'type'         => 'multiselect',
+            'label'        => 'Tags',
+            'required'     => false,
+            'translatable' => true,
+        ],
+        'seo_title' => [
+            'type'         => 'text',
+            'label'        => 'SEO-Titel',
+            'required'     => false,
+            'translatable' => true,
+            'max_length'   => 70,
+        ],
+        'seo_description' => [
+            'type'         => 'textarea',
+            'label'        => 'SEO-Beschreibung',
+            'required'     => false,
+            'translatable' => true,
+            'max_length'   => 160,
+        ],
+    ],
+];

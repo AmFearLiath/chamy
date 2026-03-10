@@ -1,0 +1,26 @@
+/vendor/
+/storage/cache/*
+/storage/logs/*
+/storage/sessions/*
+/storage/media/*
+/storage/trash/*
+/storage/install.lock
+!/storage/cache/.gitkeep
+!/storage/logs/.gitkeep
+!/storage/sessions/.gitkeep
+!/storage/media/.gitkeep
+!/storage/trash/.gitkeep
+.env
+.env.bak.*
+*.log
+.idea/
+.vscode/
+*.swp
+*.swo
+node_modules/
+
+# Repository slimming for public upload
+docs/
+tests/
+phpunit.xml
+.phpunit.cache/

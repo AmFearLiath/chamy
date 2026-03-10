@@ -1,0 +1,22 @@
+{% extends 'base.twig' %}
+
+{% block title %}{{ entry_data.title|default('Artikel') }} – {{ site_name|default('Chamy CMS') }}{% endblock %}
+{% block body_class %}page-article-single{% endblock %}
+
+{% block body %}
+<section class="page-content">
+    <div class="container">
+        <h1>{{ entry_data.title }}</h1>
+        <div class="page-meta">
+            {{ entry.created_at|date('d.m.Y') }}
+            {% if entry_data.author is defined and entry_data.author %} &mdash; {{ entry_data.author }}{% endif %}
+        </div>
+        {% if entry_data.teaser is defined and entry_data.teaser %}
+        <p style="font-size:1.1rem;color:var(--muted);margin-bottom:2rem;">{{ entry_data.teaser }}</p>
+        {% endif %}
+        <div class="body-text">
+            {{ entry_data.body|raw }}
+        </div>
+    </div>
+</section>
+{% endblock %}

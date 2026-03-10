@@ -1,0 +1,83 @@
+{% extends 'base.twig' %}
+
+{% block title %}{{ t('admin.settings')|default('Einstellungen') }} – Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">Dashboard</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ t('admin.settings')|default('Einstellungen') }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ t('admin.settings')|default('Einstellungen') }}</h1>
+    </div>
+</div>
+
+{% if not can_manage_settings %}
+<div class="alert alert-warning" style="margin-bottom: 1rem;">
+    {{ t('admin.read_only_settings_hint')|default('Sie haben nur Leserechte. Änderungen können angesehen, aber nicht gespeichert werden.') }}
+</div>
+{% endif %}
+
+<form method="post" action="/admin/settings">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {% if settings|length > 0 %}
+    <div class="tabs" style="margin-bottom: 1rem; overflow-x:auto; white-space:nowrap;">
+        {% for group_name, group_settings in settings %}
+        <button type="button" class="tab-btn {{ loop.first ? 'active' : '' }}" data-tab="settings-{{ group_name|lower|replace({' ':'-'}) }}">{{ group_name|capitalize }}</button>
+        {% endfor %}
+    </div>
+
+    <div class="tab-panels">
+    {% for group_name, group_settings in settings %}
+    <div id="tab-settings-{{ group_name|lower|replace({' ':'-'}) }}" class="tab-panel {{ loop.first ? 'active' : '' }}">
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header">
+                <h3 style="margin: 0; text-transform: capitalize;">{{ group_name }}</h3>
+            </div>
+            <div class="card-body">
+                <div class="settings-grid">
+            {% for key, setting in group_settings %}
+            <div class="form-group settings-item">
+                <label class="form-label" for="setting_{{ setting.id }}">{{ setting.key }}</label>
+
+                {% if setting.type == 'boolean' %}
+                <select name="settings[{{ setting.id }}]" id="setting_{{ setting.id }}" class="form-control" {{ not can_manage_settings ? 'disabled' : '' }}>
+                    <option value="1" {{ setting.value == '1' ? 'selected' : '' }}>{{ t('admin.yes')|default('Ja') }}</option>
+                    <option value="0" {{ setting.value == '0' ? 'selected' : '' }}>{{ t('admin.no')|default('Nein') }}</option>
+                </select>
+                {% elseif setting.type == 'integer' %}
+                <input type="number" name="settings[{{ setting.id }}]" id="setting_{{ setting.id }}"
+                       class="form-control" value="{{ setting.value }}" {{ not can_manage_settings ? 'disabled' : '' }}>
+                {% else %}
+                <input type="text" name="settings[{{ setting.id }}]" id="setting_{{ setting.id }}"
+                       class="form-control" value="{{ setting.value }}" {{ not can_manage_settings ? 'disabled' : '' }}>
+                {% endif %}
+
+                <small class="form-hint text-muted">{{ group_name }}.{{ setting.key }} ({{ setting.type }})</small>
+            </div>
+            {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center text-muted">
+            {{ t('admin.no_settings')|default('Keine Einstellungen vorhanden.') }}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if settings|length > 0 %}
+    <div style="text-align: right;">
+        <button type="submit" class="btn btn-primary" {{ not can_manage_settings ? 'disabled' : '' }}>{{ t('admin.save_settings')|default('Einstellungen speichern') }}</button>
+    </div>
+    {% endif %}
+</form>
+{% endblock %}

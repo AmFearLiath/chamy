@@ -1,0 +1,117 @@
+{% extends 'base.twig' %}
+
+{% set is_edit = edit_user.id is defined and edit_user.id %}
+
+{% block title %}{{ is_edit ? t('admin.edit_user')|default('Benutzer bearbeiten') : t('admin.new_user_title')|default('Neuer Benutzer') }} – Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">Dashboard</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/admin/users">{{ t('admin.users')|default('Benutzer') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ is_edit ? edit_user.username : t('admin.new_user_title')|default('Neu') }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ is_edit ? t('admin.edit_user')|default('Benutzer bearbeiten') : t('admin.new_user_title')|default('Neuer Benutzer') }}</h1>
+    </div>
+</div>
+
+<form method="post" action="{{ is_edit ? '/admin/users/' ~ edit_user.id ~ '/update' : '/admin/users/store' }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="edit-layout">
+        <div class="edit-main">
+            <div class="card">
+                <div class="card-body">
+                    {% if not is_edit %}
+                    <div class="form-group">
+                        <label class="form-label" for="username">{{ t('admin.username')|default('Benutzername') }} *</label>
+                        <input type="text" id="username" name="username" class="form-control"
+                               value="{{ edit_user.username|default('') }}" required autocomplete="off">
+                    </div>
+                    {% else %}
+                    <div class="form-group">
+                        <label class="form-label">{{ t('admin.username')|default('Benutzername') }}</label>
+                        <input type="text" class="form-control" value="{{ edit_user.username }}" disabled>
+                    </div>
+                    {% endif %}
+
+                    <div class="form-group">
+                        <label class="form-label" for="email">{{ t('admin.email')|default('E-Mail') }} *</label>
+                        <input type="email" id="email" name="email" class="form-control"
+                               value="{{ edit_user.email|default('') }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="display_name">{{ t('admin.display_name')|default('Anzeigename') }}</label>
+                        <input type="text" id="display_name" name="display_name" class="form-control"
+                               value="{{ edit_user.display_name|default('') }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="password">{{ t('admin.password')|default('Passwort') }} {{ is_edit ? '(' ~ t('admin.password_edit')|default('leer lassen = unverändert') ~ ')' : '*' }}</label>
+                        <input type="password" id="password" name="password" class="form-control"
+                               {{ not is_edit ? 'required' : '' }} autocomplete="new-password">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="edit-sidebar">
+            <div class="card">
+                <div class="card-header">{{ t('admin.user_settings')|default('Einstellungen') }}</div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label">{{ t('admin.role')|default('Rolle') }}</label>
+                        <template id="tpl-role-keys">
+                            <div class="multi-select-popup-list">
+                                {% for r in roles %}
+                                <button type="button" class="multi-select-option" data-value="{{ r }}">{{ r }}</button>
+                                {% endfor %}
+                            </div>
+                        </template>
+                        <div class="multi-select-container" data-popup-template="tpl-role-keys">
+                            <input type="hidden" name="roles" value="{{ edit_user.roles ? edit_user.roles|join(', ') : (edit_user.role is defined ? edit_user.role : '') }}">
+                            <input class="multi-select-input" placeholder="{{ t('admin.comma_separated_roles')|default('z. B. editor, viewer') }}" readonly>
+                            <button type="button" class="multi-select-add" aria-label="Hinzufügen">+</button>
+                        </div>
+                    </div>
+
+                    {% if is_edit %}
+                    <div class="form-group">
+                        <label class="form-label" for="is_active">{{ t('admin.status')|default('Status') }}</label>
+                        <select id="is_active" name="is_active" class="form-control">
+                            <option value="1" {{ edit_user.is_active ? 'selected' : '' }}>{{ t('admin.active')|default('Aktiv') }}</option>
+                            <option value="0" {{ not edit_user.is_active ? 'selected' : '' }}>{{ t('admin.inactive')|default('Inaktiv') }}</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group text-muted" style="font-size: .85rem;">
+                        {{ t('admin.created_at')|default('Erstellt') }}: {{ edit_user.created_at|default('–') }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer" style="display:flex; gap:12px; align-items:center;">
+                    <a href="/admin/users" class="btn btn-secondary" data-back="auto">{{ t('admin.back')|default('Zurück') }}</a>
+                    <button type="submit" class="btn btn-primary btn-block">{{ is_edit ? t('admin.save')|default('Speichern') : t('admin.create_user')|default('Erstellen') }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+{% if is_edit and edit_user.id != user.id %}
+<div class="card" style="margin-top: 1rem; max-width: 420px;">
+    <div class="card-header" style="color: var(--neon-red, #ff4444);">{{ t('admin.danger_zone')|default('Gefahrenzone') }}</div>
+    <div class="card-body">
+        <form method="post" action="/admin/users/{{ edit_user.id }}/delete">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger btn-block" data-confirm="{{ t('admin.confirm_delete_user')|default('Benutzer wirklich löschen?') }}">{{ t('admin.delete_user')|default('Benutzer löschen') }}</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

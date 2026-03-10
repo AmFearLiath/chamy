@@ -1,0 +1,98 @@
+{% extends 'base.twig' %}
+
+{% block title %}{{ t('themes.marketplace_title')|default('Theme-Marktplatz') }} – Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">{{ t('admin.dashboard')|default('Dashboard') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/admin/themes">{{ t('admin.themes')|default('Themes') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ t('themes.marketplace_tab')|default('Marketplace') }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ t('themes.marketplace_title')|default('Theme-Marktplatz') }}</h1>
+    </div>
+    <div class="page-header-right">
+        <a href="/admin/themes" class="btn btn-ghost">{{ t('themes.back_to_dashboard')|default('Zurück zum Dashboard') }}</a>
+        <a href="/admin/themes/installed" class="btn btn-secondary">{{ t('themes.installed_tab')|default('Installierte Themes') }}</a>
+        <a href="/admin/themes/marketplace/config" class="btn btn-primary">{{ t('themes.marketplace_config_tab')|default('Marketplace-Konfiguration') }}</a>
+    </div>
+</div>
+
+<form method="get" action="/admin/themes/marketplace" class="theme-filter-bar card">
+    <div class="card-body theme-filter-grid">
+        <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">{{ t('themes.search')|default('Suche') }}</label>
+            <input type="text" name="q" class="form-control" value="{{ marketplace.filters.q }}" placeholder="{{ t('themes.search_placeholder')|default('Name, Tags oder Beschreibung') }}">
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">{{ t('themes.area')|default('Bereich') }}</label>
+            <select name="area" class="form-control">
+                <option value="all" {{ marketplace.filters.area == 'all' ? 'selected' : '' }}>{{ t('themes.all')|default('Alle') }} ({{ marketplace.counts.all }})</option>
+                <option value="admin" {{ marketplace.filters.area == 'admin' ? 'selected' : '' }}>{{ t('themes.area_admin')|default('Admin') }} ({{ marketplace.counts.admin }})</option>
+                <option value="frontend" {{ marketplace.filters.area == 'frontend' ? 'selected' : '' }}>{{ t('themes.area_frontend')|default('Frontend') }} ({{ marketplace.counts.frontend }})</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">{{ t('themes.price')|default('Preis') }}</label>
+            <select name="pricing" class="form-control">
+                <option value="all" {{ marketplace.filters.pricing == 'all' ? 'selected' : '' }}>{{ t('themes.all')|default('Alle') }}</option>
+                <option value="free" {{ marketplace.filters.pricing == 'free' ? 'selected' : '' }}>{{ t('themes.free')|default('Kostenlos') }} ({{ marketplace.counts.free }})</option>
+                <option value="paid" {{ marketplace.filters.pricing == 'paid' ? 'selected' : '' }}>{{ t('themes.paid')|default('Bezahlt') }} ({{ marketplace.counts.paid }})</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">{{ t('themes.sort')|default('Sortierung') }}</label>
+            <select name="sort" class="form-control">
+                <option value="popular" {{ marketplace.filters.sort == 'popular' ? 'selected' : '' }}>{{ t('themes.sort_popular')|default('Popularität') }}</option>
+                <option value="rating" {{ marketplace.filters.sort == 'rating' ? 'selected' : '' }}>{{ t('themes.sort_rating')|default('Bewertung') }}</option>
+                <option value="price_asc" {{ marketplace.filters.sort == 'price_asc' ? 'selected' : '' }}>{{ t('themes.sort_price_asc')|default('Preis aufsteigend') }}</option>
+                <option value="price_desc" {{ marketplace.filters.sort == 'price_desc' ? 'selected' : '' }}>{{ t('themes.sort_price_desc')|default('Preis absteigend') }}</option>
+                <option value="name" {{ marketplace.filters.sort == 'name' ? 'selected' : '' }}>{{ t('themes.sort_name')|default('Name') }}</option>
+            </select>
+        </div>
+        <div class="theme-filter-actions">
+            <button class="btn btn-primary" type="submit">{{ t('themes.filter')|default('Filtern') }}</button>
+        </div>
+    </div>
+</form>
+
+<div class="theme-card-grid" style="margin-top: 1rem;">
+    {% for item in marketplace.items %}
+    <article class="theme-card">
+        <div class="theme-preview-block preview-swatch-{{ (loop.index0 % 6) + 1 }}">
+            <span>{{ item.area == 'admin' ? t('themes.admin_preview')|default('Admin Vorschau') : t('themes.frontend_preview')|default('Frontend Vorschau') }}</span>
+        </div>
+        <div class="theme-card-body">
+            <h3>{{ item.name }}</h3>
+            <p class="text-muted">{{ item.description }}</p>
+            <div class="theme-meta-line">
+                <span class="badge {{ item.pricing == 'free' ? 'badge-published' : 'badge-review' }}">{{ item.pricing == 'free' ? t('themes.free')|default('Kostenlos') : item.price ~ ' ' ~ item.currency }}</span>
+                <span class="text-muted">{{ item.area == 'admin' ? t('themes.area_admin')|default('Admin') : t('themes.area_frontend')|default('Frontend') }}</span>
+                <span class="text-muted">{{ item.downloads }} {{ t('themes.downloads')|default('Downloads') }}</span>
+                <span class="text-muted">★ {{ item.rating }}</span>
+            </div>
+            <div class="theme-tag-list">
+                {% for tag in item.tags %}
+                <span>{{ tag }}</span>
+                {% endfor %}
+            </div>
+            <div class="theme-manager-items">
+                {% for capability in item.manager %}
+                <span>{{ capability }}</span>
+                {% endfor %}
+            </div>
+            <div class="theme-card-actions">
+                <a href="/admin/themes/marketplace/{{ item.id }}" class="btn btn-sm btn-secondary">{{ t('themes.preview_details')|default('Vorschau & Details') }}</a>
+                <button class="btn btn-sm btn-primary" {{ not can_manage_themes ? 'disabled' : '' }}>{{ t('themes.install')|default('Installieren') }}</button>
+            </div>
+        </div>
+    </article>
+    {% else %}
+    <div class="card"><div class="card-body text-muted">{{ t('themes.no_marketplace_filtered')|default('Keine Themes für die aktuellen Filter gefunden.') }}</div></div>
+    {% endfor %}
+</div>
+{% endblock %}

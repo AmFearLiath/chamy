@@ -1,0 +1,56 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Chamy CLI – Database Migration Runner
+ *
+ * Usage:
+ *   php chamy migrate        Run all pending migrations
+ *   php chamy migrate:down   Rollback last batch
+ *   php chamy migrate:status Show migration status
+ */
+
+require __DIR__ . '/vendor/autoload.php';
+
+\Chamy\Core\Bootstrap::init(__DIR__);
+
+$kernel = \Chamy\Core\Kernel::getInstance();
+$db     = $kernel->db();
+
+$runner = new \Chamy\Core\Database\MigrationRunner($db);
+
+$migrationsPath = __DIR__ . '/system/migrations';
+$command = $argv[1] ?? 'migrate';
+
+switch ($command) {
+    case 'migrate':
+        echo "Running migrations...\n";
+        $ran = $runner->run($migrationsPath);
+        if (empty($ran)) {
+            echo "Nothing to migrate.\n";
+        } else {
+            foreach ($ran as $name) {
+                echo "  ✓ {$name}\n";
+            }
+            echo count($ran) . " migration(s) executed.\n";
+        }
+        break;
+
+    case 'migrate:down':
+        echo "Rolling back last batch...\n";
+        $rolled = $runner->rollbackLast($migrationsPath);
+        if (empty($rolled)) {
+            echo "Nothing to roll back.\n";
+        } else {
+            foreach ($rolled as $name) {
+                echo "  ↩ {$name}\n";
+            }
+        }
+        break;
+
+    default:
+        echo "Unknown command: {$command}\n";
+        echo "Available: migrate, migrate:down\n";
+        exit(1);
+}

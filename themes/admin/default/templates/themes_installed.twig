@@ -1,0 +1,186 @@
+{% extends 'base.twig' %}
+
+{% block title %}{{ t('themes.installed_tab')|default('Installierte Themes') }} - Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">{{ t('admin.dashboard')|default('Dashboard') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/admin/themes">{{ t('admin.themes')|default('Themes') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ t('themes.installed_tab')|default('Installierte Themes') }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ t('themes.installed_tab')|default('Installierte Themes') }}</h1>
+        <p class="text-muted">{{ t('themes.installed_layout_hint')|default('Links große Vorschau, rechts Informationen, Einstellungen und Aktionen inklusive Theme-Auswahl.') }}</p>
+    </div>
+    <div class="page-header-right">
+        <a href="/admin/themes" class="btn btn-ghost">{{ t('themes.back_to_dashboard')|default('Zurück zum Dashboard') }}</a>
+        <a href="/admin/themes/marketplace" class="btn btn-primary">{{ t('themes.marketplace_tab')|default('Marketplace') }}</a>
+    </div>
+</div>
+
+{% if not can_manage_themes %}
+<div class="alert alert-warning" style="margin-bottom:1rem;">{{ t('themes.read_only_hint')|default('Lesemodus: Theme-Manager und Einstellungen können betrachtet, aber nicht geändert werden.') }}</div>
+{% endif %}
+
+<div class="theme-installed-panel">
+    <div class="theme-section-head">
+        <h2>{{ t('themes.admin_section')|default('Admin-Themes') }}</h2>
+        <span class="text-muted">{{ t('themes.active')|default('Aktiv') }}: <strong>{{ active_admin_theme }}</strong></span>
+    </div>
+
+    {% set selectedAdmin = selected_admin_theme_data %}
+    {% if selectedAdmin %}
+    <div class="theme-workspace-grid">
+        <section class="card theme-workspace-preview">
+            <div class="card-header"><h3 class="card-title">{{ selectedAdmin.name|default(selected_admin_theme) }}</h3></div>
+            <div class="card-body">
+                <div class="theme-detail-preview preview-admin">
+                    <div>
+                        <strong>{{ selectedAdmin.name|default(selected_admin_theme) }}</strong>
+                        <p>{{ selectedAdmin.description|default(t('themes.no_description')|default('Keine Beschreibung vorhanden.')) }}</p>
+                    </div>
+                </div>
+                <div class="theme-meta-line" style="margin-top:.8rem;">
+                    <span class="badge {{ selected_admin_theme == active_admin_theme ? 'badge-published' : 'badge-draft' }}">{{ selected_admin_theme == active_admin_theme ? t('themes.live')|default('Live') : t('themes.installed')|default('Installiert') }}</span>
+                    <span class="text-muted">v{{ selectedAdmin.version|default('?') }}</span>
+                    <span class="text-muted">{{ selectedAdmin.author|default(t('themes.unknown_author')|default('Unbekannt')) }}</span>
+                    {% if selectedAdmin.parent is defined and selectedAdmin.parent %}
+                    <span class="badge badge-pending">{{ t('themes.child_of')|default('Child von') }}: {{ selectedAdmin.parent }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <aside class="card theme-workspace-sidebar">
+            <div class="card-header"><h3 class="card-title">{{ t('themes.sidebar_admin_title')|default('Informationen, Einstellungen & Aktionen') }}</h3></div>
+            <div class="card-body">
+                <div class="theme-manager-items" style="margin-top:0;">
+                    <span>{{ t('themes.manager')|default('Manager') }}</span>
+                    <span>{{ t('themes.settings')|default('Einstellungen') }}</span>
+                    <span>{{ t('themes.preview')|default('Vorschau') }}</span>
+                </div>
+
+                <div class="theme-card-actions" style="margin-top:12px;">
+                    <a href="/admin/themes/installed/admin/{{ selected_admin_theme }}" class="btn btn-sm btn-secondary">{{ t('themes.details')|default('Details') }}</a>
+                    {% if can_manage_themes %}
+                    <form action="{{ route('admin.themes.installed.activate', {'area':'admin','id': selected_admin_theme}) }}" method="post" style="display:inline-block">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-primary" data-confirm="{{ t('themes.confirm_activate')|default('Möchten Sie dieses Theme aktivieren?') }}">{{ t('themes.activate')|default('Aktivieren') }}</button>
+                    </form>
+                    <form action="{{ route('admin.themes.installed.toggle_status', {'area':'admin','id': selected_admin_theme}) }}" method="post" style="display:inline-block">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-ghost" data-confirm="{{ t('themes.confirm_status_toggle')|default('Möchten Sie den Theme-Status ändern?') }}">{{ t('themes.status')|default('Status') }}</button>
+                    </form>
+                    <form action="{{ route('admin.themes.installed.uninstall', {'area':'admin','id': selected_admin_theme}) }}" method="post" style="display:inline-block">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-danger" data-confirm-double="1" data-confirm="{{ t('themes.confirm_uninstall_step1')|default('Möchten Sie dieses Theme wirklich deinstallieren?') }}" data-confirm-second="{{ t('themes.confirm_uninstall_step2')|default('Achtung: Dadurch werden Theme-Dateien entfernt. Bitte bestätigen Sie erneut.') }}">{{ t('themes.uninstall')|default('Deinstallieren') }}</button>
+                    </form>
+                    {% else %}
+                    <button type="button" class="btn btn-sm btn-primary" disabled>{{ t('themes.activate')|default('Aktivieren') }}</button>
+                    {% endif %}
+                </div>
+
+                <a href="/admin/themes/config?area=admin&theme={{ selected_admin_theme }}" class="btn btn-sm btn-ghost" style="margin-top:10px;">{{ t('themes.configure')|default('Konfigurieren') }}</a>
+
+                <hr class="divider" style="margin:14px 0;">
+                <h4 style="margin-bottom:8px;">{{ t('themes.theme_selection')|default('Theme-Auswahl') }}</h4>
+                <div class="theme-selection-list">
+                    {% for key, th in admin_themes %}
+                    {% set id = key|split('/')|last %}
+                    <a class="theme-selection-item {{ id == selected_admin_theme ? 'is-active' : '' }}" href="/admin/themes/installed?admin_theme={{ id }}&frontend_theme={{ selected_frontend_theme }}">
+                        <span class="theme-selection-name">{{ th.name|default(id) }}</span>
+                        <span class="theme-selection-meta">{{ id }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </aside>
+    </div>
+    {% else %}
+    <div class="card"><div class="card-body text-muted">{{ t('themes.no_admin_installed')|default('Keine Admin-Themes installiert.') }}</div></div>
+    {% endif %}
+</div>
+
+<div class="theme-installed-panel" style="margin-top:1.5rem;">
+    <div class="theme-section-head">
+        <h2>{{ t('themes.frontend_section')|default('Frontend-Themes') }}</h2>
+        <span class="text-muted">{{ t('themes.active')|default('Aktiv') }}: <strong>{{ active_frontend_theme }}</strong></span>
+    </div>
+
+    {% set selectedFrontend = selected_frontend_theme_data %}
+    {% if selectedFrontend %}
+    <div class="theme-workspace-grid">
+        <section class="card theme-workspace-preview">
+            <div class="card-header"><h3 class="card-title">{{ selectedFrontend.name|default(selected_frontend_theme) }}</h3></div>
+            <div class="card-body">
+                <div class="theme-detail-preview preview-frontend">
+                    <div>
+                        <strong>{{ selectedFrontend.name|default(selected_frontend_theme) }}</strong>
+                        <p>{{ selectedFrontend.description|default(t('themes.no_description')|default('Keine Beschreibung vorhanden.')) }}</p>
+                    </div>
+                </div>
+                <div class="theme-meta-line" style="margin-top:.8rem;">
+                    <span class="badge {{ selected_frontend_theme == active_frontend_theme ? 'badge-published' : 'badge-draft' }}">{{ selected_frontend_theme == active_frontend_theme ? t('themes.live')|default('Live') : t('themes.installed')|default('Installiert') }}</span>
+                    <span class="text-muted">v{{ selectedFrontend.version|default('?') }}</span>
+                    <span class="text-muted">{{ selectedFrontend.author|default(t('themes.unknown_author')|default('Unbekannt')) }}</span>
+                    {% if selectedFrontend.parent is defined and selectedFrontend.parent %}
+                    <span class="badge badge-pending">{{ t('themes.child_of')|default('Child von') }}: {{ selectedFrontend.parent }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <aside class="card theme-workspace-sidebar">
+            <div class="card-header"><h3 class="card-title">{{ t('themes.sidebar_frontend_title')|default('Informationen, Einstellungen & Aktionen') }}</h3></div>
+            <div class="card-body">
+                <div class="theme-manager-items" style="margin-top:0;">
+                    <span>{{ t('themes.manager')|default('Manager') }}</span>
+                    <span>{{ t('themes.settings')|default('Einstellungen') }}</span>
+                    <span>{{ t('themes.preview')|default('Vorschau') }}</span>
+                </div>
+
+                <div class="theme-card-actions" style="margin-top:12px;">
+                    <a href="/admin/themes/installed/frontend/{{ selected_frontend_theme }}" class="btn btn-sm btn-secondary">{{ t('themes.details')|default('Details') }}</a>
+                    {% if can_manage_themes %}
+                    <form action="{{ route('admin.themes.installed.activate', {'area':'frontend','id': selected_frontend_theme}) }}" method="post" style="display:inline-block">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-primary" data-confirm="{{ t('themes.confirm_activate')|default('Möchten Sie dieses Theme aktivieren?') }}">{{ t('themes.activate')|default('Aktivieren') }}</button>
+                    </form>
+                    <form action="{{ route('admin.themes.installed.toggle_status', {'area':'frontend','id': selected_frontend_theme}) }}" method="post" style="display:inline-block">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-ghost" data-confirm="{{ t('themes.confirm_status_toggle')|default('Möchten Sie den Theme-Status ändern?') }}">{{ t('themes.status')|default('Status') }}</button>
+                    </form>
+                    <form action="{{ route('admin.themes.installed.uninstall', {'area':'frontend','id': selected_frontend_theme}) }}" method="post" style="display:inline-block">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-danger" data-confirm-double="1" data-confirm="{{ t('themes.confirm_uninstall_step1')|default('Möchten Sie dieses Theme wirklich deinstallieren?') }}" data-confirm-second="{{ t('themes.confirm_uninstall_step2')|default('Achtung: Dadurch werden Theme-Dateien entfernt. Bitte bestätigen Sie erneut.') }}">{{ t('themes.uninstall')|default('Deinstallieren') }}</button>
+                    </form>
+                    {% else %}
+                    <button type="button" class="btn btn-sm btn-primary" disabled>{{ t('themes.activate')|default('Aktivieren') }}</button>
+                    {% endif %}
+                </div>
+
+                <a href="/admin/themes/config?area=frontend&theme={{ selected_frontend_theme }}" class="btn btn-sm btn-ghost" style="margin-top:10px;">{{ t('themes.configure')|default('Konfigurieren') }}</a>
+
+                <hr class="divider" style="margin:14px 0;">
+                <h4 style="margin-bottom:8px;">{{ t('themes.theme_selection')|default('Theme-Auswahl') }}</h4>
+                <div class="theme-selection-list">
+                    {% for key, th in frontend_themes %}
+                    {% set id = key|split('/')|last %}
+                    <a class="theme-selection-item {{ id == selected_frontend_theme ? 'is-active' : '' }}" href="/admin/themes/installed?admin_theme={{ selected_admin_theme }}&frontend_theme={{ id }}">
+                        <span class="theme-selection-name">{{ th.name|default(id) }}</span>
+                        <span class="theme-selection-meta">{{ id }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </aside>
+    </div>
+    {% else %}
+    <div class="card"><div class="card-body text-muted">{{ t('themes.no_frontend_installed')|default('Keine Frontend-Themes installiert.') }}</div></div>
+    {% endif %}
+</div>
+{% endblock %}

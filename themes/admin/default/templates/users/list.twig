@@ -1,0 +1,68 @@
+{% extends 'base.twig' %}
+
+{% block title %}{{ t('admin.users')|default('Benutzer') }} – Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">Dashboard</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ t('admin.users')|default('Benutzer') }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ t('admin.users')|default('Benutzer') }}</h1>
+        <span class="page-badge">{{ users|length }} {{ t('admin.total')|default('gesamt') }}</span>
+    </div>
+    <div class="page-header-right">
+        <a href="/admin/users/create" class="btn btn-primary">{{ t('admin.new_user')|default('+ Neuer Benutzer') }}</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>{{ t('admin.id')|default('ID') }}</th>
+                    <th>{{ t('admin.username')|default('Benutzername') }}</th>
+                    <th>{{ t('admin.email')|default('E-Mail') }}</th>
+                    <th>{{ t('admin.display_name')|default('Anzeigename') }}</th>
+                    <th>{{ t('admin.role')|default('Rolle') }}</th>
+                    <th>{{ t('admin.status')|default('Status') }}</th>
+                    <th>{{ t('admin.last_login')|default('Letzter Login') }}</th>
+                    <th>{{ t('admin.actions')|default('Aktionen') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u.id }}</td>
+                    <td><strong>{{ u.username }}</strong></td>
+                    <td>{{ u.email }}</td>
+                    <td>{{ u.display_name }}</td>
+                    <td>
+                        <span class="state-badge state-{{ u.role }}">{{ u.role }}</span>
+                    </td>
+                    <td>
+                        {% if u.is_active %}
+                            <span class="state-badge state-published">{{ t('admin.active')|default('Aktiv') }}</span>
+                        {% else %}
+                            <span class="state-badge state-archived">{{ t('admin.inactive')|default('Inaktiv') }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ u.last_login_at ?? '–' }}</td>
+                    <td class="table-actions">
+                        <a href="/admin/users/{{ u.id }}/edit" class="btn btn-sm btn-outline" title="{{ t('admin.edit')|default('Bearbeiten') }}">✎</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted">{{ t('admin.no_users')|default('Keine Benutzer vorhanden.') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
