@@ -19,22 +19,33 @@ class InstallWizard
         };
 
         // Basic step markers and progress; the JS will handle transitions.
-        <?php
         // Prefer admin theme assets from the `default` admin theme. Fall back to packaged assets.
         $projectRoot = dirname(__DIR__, 2);
         $themeCssPath = $projectRoot . '/themes/admin/default/assets/css/admin.css';
         $themeJsPath = $projectRoot . '/themes/admin/default/assets/js/admin.js';
         $useThemeCss = is_file($themeCssPath);
         $useThemeJs = is_file($themeJsPath);
+
+        // Close PHP to emit HTML; theme assets will be conditionally inlined.
         ?>
         <?php if ($useThemeCss): ?>
-            <link rel="stylesheet" href="/themes/admin/default/assets/css/admin.css">
+            <?php $css = @file_get_contents($themeCssPath); ?>
+            <?php if ($css !== false): ?>
+                <style><?= $css ?></style>
+            <?php else: ?>
+                <link rel="stylesheet" href="/assets/install-wizard.css">
+            <?php endif; ?>
         <?php else: ?>
             <link rel="stylesheet" href="/assets/install-wizard.css">
         <?php endif; ?>
+
         <?php if ($useThemeJs): ?>
-            <script defer src="/themes/admin/default/assets/js/admin.js"></script>
+            <?php $js = @file_get_contents($themeJsPath); ?>
+            <?php if ($js !== false): ?>
+                <script><?= $js ?></script>
+            <?php endif; ?>
         <?php endif; ?>
+
         <script defer src="/assets/install-wizard.js"></script>
 
         <?php if ($errors !== []): ?>
