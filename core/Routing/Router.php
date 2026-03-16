@@ -190,9 +190,10 @@ final class Router
     private function render404(Request $request): Response
     {
         try {
+            $area = str_starts_with($request->getPath(), '/admin') ? 'admin' : 'frontend';
             $html = $this->kernel->themes()->render('errors/404.twig', [
                 'app_locale' => $this->kernel->config()->get('APP_LOCALE', 'de'),
-            ]);
+            ], $area);
             return Response::html($html, 404);
         } catch (\Throwable) {
             $lang = $this->kernel->lang();

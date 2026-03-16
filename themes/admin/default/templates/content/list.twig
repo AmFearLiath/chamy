@@ -1,21 +1,21 @@
 {% extends "base.twig" %}
 
-{% block title %}{{ type.label_plural|default(type_key) }} – Chamy CMS{% endblock %}
+{% block title %}{{ content_labels[type_key]|default(type.label_plural|default(type_key)) }} – Chamy CMS{% endblock %}
 
 {% block breadcrumb %}
 <a href="/admin">Dashboard</a>
 <span>›</span>
-<span class="current">{{ type.label_plural|default(type_key) }}</span>
+<span class="current">{{ content_labels[type_key]|default(type.label_plural|default(type_key)) }}</span>
 {% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
-        <h1 class="page-title">{{ type.label_plural|default(type_key) }}</h1>
+        <h1 class="page-title">{{ content_labels[type_key]|default(type.label_plural|default(type_key)) }}</h1>
         <p class="page-subtitle">{{ entries_total|default(0) }} {{ t('admin.entries')|default('Einträge') }}</p>
     </div>
     <a href="/admin/content/{{ type_key }}/create" class="btn btn-primary">
-        ＋ {{ type.label|default(type_key) }} {{ t('admin.create')|default('erstellen') }}
+        ＋ {{ content_labels[type_key]|default(type.label|default(type_key)) }} {{ t('admin.create')|default('erstellen') }}
     </a>
 </div>
 
@@ -52,6 +52,9 @@
                         <td>
                             <div class="flex gap-2">
                                 <a href="/admin/content/{{ type_key }}/{{ entry.id }}/edit" class="btn btn-ghost btn-sm" title="{{ t('admin.edit')|default('Bearbeiten') }}">✎</a>
+                                {% if type_key in ['article', 'documentation'] %}
+                                <a href="/admin/content/{{ type_key }}/{{ entry.id }}/editor" class="btn btn-ghost btn-sm" title="{{ t('admin.visual_editor')|default('Visueller Editor') }}">✦</a>
+                                {% endif %}
                                 <form method="POST" action="/admin/content/{{ type_key }}/{{ entry.id }}/delete" style="display:inline;">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="btn btn-ghost btn-sm" data-confirm="{{ t('admin.confirm_delete')|default('Wirklich löschen?') }}" title="{{ t('admin.delete')|default('Löschen') }}">✕</button>

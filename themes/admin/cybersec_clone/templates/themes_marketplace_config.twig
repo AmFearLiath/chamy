@@ -1,0 +1,74 @@
+{% extends 'base.twig' %}
+
+{% block title %}{{ t('themes.marketplace_config_tab')|default('Marketplace-Konfiguration') }} – Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">{{ t('admin.dashboard')|default('Dashboard') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/admin/themes">{{ t('admin.themes')|default('Themes') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ t('themes.marketplace_config_tab')|default('Marketplace-Konfiguration') }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ t('themes.marketplace_config_tab')|default('Marketplace-Konfiguration') }}</h1>
+    </div>
+    <div class="page-header-right">
+        <a href="/admin/themes/marketplace" class="btn btn-ghost">{{ t('themes.marketplace_tab')|default('Marketplace') }}</a>
+        <a href="/admin/themes/config" class="btn btn-secondary">{{ t('themes.config_tab')|default('Konfiguration') }}</a>
+    </div>
+</div>
+
+<form method="post" action="/admin/themes/marketplace/config">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="card">
+        <div class="card-body">
+            <div class="settings-grid">
+                <div class="settings-item">
+                    <label class="form-label">
+                        <input type="checkbox" name="marketplace[catalog_enabled]" value="1" {{ marketplace_config.catalog_enabled ? 'checked' : '' }} {{ not can_manage_themes ? 'disabled' : '' }}>
+                        {{ t('themes.marketplace_catalog_enabled')|default('Marketplace-Katalog aktivieren') }}
+                    </label>
+                </div>
+
+                <div class="settings-item">
+                    <label class="form-label">
+                        <input type="checkbox" name="marketplace[allow_paid_themes]" value="1" {{ marketplace_config.allow_paid_themes ? 'checked' : '' }} {{ not can_manage_themes ? 'disabled' : '' }}>
+                        {{ t('themes.marketplace_allow_paid')|default('Bezahlte Themes erlauben') }}
+                    </label>
+                </div>
+
+                <div class="settings-item">
+                    <label class="form-label" for="market_default_sort">{{ t('themes.marketplace_default_sort')|default('Standard-Sortierung') }}</label>
+                    <select id="market_default_sort" name="marketplace[default_sort]" class="form-control" {{ not can_manage_themes ? 'disabled' : '' }}>
+                        <option value="popular" {{ marketplace_config.default_sort == 'popular' ? 'selected' : '' }}>{{ t('themes.sort_popular')|default('Popularität') }}</option>
+                        <option value="rating" {{ marketplace_config.default_sort == 'rating' ? 'selected' : '' }}>{{ t('themes.sort_rating')|default('Bewertung') }}</option>
+                        <option value="price_asc" {{ marketplace_config.default_sort == 'price_asc' ? 'selected' : '' }}>{{ t('themes.sort_price_asc')|default('Preis aufsteigend') }}</option>
+                        <option value="price_desc" {{ marketplace_config.default_sort == 'price_desc' ? 'selected' : '' }}>{{ t('themes.sort_price_desc')|default('Preis absteigend') }}</option>
+                    </select>
+                </div>
+
+                <div class="settings-item">
+                    <label class="form-label" for="market_default_area">{{ t('themes.marketplace_default_area')|default('Standard-Bereich') }}</label>
+                    <select id="market_default_area" name="marketplace[default_area]" class="form-control" {{ not can_manage_themes ? 'disabled' : '' }}>
+                        <option value="all" {{ marketplace_config.default_area == 'all' ? 'selected' : '' }}>{{ t('themes.all')|default('Alle') }}</option>
+                        <option value="admin" {{ marketplace_config.default_area == 'admin' ? 'selected' : '' }}>{{ t('themes.area_admin')|default('Admin') }}</option>
+                        <option value="frontend" {{ marketplace_config.default_area == 'frontend' ? 'selected' : '' }}>{{ t('themes.area_frontend')|default('Frontend') }}</option>
+                    </select>
+                </div>
+            </div>
+
+            {% if theme_settings|length == 0 %}
+            <p class="text-muted" style="margin-top: 1rem;">{{ t('themes.no_marketplace_settings')|default('Keine Marketplace-Einstellungen in der Gruppe "theme" gefunden. Es werden Standardwerte genutzt.') }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="text-align: right; margin-top: 1rem;">
+        <button type="submit" class="btn btn-primary" {{ not can_manage_themes ? 'disabled' : '' }}>{{ t('themes.save_config')|default('Konfiguration speichern') }}</button>
+    </div>
+</form>
+{% endblock %}

@@ -1,9 +1,12 @@
 {% extends 'base.twig' %}
 
-{% block title %}{{ entry_data.title|default('Artikel') }} – {{ site_name|default('Chamy CMS') }}{% endblock %}
-{% block body_class %}page-article-single{% endblock %}
+{% block title %}{{ entry_data.seo_title|default(entry_data.title|default('Artikel')) }} – {{ site_name|default('Chamy CMS') }}{% endblock %}
+{% block body_class %}page-article-single{% if editor_content %} page-editor{% endif %}{% endblock %}
 
 {% block body %}
+{% if editor_content %}
+    {{ editor_content|raw }}
+{% else %}
 <section class="page-content">
     <div class="container">
         <h1>{{ entry_data.title }}</h1>
@@ -19,4 +22,5 @@
         </div>
     </div>
 </section>
+{% endif %}
 {% endblock %}

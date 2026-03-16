@@ -23,8 +23,18 @@ $router->get('/admin/content/{type}', [AdminController::class, 'contentList'], '
 $router->get('/admin/content/{type}/create', [AdminController::class, 'contentCreate'], 'admin.content.create');
 $router->post('/admin/content/{type}/store', [AdminController::class, 'contentStore'], 'admin.content.store');
 $router->get('/admin/content/{type}/{id}/edit', [AdminController::class, 'contentEdit'], 'admin.content.edit');
+$router->get('/admin/content/{type}/{id}/editor', [AdminController::class, 'contentEditor'], 'admin.content.editor');
 $router->post('/admin/content/{type}/{id}/update', [AdminController::class, 'contentUpdate'], 'admin.content.update');
 $router->post('/admin/content/{type}/{id}/delete', [AdminController::class, 'contentDelete'], 'admin.content.delete');
+
+// Editor Manager (system elements, packages)
+$router->get('/admin/editor', [AdminController::class, 'editorManager'], 'admin.editor');
+$router->post('/admin/editor/elements/create', [AdminController::class, 'editorCreateElement'], 'admin.editor.element.create');
+$router->post('/admin/editor/packages/import', [AdminController::class, 'editorImportPackage'], 'admin.editor.package.import');
+$router->get('/admin/editor/packages/export', [AdminController::class, 'editorExportPackage'], 'admin.editor.package.export');
+// Editor element management (update/delete)
+$router->post('/admin/editor/elements/update', [AdminController::class, 'editorUpdateElement'], 'admin.editor.element.update');
+$router->post('/admin/editor/elements/delete', [AdminController::class, 'editorDeleteElement'], 'admin.editor.element.delete');
 
 // Users
 $router->get('/admin/users', [AdminController::class, 'usersList'], 'admin.users');
@@ -52,6 +62,10 @@ $router->post('/admin/permissions/{id}/delete', [AdminController::class, 'permis
 // Settings
 $router->get('/admin/settings', [AdminController::class, 'settingsPage'], 'admin.settings');
 $router->post('/admin/settings', [AdminController::class, 'settingsUpdate'], 'admin.settings.update');
+// Admin API: Google Fonts status check (lightweight)
+$router->get('/admin/api/google-fonts/status', [AdminController::class, 'googleFontsStatus'], 'admin.api.google_fonts.status');
+$router->post('/admin/api/google-fonts/check', [AdminController::class, 'googleFontsCheck'], 'admin.api.google_fonts.check');
+$router->get('/admin/api/google-fonts/search', [AdminController::class, 'googleFontsSearch'], 'admin.api.google_fonts.search');
 
 // Global Trash
 $router->get('/admin/trash', [AdminController::class, 'trashPage'], 'admin.trash');
@@ -60,6 +74,17 @@ $router->post('/admin/trash/{id}/purge', [AdminController::class, 'trashPurge'],
 
 // Modules
 $router->get('/admin/modules', [AdminController::class, 'modulesList'], 'admin.modules');
+$router->get('/admin/modules/marketplace', [AdminController::class, 'modulesMarketplace'], 'admin.modules.marketplace');
+$router->get('/admin/modules/marketplace/{id}', [AdminController::class, 'modulesMarketplaceDetail'], 'admin.modules.marketplace.detail');
+$router->get('/admin/modules/manager', [AdminController::class, 'modulesManager'], 'admin.modules.manager');
+$router->get('/admin/modules/manager/{id}', [AdminController::class, 'modulesManagerDetail'], 'admin.modules.manager.detail');
+$router->post('/admin/modules/manager/{id}/toggle', [AdminController::class, 'modulesToggle'], 'admin.modules.toggle');
+$router->post('/admin/modules/manager/{id}/uninstall', [AdminController::class, 'modulesUninstall'], 'admin.modules.uninstall');
+$router->get('/admin/modules/sdk', [AdminController::class, 'modulesSdk'], 'admin.modules.sdk');
+$router->get('/admin/modules/config', [AdminController::class, 'modulesConfig'], 'admin.modules.config');
+$router->post('/admin/modules/config', [AdminController::class, 'modulesConfigUpdate'], 'admin.modules.config.update');
+$router->get('/admin/modules/config/{id}', [AdminController::class, 'modulesModConfig'], 'admin.modules.mod_config');
+$router->post('/admin/modules/config/{id}', [AdminController::class, 'modulesModConfigUpdate'], 'admin.modules.mod_config.update');
 
 // Profile
 $router->get('/admin/profile', [AdminController::class, 'profilePage'], 'admin.profile');

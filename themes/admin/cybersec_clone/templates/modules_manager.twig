@@ -1,0 +1,84 @@
+{% extends 'base.twig' %}
+
+{% block title %}{{ t('modules.manager_tab')|default('Mod-Manager') }} – Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">{{ t('admin.dashboard')|default('Dashboard') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/admin/modules">{{ t('admin.modules')|default('Module') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ t('modules.manager_tab')|default('Manager') }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ t('modules.manager_tab')|default('Mod-Manager') }}</h1>
+        <span class="page-badge">{{ modules|length }} {{ t('modules.installed')|default('installiert') }}</span>
+    </div>
+    <div class="page-header-right">
+        <a href="/admin/modules" class="btn btn-ghost">{{ t('modules.back_to_dashboard')|default('Zurück zum Dashboard') }}</a>
+        <a href="/admin/modules/marketplace" class="btn btn-primary">{{ t('modules.marketplace_tab')|default('Marketplace') }}</a>
+    </div>
+</div>
+
+{% if not can_manage_modules %}
+<div class="alert alert-warning" style="margin-bottom:1rem;">
+    {{ t('modules.read_only_hint')|default('Lesemodus: Ohne Berechtigung können Module angesehen, aber nicht verändert werden.') }}
+</div>
+{% endif %}
+
+{% if modules|length > 0 %}
+<div class="mod-manager-list">
+    {% for id, mod in modules %}
+    <article class="card mod-manager-card">
+        <div class="card-body">
+            <div class="mod-manager-row">
+                <div class="mod-icon-block mod-icon-lg" style="--preview: {{ mod.preview_color|default('#4d7aff') }}">
+                    <span class="mod-icon">⧉</span>
+                </div>
+                <div class="mod-manager-info">
+                    <h3>{{ mod.name|default(id) }}</h3>
+                    <p class="text-muted">{{ mod.description|default(t('modules.no_description')|default('Keine Beschreibung vorhanden.')) }}</p>
+                    <div class="theme-meta-line">
+                        <span class="badge {{ mod._is_active ? 'badge-published' : 'badge-draft' }}">{{ mod._is_active ? t('modules.active')|default('Aktiv') : t('modules.inactive')|default('Inaktiv') }}</span>
+                        <span class="text-muted">v{{ mod.version|default('?') }}</span>
+                        <span class="text-muted">{{ mod.author|default('Unbekannt') }}</span>
+                        {% if mod.license is defined %}<span class="text-muted">{{ mod.license }}</span>{% endif %}
+                    </div>
+                </div>
+                <div class="mod-manager-actions">
+                    {# Quick Actions #}
+                    <a href="/admin/modules/manager/{{ id }}" class="btn btn-sm btn-secondary">{{ t('modules.details')|default('Details') }}</a>
+
+                    {% if mod._has_config %}
+                    <a href="/admin/modules/config/{{ id }}" class="btn btn-sm btn-ghost">{{ t('modules.configure')|default('Konfigurieren') }}</a>
+                    {% endif %}
+
+                    {% if can_manage_modules %}
+                    <form action="{{ route('admin.modules.toggle', {'id': id}) }}" method="post" style="display:inline-block;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm {{ mod._is_active ? 'btn-ghost' : 'btn-primary' }}" data-confirm="{{ mod._is_active ? t('modules.confirm_deactivate')|default('Modul wirklich deaktivieren?') : t('modules.confirm_activate')|default('Modul aktivieren?') }}">{{ mod._is_active ? t('modules.deactivate')|default('Deaktivieren') : t('modules.activate')|default('Aktivieren') }}</button>
+                    </form>
+
+                    <form action="{{ route('admin.modules.uninstall', {'id': id}) }}" method="post" style="display:inline-block;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-danger" data-confirm-double="1" data-confirm="{{ t('modules.confirm_uninstall_step1')|default('Modul wirklich deinstallieren?') }}" data-confirm-second="{{ t('modules.confirm_uninstall_step2')|default('Diese Aktion kann nicht rückgängig gemacht werden.') }}">{{ t('modules.uninstall')|default('Deinstallieren') }}</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-muted" style="padding:3rem;text-align:center;">
+        <p style="font-size:1.15rem;margin-bottom:.5rem;">{{ t('modules.no_installed')|default('Keine Module installiert.') }}</p>
+        <p>{{ t('modules.no_installed_hint')|default('Besuche den Marketplace, um Module zu finden und zu installieren.') }}</p>
+        <a href="/admin/modules/marketplace" class="btn btn-primary" style="margin-top:.75rem;">{{ t('modules.marketplace_tab')|default('Marketplace') }}</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

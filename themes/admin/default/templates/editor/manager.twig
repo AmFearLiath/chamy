@@ -1,0 +1,334 @@
+{% extends "base.twig" %}
+
+{% block title %}Editor Manager - Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+<a href="/admin">Dashboard</a>
+<span>›</span>
+<span class="current">Editor</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Editor</h1>
+        <p class="page-subtitle">Verwalte globale Layouts, Bloecke, Komponenten und Snippets (keine Inhalts-Instanzen).</p>
+    </div>
+    <div class="flex gap-2">
+        <a href="/admin/editor/packages/export" class="btn btn-primary">Export Paket</a>
+    </div>
+</div>
+
+<div class="editor-manager-grid" style="display:grid;grid-template-columns:1fr 420px;gap:20px;">
+    <div>
+        <div class="card mb-4">
+            <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                <div>
+                    <span class="card-title">Editor – Elemente</span>
+                    <div class="card-subtitle">Verwalte Komponenten, Blöcke und Snippets</div>
+                </div>
+                <div>
+                    <button class="btn" id="tab-new-element">Neu</button>
+                    <div style="display:inline-block;width:8px"></div>
+                    <button class="btn btn-ghost" id="tab-export-package"><a href="/admin/editor/packages/export">Export</a></button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="tabs" id="editor-tabs" style="margin-bottom:12px;display:flex;gap:6px;">
+                    <button class="tab-btn" data-tab="layouts">Layouts</button>
+                    <button class="tab-btn active" data-tab="components">Komponenten</button>
+                    <button class="tab-btn" data-tab="blocks">Blöcke</button>
+                    <button class="tab-btn" data-tab="snippets">Snippets</button>
+                </div>
+
+                {% set merged_layouts = definitions.layouts|merge(custom_definitions.layouts|default({})) %}
+                {% set merged_components = definitions.components|merge(custom_definitions.components|default({})) %}
+                {% set merged_blocks = definitions.blocks|merge(custom_definitions.blocks|default({})) %}
+                {% set merged_snippets = definitions.snippets|merge(custom_definitions.snippets|default({})) %}
+
+                <div class="tab-panels">
+                    <div id="tab-layouts" class="tab-panel" data-panel="layouts" style="display:none;">
+                        <table class="wide">
+                            <thead>
+                                <tr><th>ID</th><th>Label</th><th>Kategorie</th><th>Quelle</th><th>Aktionen</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for id, def in merged_layouts %}
+                                <tr>
+                                    <td>{{ id }}</td>
+                                    <td>{{ def.label }}</td>
+                                    <td>{{ def.category|default('-') }}</td>
+                                    <td>{{ def.source|default('core') }}</td>
+                                    <td>
+                                        <button class="btn btn-sm" data-action="edit" data-type="layout" data-id="{{ id }}">Bearbeiten</button>
+                                        <form method="POST" action="/admin/editor/elements/delete" style="display:inline-block;margin-left:6px;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="element_type" value="layout">
+                                            <input type="hidden" name="element_id" value="{{ id }}">
+                                            <button class="btn btn-sm btn-danger" onclick="return confirm('Element wirklich löschen?');">Löschen</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="5" class="text-muted">Keine Layouts gefunden.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="tab-components" class="tab-panel active" data-panel="components">
+                        <table class="wide">
+                            <thead>
+                                <tr><th>ID</th><th>Label</th><th>Kategorie</th><th>Quelle</th><th>Aktionen</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for id, def in merged_components %}
+                                <tr>
+                                    <td>{{ id }}</td>
+                                    <td>{{ def.label }}</td>
+                                    <td>{{ def.category|default('-') }}</td>
+                                    <td>{{ def.source|default('core') }}</td>
+                                    <td>
+                                        <button class="btn btn-sm" data-action="edit" data-type="component" data-id="{{ id }}">Bearbeiten</button>
+                                        <form method="POST" action="/admin/editor/elements/delete" style="display:inline-block;margin-left:6px;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="element_type" value="component">
+                                            <input type="hidden" name="element_id" value="{{ id }}">
+                                            <button class="btn btn-sm btn-danger" onclick="return confirm('Element wirklich löschen?');">Löschen</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="5" class="text-muted">Keine Komponenten gefunden.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="tab-blocks" class="tab-panel" data-panel="blocks" style="display:none;">
+                        <table class="wide">
+                            <thead>
+                                <tr><th>ID</th><th>Label</th><th>Kategorie</th><th>Quelle</th><th>Aktionen</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for id, def in merged_blocks %}
+                                <tr>
+                                    <td>{{ id }}</td>
+                                    <td>{{ def.label }}</td>
+                                    <td>{{ def.category|default('-') }}</td>
+                                    <td>{{ def.source|default('core') }}</td>
+                                    <td>
+                                        <button class="btn btn-sm" data-action="edit" data-type="block" data-id="{{ id }}">Bearbeiten</button>
+                                        <form method="POST" action="/admin/editor/elements/delete" style="display:inline-block;margin-left:6px;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="element_type" value="block">
+                                            <input type="hidden" name="element_id" value="{{ id }}">
+                                            <button class="btn btn-sm btn-danger" onclick="return confirm('Element wirklich löschen?');">Löschen</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="5" class="text-muted">Keine Blöcke gefunden.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="tab-snippets" class="tab-panel" data-panel="snippets" style="display:none;">
+                        <table class="wide">
+                            <thead>
+                                <tr><th>ID</th><th>Label</th><th>Kategorie</th><th>Quelle</th><th>Aktionen</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for id, def in merged_snippets %}
+                                <tr>
+                                    <td>{{ id }}</td>
+                                    <td>{{ def.label }}</td>
+                                    <td>{{ def.category|default('-') }}</td>
+                                    <td>{{ def.source|default('core') }}</td>
+                                    <td>
+                                        <button class="btn btn-sm" data-action="edit" data-type="snippet" data-id="{{ id }}">Bearbeiten</button>
+                                        <form method="POST" action="/admin/editor/elements/delete" style="display:inline-block;margin-left:6px;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="element_type" value="snippet">
+                                            <input type="hidden" name="element_id" value="{{ id }}">
+                                            <button class="btn btn-sm btn-danger" onclick="return confirm('Element wirklich löschen?');">Löschen</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="5" class="text-muted">Keine Snippets gefunden.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <div class="card mb-4">
+            <div class="card-header">
+                <span class="card-title">Paket importieren</span>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/admin/editor/packages/import">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="form-group">
+                        <label class="form-label" for="package_json">Package JSON</label>
+                        <textarea class="form-textarea" id="package_json" name="package_json" rows="14" placeholder='{"name":"my-package","definitions":{"blocks":{...}}}' required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Paket importieren</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Importierte Pakete</span>
+            </div>
+            <div class="card-body" style="padding:0;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Paket</th>
+                            <th>Version</th>
+                            <th>Elemente</th>
+                            <th>Stand</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pkg in packages|default([]) %}
+                        <tr>
+                            <td><strong>{{ pkg.name }}</strong><br><span class="text-muted" style="font-size:11px;">{{ pkg.file }}</span></td>
+                            <td>{{ pkg.version }}</td>
+                            <td>
+                                L{{ pkg.counts.layouts }}, B{{ pkg.counts.blocks }}, K{{ pkg.counts.components }}, S{{ pkg.counts.snippets }}
+                            </td>
+                            <td class="text-muted">{{ pkg.updated_at }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-muted">Keine importierten Pakete vorhanden.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# -- Modals: Create / Edit / Settings (modals used for create/edit/settings) -- #}
+<div id="editor-modal" class="modal" style="display:none;">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content" role="dialog" aria-modal="true">
+        <div class="modal-header">
+            <h3 id="modal-title">Element bearbeiten</h3>
+            <button id="modal-close" class="btn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="modal-form" method="POST" action="/admin/editor/elements/create">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="element_type" id="modal_element_type" value="component">
+                <input type="hidden" name="element_id" id="modal_element_id" value="">
+
+                <div class="form-group">
+                    <label class="form-label" for="modal_element_label">Label</label>
+                    <input class="form-input" id="modal_element_label" name="element_label" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="modal_element_description">Beschreibung</label>
+                    <input class="form-input" id="modal_element_description" name="element_description">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="modal_element_category">Kategorie</label>
+                    <input class="form-input" id="modal_element_category" name="element_category" value="custom">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="modal_element_icon">Icon</label>
+                    <input class="form-input" id="modal_element_icon" name="element_icon" value="custom">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="modal_element_fields_json">Fields JSON</label>
+                    <textarea class="form-textarea" id="modal_element_fields_json" name="element_fields_json" rows="6">[]</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="modal_element_default_props_json">Default Props JSON</label>
+                    <textarea class="form-textarea" id="modal_element_default_props_json" name="element_default_props_json" rows="4">{}</textarea>
+                </div>
+
+                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+                    <button type="button" class="btn" id="modal-cancel">Abbrechen</button>
+                    <button type="submit" class="btn btn-primary" id="modal-save">Speichern</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Minimal tab and modal handling
+(() => {
+    const definitionMap = {
+        layout: {{ merged_layouts|json_encode|raw }},
+        component: {{ merged_components|json_encode|raw }},
+        block: {{ merged_blocks|json_encode|raw }},
+        snippet: {{ merged_snippets|json_encode|raw }}
+    };
+
+    const tabs = document.querySelectorAll('#editor-tabs .tab-btn');
+    const panels = document.querySelectorAll('.tab-panel');
+    tabs.forEach(t => t.addEventListener('click', () => {
+        tabs.forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        const name = t.dataset.tab;
+        panels.forEach(p => { p.style.display = p.dataset.panel === name ? '' : 'none'; p.classList.toggle('active', p.dataset.panel === name); });
+    }));
+
+    const modal = document.getElementById('editor-modal');
+    const modalClose = document.getElementById('modal-close');
+    const modalCancel = document.getElementById('modal-cancel');
+    const modalForm = document.getElementById('modal-form');
+
+    function openModal(mode, type, id, def) {
+        document.getElementById('modal-title').textContent = mode === 'edit' ? 'Element bearbeiten' : 'Neues Element';
+        document.getElementById('modal_element_type').value = type;
+        document.getElementById('modal_element_id').value = id || '';
+        document.getElementById('modal_element_label').value = def?.label || '';
+        document.getElementById('modal_element_description').value = def?.description || '';
+        document.getElementById('modal_element_category').value = def?.category || 'custom';
+        document.getElementById('modal_element_icon').value = def?.icon || 'custom';
+        document.getElementById('modal_element_fields_json').value = JSON.stringify(def?.fields || [], null, 2);
+        document.getElementById('modal_element_default_props_json').value = JSON.stringify(def?.defaultProps || {}, null, 2);
+
+        // If editing existing element we should post to update endpoint
+        modalForm.action = id ? '/admin/editor/elements/update' : '/admin/editor/elements/create';
+        modal.style.display = '';
+    }
+
+    document.querySelectorAll('button[data-action="edit"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const type = btn.dataset.type;
+            const id = btn.dataset.id;
+            const def = (definitionMap[type] && definitionMap[type][id]) ? definitionMap[type][id] : {};
+            openModal('edit', type, id, def);
+        });
+    });
+
+    modalClose.addEventListener('click', () => modal.style.display = 'none');
+    modalCancel.addEventListener('click', () => modal.style.display = 'none');
+    document.getElementById('tab-new-element').addEventListener('click', () => {
+        const activeTab = document.querySelector('#editor-tabs .tab-btn.active')?.dataset.tab || 'components';
+        const typeMap = { layouts: 'layout', components: 'component', blocks: 'block', snippets: 'snippet' };
+        openModal('new', typeMap[activeTab] || 'component', '', {});
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500 – Serverfehler</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #0a0a0f; --surface: #12121a; --text: #e0e0e8; --muted: #6c6c80; --accent: #ff1744; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .error-container { text-align: center; padding: 3rem; }
+        .error-code { font-size: 8rem; font-weight: 800; background: linear-gradient(135deg, var(--accent), #ff6d00, #ffab00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; }
+        .error-title { font-size: 1.5rem; font-weight: 600; margin: 1rem 0 0.5rem; }
+        .error-text { color: var(--muted); margin-bottom: 2rem; max-width: 400px; }
+        .error-link { display: inline-block; padding: 0.75rem 2rem; background: var(--accent); color: #fff; font-weight: 600; text-decoration: none; border-radius: 2px; transition: box-shadow 0.2s; }
+        .error-link:hover { box-shadow: 0 0 20px rgba(255,23,68,0.4); }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-code">500</div>
+        <h1 class="error-title">Interner Serverfehler</h1>
+        <p class="error-text">Es ist ein unerwarteter Fehler aufgetreten. Bitte versuche es später erneut.</p>
+        <a href="/" class="error-link">Zur Startseite</a>
+    </div>
+</body>
+</html>

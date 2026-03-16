@@ -1,0 +1,68 @@
+{% extends 'base.twig' %}
+
+{% block title %}{{ t('themes.marketplace_title')|default('Theme-Marktplatz') }} – Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">{{ t('admin.dashboard')|default('Dashboard') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/admin/themes">{{ t('admin.themes')|default('Themes') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/admin/themes/marketplace">{{ t('themes.marketplace_tab')|default('Marketplace') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ theme.name }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ theme.name }}</h1>
+        <span class="page-badge">{{ theme.area == 'admin' ? t('themes.admin_theme')|default('Admin-Theme') : t('themes.frontend_theme')|default('Frontend-Theme') }}</span>
+    </div>
+    <div class="page-header-right">
+        <a href="/admin/themes/marketplace" class="btn btn-ghost">{{ t('themes.back_to_list')|default('Zur Liste') }}</a>
+        <button class="btn btn-primary" {{ not can_manage_themes ? 'disabled' : '' }}>{{ t('themes.install')|default('Installieren') }}</button>
+    </div>
+</div>
+
+<div class="theme-detail-layout">
+    <section class="card">
+        <div class="card-header"><h3 class="card-title">{{ t('themes.live_preview')|default('Live-Vorschau') }}</h3></div>
+        <div class="card-body">
+            <div class="theme-detail-preview preview-marketplace">
+                <div>
+                    <strong>{{ theme.name }}</strong>
+                    <p>{{ theme.description }}</p>
+                </div>
+            </div>
+            <div class="theme-meta-line" style="margin-top: .8rem;">
+                <span class="badge {{ theme.pricing == 'free' ? 'badge-published' : 'badge-review' }}">{{ theme.pricing == 'free' ? t('themes.free')|default('Kostenlos') : theme.price ~ ' ' ~ theme.currency }}</span>
+                <span class="text-muted">★ {{ theme.rating }}</span>
+                <span class="text-muted">{{ theme.downloads }} {{ t('themes.downloads')|default('Downloads') }}</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-header"><h3 class="card-title">{{ t('themes.features')|default('Funktionen') }}</h3></div>
+        <div class="card-body">
+            <div class="theme-tag-list" style="margin-bottom: .9rem;">
+                {% for tag in theme.tags %}
+                <span>{{ tag }}</span>
+                {% endfor %}
+            </div>
+            <div class="theme-manager-items">
+                {% for capability in theme.manager %}
+                <span>{{ capability }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="card" style="margin-top: 1rem;">
+    <div class="card-header"><h3 class="card-title">{{ t('themes.install_note_title')|default('Installationshinweis') }}</h3></div>
+    <div class="card-body">
+        <p class="text-muted" style="margin:0;">{{ t('themes.install_rule_footer')|default('Alle Themes können jederzeit installiert werden. Live aktiv ist pro Bereich immer nur das aktuell aktivierte Theme.') }}</p>
+    </div>
+</div>
+{% endblock %}

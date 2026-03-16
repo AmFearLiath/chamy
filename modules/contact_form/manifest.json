@@ -5,9 +5,9 @@
     "version": "1.0.0",
     "author": "Chamy Team",
     "license": "MIT",
-    "requires": {
-        "chamy": "^1.0"
-    },
+    "requires": [
+        "chamy@^1.0.0"
+    ],
     "entry": "module.php",
     "languages": "languages/",
     "content_types": "content-types/",

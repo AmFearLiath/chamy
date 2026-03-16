@@ -194,6 +194,11 @@ final class LiveDataProvider implements DataProviderInterface
             unset($data['roles']);
         }
 
+        // Ensure a UUID exists for the user record
+        if (empty($data['uuid'])) {
+            $data['uuid'] = $this->uuid();
+        }
+
         $id = (int) $this->db->insert('users', $data);
 
         if (!empty($roles)) {

@@ -1,0 +1,83 @@
+{% extends 'base.twig' %}
+
+{% block title %}{{ mod.name|default(mod.id) }} {{ t('modules.mod_config_suffix')|default('– Konfiguration') }} – Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">{{ t('admin.dashboard')|default('Dashboard') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/admin/modules">{{ t('admin.modules')|default('Module') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/admin/modules/config">{{ t('modules.config_tab')|default('Konfiguration') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ mod.name|default(mod.id) }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ mod.name|default(mod.id) }} – {{ t('modules.mod_config_title')|default('Konfiguration') }}</h1>
+        <span class="page-badge">v{{ mod.version|default('?') }}</span>
+    </div>
+    <div class="page-header-right">
+        <a href="/admin/modules/config" class="btn btn-ghost">{{ t('modules.back_to_config')|default('Zurück') }}</a>
+        <a href="/admin/modules/manager/{{ mod.id }}" class="btn btn-ghost">{{ t('modules.view_details')|default('Details') }}</a>
+    </div>
+</div>
+
+<section class="card">
+    <div class="card-header">
+        <h3 class="card-title">{{ t('modules.mod_config_values')|default('Einstellungen') }}</h3>
+    </div>
+    <div class="card-body">
+        {% if mod_config is empty %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <p>{{ t('modules.mod_config_empty')|default('Dieses Modul hat keine konfigurierbaren Werte.') }}</p>
+        </div>
+        {% else %}
+        <form action="{{ route('admin.modules.mod_config.update', {'id': mod.id}) }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="mod-config-form-grid">
+                {% for key, value in mod_config %}
+                <div class="form-group">
+                    <label class="form-label" for="cfg_{{ key }}">{{ key }}</label>
+
+                    {% if value is same as(true) or value is same as(false) %}
+                        {# Boolean toggle #}
+                        <label class="toggle-switch">
+                            <input type="hidden" name="config[{{ key }}]" value="0">
+                            <input type="checkbox" id="cfg_{{ key }}" name="config[{{ key }}]" value="1" {{ value ? 'checked' : '' }}>
+                            <span class="toggle-slider"></span>
+                        </label>
+
+                    {% elseif value is iterable %}
+                        {# Array / Object – show as JSON textarea #}
+                        <textarea id="cfg_{{ key }}" name="config[{{ key }}]" class="form-control form-textarea" rows="4" style="font-family:monospace;">{{ value|json_encode(constant('JSON_PRETTY_PRINT') b-or constant('JSON_UNESCAPED_UNICODE')) }}</textarea>
+                        <p class="form-hint">JSON</p>
+
+                    {% elseif value matches '/^\\d+$/' %}
+                        {# Numeric #}
+                        <input id="cfg_{{ key }}" type="number" name="config[{{ key }}]" value="{{ value }}" class="form-control">
+
+                    {% else %}
+                        {# String / fallback #}
+                        {% if value|length > 120 %}
+                        <textarea id="cfg_{{ key }}" name="config[{{ key }}]" class="form-control form-textarea" rows="3">{{ value }}</textarea>
+                        {% else %}
+                        <input id="cfg_{{ key }}" type="text" name="config[{{ key }}]" value="{{ value }}" class="form-control">
+                        {% endif %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-top:1.5rem;display:flex;gap:.75rem;">
+                <button type="submit" class="btn btn-primary">{{ t('modules.mod_config_save')|default('Konfiguration speichern') }}</button>
+                <a href="/admin/modules/config" class="btn btn-ghost">{{ t('modules.cancel')|default('Abbrechen') }}</a>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

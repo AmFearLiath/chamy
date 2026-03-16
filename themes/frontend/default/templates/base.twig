@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/themes/frontend/default/assets/css/frontend.css">
+    <link rel="stylesheet" href="{{ theme_asset('css/frontend.css') }}">
     {% block head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -18,8 +18,11 @@
         <a href="/" class="site-logo"><span>{{ site_name|default('Chamy') }}</span></a>
         <nav class="site-nav">
             <a href="/" class="{{ current_route == 'home' ? 'active' : '' }}">Start</a>
-            <a href="/seiten" class="{{ current_route == 'pages' ? 'active' : '' }}">Seiten</a>
-            <a href="/artikel" class="{{ current_route == 'articles' ? 'active' : '' }}">Artikel</a>
+            <a href="/seite/features" class="{{ current_route == 'features' ? 'active' : '' }}">Features</a>
+            <a href="/seite/pricing" class="{{ current_route == 'pricing' ? 'active' : '' }}">Pricing</a>
+            <a href="/artikel" class="{{ current_route == 'articles' ? 'active' : '' }}">Blog</a>
+            <a href="/seite/about" class="{{ current_route == 'about' ? 'active' : '' }}">Über uns</a>
+            <a href="#" class="nav-cta">Demo starten</a>
         </nav>
     </div>
 </header>
@@ -32,7 +35,7 @@
     </div>
 </footer>
 
-<script src="/themes/frontend/default/assets/js/frontend.js"></script>
+<script src="{{ theme_asset('js/frontend.js') }}"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -1,0 +1,88 @@
+{% extends 'base.twig' %}
+
+{% block title %}{{ t('themes.config_tab')|default('Konfiguration') }} – Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">{{ t('admin.dashboard')|default('Dashboard') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/admin/themes">{{ t('admin.themes')|default('Themes') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ t('themes.config_tab')|default('Konfiguration') }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ t('themes.config_tab')|default('Konfiguration') }}</h1>
+    </div>
+    <div class="page-header-right">
+        <a href="/admin/themes" class="btn btn-ghost">{{ t('themes.back_to_dashboard')|default('Zurück zum Dashboard') }}</a>
+        <a href="/admin/themes/marketplace/config" class="btn btn-secondary">{{ t('themes.marketplace_config_tab')|default('Marketplace-Konfiguration') }}</a>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 1rem;">
+    <div class="card-body">
+        <form method="get" action="/admin/themes/config" class="theme-filter-grid">
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">{{ t('themes.area')|default('Bereich') }}</label>
+                <select name="area" class="form-control">
+                    <option value="admin" {{ selected_area == 'admin' ? 'selected' : '' }}>{{ t('themes.area_admin')|default('Admin') }}</option>
+                    <option value="frontend" {{ selected_area == 'frontend' ? 'selected' : '' }}>{{ t('themes.area_frontend')|default('Frontend') }}</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">{{ t('themes.theme')|default('Theme') }}</label>
+                <select name="theme" class="form-control">
+                    <option value="">{{ t('themes.select_theme')|default('Theme auswählen') }}</option>
+                    {% for key, th in selected_area == 'admin' ? admin_themes : frontend_themes %}
+                    {% set id = key|split('/')|last %}
+                    <option value="{{ id }}" {{ selected_theme == id ? 'selected' : '' }}>{{ th.name|default(id) }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="theme-filter-actions">
+                <button class="btn btn-primary" type="submit">{{ t('themes.apply')|default('Anwenden') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<form method="post" action="/admin/themes/config">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">{{ t('themes.config_values')|default('Theme-Einstellungen') }}</h3>
+        </div>
+        <div class="card-body">
+            {% if theme_settings|length > 0 %}
+            <div class="settings-grid">
+                {% for key, setting in theme_settings %}
+                <div class="settings-item">
+                    <label class="form-label" for="cfg_{{ setting.id }}">{{ setting.key }}</label>
+                    {% if setting.type == 'boolean' %}
+                    <select id="cfg_{{ setting.id }}" name="config[{{ setting.key }}]" class="form-control" {{ not can_manage_themes ? 'disabled' : '' }}>
+                        <option value="1" {{ setting.value == '1' ? 'selected' : '' }}>{{ t('admin.yes')|default('Ja') }}</option>
+                        <option value="0" {{ setting.value == '0' ? 'selected' : '' }}>{{ t('admin.no')|default('Nein') }}</option>
+                    </select>
+                    {% elseif setting.type == 'integer' %}
+                    <input id="cfg_{{ setting.id }}" type="number" name="config[{{ setting.key }}]" class="form-control" value="{{ setting.value }}" {{ not can_manage_themes ? 'disabled' : '' }}>
+                    {% else %}
+                    <input id="cfg_{{ setting.id }}" type="text" name="config[{{ setting.key }}]" class="form-control" value="{{ setting.value }}" {{ not can_manage_themes ? 'disabled' : '' }}>
+                    {% endif %}
+                    <small class="text-muted">{{ setting.type }}</small>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">{{ t('themes.no_theme_settings')|default('Keine Theme-Einstellungen in der Gruppe "theme" gefunden.') }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="text-align: right; margin-top: 1rem;">
+        <button type="submit" class="btn btn-primary" {{ (not can_manage_themes or theme_settings|length == 0) ? 'disabled' : '' }}>{{ t('themes.save_config')|default('Konfiguration speichern') }}</button>
+    </div>
+</form>
+{% endblock %}

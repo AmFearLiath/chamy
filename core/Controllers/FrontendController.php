@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Chamy\Core\Controllers;
 
+use Chamy\Core\Editor\EditorRenderer;
 use Chamy\Core\Http\Request;
 use Chamy\Core\Http\Response;
 use Chamy\Core\Kernel;
@@ -11,10 +12,12 @@ use Chamy\Core\Kernel;
 final class FrontendController
 {
     private Kernel $kernel;
+    private EditorRenderer $renderer;
 
     public function __construct(Kernel $kernel)
     {
-        $this->kernel = $kernel;
+        $this->kernel   = $kernel;
+        $this->renderer = new EditorRenderer($kernel);
     }
 
     private function baseData(string $route = ''): array
@@ -26,11 +29,35 @@ final class FrontendController
         ];
     }
 
+    /**
+     * If the entry data contains an editor tree, render it to HTML.
+     */
+    private function renderEditorContent(array $entryData): string
+    {
+        if (empty($entryData['editor_data'])) {
+            return '';
+        }
+        $editorData = $entryData['editor_data'];
+        if (is_string($editorData)) {
+            $editorData = json_decode($editorData, true);
+        }
+        if (!is_array($editorData) || empty($editorData['root'])) {
+            return '';
+        }
+        return $this->renderer->renderFrontendHtml($editorData);
+    }
+
     /* ─── Home ─── */
 
     public function home(Request $request): Response
     {
         $data = $this->kernel->data();
+
+        // Try to load a page with slug 'startseite' for hero/editor content
+        $homePage    = $data->getContentBySlug('page', 'startseite');
+        $homeData    = $homePage['_data'] ?? [];
+        $editorHtml  = $this->renderEditorContent($homeData);
+
         $recentArticles = $data->getContentEntries('article', 'published', 6);
         $recentPages    = $data->getContentEntries('page', 'published', 6);
 
@@ -38,6 +65,9 @@ final class FrontendController
             $this->kernel->themes()->render('home.twig', array_merge($this->baseData('home'), [
                 'recent_articles' => $recentArticles,
                 'recent_pages'    => $recentPages,
+                'home_entry'      => $homePage,
+                'home_data'       => $homeData,
+                'editor_content'  => $editorHtml,
             ]), 'frontend')
         );
     }
@@ -75,10 +105,14 @@ final class FrontendController
             );
         }
 
+        $entryData   = $entry['_data'] ?? [];
+        $editorHtml  = $this->renderEditorContent($entryData);
+
         return Response::html(
             $this->kernel->themes()->render('page.twig', array_merge($this->baseData('pages'), [
-                'entry'      => $entry,
-                'entry_data' => $entry['_data'] ?? [],
+                'entry'          => $entry,
+                'entry_data'     => $entryData,
+                'editor_content' => $editorHtml,
             ]), 'frontend')
         );
     }
@@ -116,10 +150,14 @@ final class FrontendController
             );
         }
 
+        $entryData   = $entry['_data'] ?? [];
+        $editorHtml  = $this->renderEditorContent($entryData);
+
         return Response::html(
             $this->kernel->themes()->render('article.twig', array_merge($this->baseData('articles'), [
-                'entry'      => $entry,
-                'entry_data' => $entry['_data'] ?? [],
+                'entry'          => $entry,
+                'entry_data'     => $entryData,
+                'editor_content' => $editorHtml,
             ]), 'frontend')
         );
     }

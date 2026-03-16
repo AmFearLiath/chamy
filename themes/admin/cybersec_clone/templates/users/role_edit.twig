@@ -1,0 +1,89 @@
+{% extends 'base.twig' %}
+
+{% set is_edit = edit_role.id is defined and edit_role.id %}
+
+{% block title %}{{ is_edit ? t('admin.edit_role')|default('Rolle bearbeiten') : t('admin.new_role_title')|default('Neue Rolle') }} – Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">Dashboard</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/admin/users">{{ t('admin.users')|default('Benutzer') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ is_edit ? edit_role.name : t('admin.new_role_title')|default('Neue Rolle') }}</span>
+{% endblock %}
+{% block content %}
+<template id="tpl-permission-options">
+    <div class="multi-select-popup-list">
+        {% for permission in permissions %}
+        {% set is_selected = permission.key in selected_permissions %}
+        <button type="button" class="multi-select-option{% if is_selected %} selected{% endif %}" data-value="{{ permission.key }}" data-label="{{ permission.description }}"{% if is_selected %} data-selected="1" aria-disabled="true"{% endif %}>{{ permission.key }} <small class="muted">{{ permission.description }}</small></button>
+        {% endfor %}
+    </div>
+</template>
+
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ is_edit ? t('admin.edit_role')|default('Rolle bearbeiten') : t('admin.new_role_title')|default('Neue Rolle') }}</h1>
+    </div>
+</div>
+
+<form method="post" action="{{ is_edit ? '/admin/roles/' ~ edit_role.id ~ '/update' : '/admin/roles/store' }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="edit-layout">
+        <div class="edit-main">
+            <div class="card">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label" for="key">{{ t('admin.key')|default('Key') }} *</label>
+                        <input type="text" id="key" name="key" class="form-control"
+                               value="{{ edit_role.key|default('') }}" {{ is_edit ? 'readonly' : 'required' }} autocomplete="off">
+                        <small class="form-hint text-muted">{{ t('admin.role_key_hint')|default('Der Key identifiziert die Rolle systemweit und kann später nicht geändert werden.') }}</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="name">{{ t('admin.name')|default('Name') }} *</label>
+                        <input type="text" id="name" name="name" class="form-control"
+                               value="{{ edit_role.name|default('') }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="description">{{ t('admin.description')|default('Beschreibung') }}</label>
+                        <textarea id="description" name="description" class="form-control" rows="4">{{ edit_role.description|default('') }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="edit-sidebar">
+            <div class="card">
+                <div class="card-header">{{ t('admin.assigned_permissions')|default('Zugewiesene Berechtigungen') }}</div>
+                <div class="card-body">
+                    <div class="multi-select-container" data-popup-template="tpl-permission-options">
+                        <input type="hidden" name="permission_keys" value="{{ selected_permissions|join(', ') }}">
+                        <input class="multi-select-input" placeholder="{{ t('admin.comma_separated_permissions')|default('z. B. users.manage, content.edit') }}" readonly>
+                        <button type="button" class="multi-select-add" aria-label="Hinzufügen">+</button>
+                    </div>
+                    <div class="muted small">{{ t('admin.click_to_add_permissions')|default('Klicken, um Berechtigungen hinzuzufügen') }}</div>
+                </div>
+                <div class="card-footer" style="display:flex; gap:12px; align-items:center;">
+                    <a href="/admin/users" class="btn btn-secondary" data-back="auto">{{ t('admin.back')|default('Zurück') }}</a>
+                    <button type="submit" class="btn btn-primary btn-block">{{ is_edit ? t('admin.save')|default('Speichern') : t('admin.create_role_submit')|default('Rolle erstellen') }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+{% if is_edit and edit_role.key not in ['admin', 'editor', 'viewer'] %}
+<div class="card" style="margin-top: 1rem; max-width: 420px;">
+    <div class="card-header" style="color: var(--neon-red, #ff4444);">{{ t('admin.danger_zone')|default('Gefahrenzone') }}</div>
+    <div class="card-body">
+        <form method="post" action="/admin/roles/{{ edit_role.id }}/delete">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger btn-block" data-confirm="{{ t('admin.confirm_delete_role')|default('Rolle wirklich löschen?') }}">{{ t('admin.delete_role')|default('Rolle löschen') }}</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

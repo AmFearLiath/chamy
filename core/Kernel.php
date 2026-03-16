@@ -22,6 +22,7 @@ use Chamy\Core\Managers\ComponentManager;
 use Chamy\Core\Managers\CacheManager;
 use Chamy\Core\Managers\MarketplaceManager;
 use Chamy\Core\Managers\TrashManager;
+use Chamy\Core\Managers\AssetLibraryManager;
 use Chamy\Core\Data\DataProviderInterface;
 use Chamy\Core\Data\DataProviderFactory;
 use Chamy\Core\Database\Connection;
@@ -104,6 +105,7 @@ final class Kernel
         $this->initComponent();
         $this->initMarketplace();
         $this->initTrash();
+        $this->initAssetLibrary();
 
         $this->registry->bootAll();
         $this->registerRoutes();
@@ -273,6 +275,13 @@ final class Kernel
         return $manager;
     }
 
+    public function assetLibrary(): AssetLibraryManager
+    {
+        /** @var AssetLibraryManager $manager */
+        $manager = $this->registry->get('asset_library');
+        return $manager;
+    }
+
     // ------------------------------------------------------------------
     // Initialization methods
     // ------------------------------------------------------------------
@@ -383,10 +392,37 @@ final class Kernel
     private function initTheme(): void
     {
         $config = $this->config();
+
+        // Prefer persisted settings from the settings table, then fall back to env/config.
+        $adminTheme = (string) $config->get('ADMIN_THEME', 'default');
+        $frontendTheme = (string) $config->get('FRONTEND_THEME', 'default');
+
+        try {
+            $allSettings = $this->dataProvider->getSettings();
+            $themeSettings = $allSettings['theme'] ?? $allSettings['appearance'] ?? [];
+            if (is_array($themeSettings)) {
+                foreach ($themeSettings as $setting) {
+                    if (!is_array($setting)) {
+                        continue;
+                    }
+                    $key = (string) ($setting['key'] ?? '');
+                    $value = trim((string) ($setting['value'] ?? ''));
+                    if ($key === 'admin_theme' && $value !== '') {
+                        $adminTheme = $value;
+                    }
+                    if ($key === 'frontend_theme' && $value !== '') {
+                        $frontendTheme = $value;
+                    }
+                }
+            }
+        } catch (\Throwable) {
+            // Best effort: boot must not fail when settings cannot be read.
+        }
+
         $manager = new ThemeManager(
             $this,
-            $config->get('ADMIN_THEME', 'default'),
-            $config->get('FRONTEND_THEME', 'default')
+            $adminTheme,
+            $frontendTheme
         );
         $this->registry->register('theme', $manager);
     }
@@ -437,6 +473,12 @@ final class Kernel
     {
         $manager = new TrashManager($this->basePath);
         $this->registry->register('trash', $manager);
+    }
+
+    private function initAssetLibrary(): void
+    {
+        $manager = new AssetLibraryManager($this->basePath);
+        $this->registry->register('asset_library', $manager);
     }
 
     private function registerRoutes(): void

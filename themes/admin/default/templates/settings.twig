@@ -21,63 +21,1554 @@
 </div>
 {% endif %}
 
-<form method="post" action="/admin/settings">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{% set has_settings = settings|length > 0 %}
 
-    {% if settings|length > 0 %}
-    <div class="tabs" style="margin-bottom: 1rem; overflow-x:auto; white-space:nowrap;">
-        {% for group_name, group_settings in settings %}
-        <button type="button" class="tab-btn {{ loop.first ? 'active' : '' }}" data-tab="settings-{{ group_name|lower|replace({' ':'-'}) }}">{{ group_name|capitalize }}</button>
-        {% endfor %}
-    </div>
-
-    <div class="tab-panels">
+<div class="tabs" style="margin-bottom: 1rem; overflow-x:auto; white-space:nowrap;">
+    <button type="button" class="tab-btn {{ asset_active_tab == 'icons' ? 'active' : (asset_active_tab == 'fonts' ? '' : (has_settings ? 'active' : '')) }}" data-tab="icons">{{ t('admin.settings_tab_icons')|default('Icons') }}</button>
+    <button type="button" class="tab-btn {{ asset_active_tab == 'fonts' ? 'active' : '' }}" data-tab="fonts">{{ t('admin.settings_tab_fonts')|default('Schriftarten') }}</button>
     {% for group_name, group_settings in settings %}
-    <div id="tab-settings-{{ group_name|lower|replace({' ':'-'}) }}" class="tab-panel {{ loop.first ? 'active' : '' }}">
-        <div class="card" style="margin-bottom: 1.5rem;">
+    <button type="button" class="tab-btn {{ asset_active_tab == '' and loop.first ? 'active' : '' }}" data-tab="settings-{{ group_name|lower|replace({' ':'-'}) }}">{{ group_name|capitalize }}</button>
+    {% endfor %}
+</div>
+
+<div class="tab-panels">
+    <div id="tab-icons" class="tab-panel {{ asset_active_tab == 'icons' ? 'active' : (asset_active_tab == 'fonts' ? '' : (has_settings ? '' : 'active')) }}">
+        {% set tpl_result = icons_template_result is iterable ? icons_template_result : {} %}
+        {% set tpl_ok = tpl_result.success|default(false) %}
+        <div class="card" style="margin-bottom: 1rem;">
             <div class="card-header">
-                <h3 style="margin: 0; text-transform: capitalize;">{{ group_name }}</h3>
+                <h3 style="margin:0;">{{ t('admin.settings_icons_title')|default('Icon-Manager') }}</h3>
             </div>
             <div class="card-body">
-                <div class="settings-grid">
-            {% for key, setting in group_settings %}
-            <div class="form-group settings-item">
-                <label class="form-label" for="setting_{{ setting.id }}">{{ setting.key }}</label>
-
-                {% if setting.type == 'boolean' %}
-                <select name="settings[{{ setting.id }}]" id="setting_{{ setting.id }}" class="form-control" {{ not can_manage_settings ? 'disabled' : '' }}>
-                    <option value="1" {{ setting.value == '1' ? 'selected' : '' }}>{{ t('admin.yes')|default('Ja') }}</option>
-                    <option value="0" {{ setting.value == '0' ? 'selected' : '' }}>{{ t('admin.no')|default('Nein') }}</option>
-                </select>
-                {% elseif setting.type == 'integer' %}
-                <input type="number" name="settings[{{ setting.id }}]" id="setting_{{ setting.id }}"
-                       class="form-control" value="{{ setting.value }}" {{ not can_manage_settings ? 'disabled' : '' }}>
-                {% else %}
-                <input type="text" name="settings[{{ setting.id }}]" id="setting_{{ setting.id }}"
-                       class="form-control" value="{{ setting.value }}" {{ not can_manage_settings ? 'disabled' : '' }}>
+                <p class="text-muted" style="margin-bottom:1rem;">{{ t('admin.settings_icons_desc')|default('Icon-Fonts analysieren, lokal installieren und als Sets verwalten.') }}</p>
+                {% if not can_manage_icons %}
+                <div class="alert alert-warning" style="margin-bottom:1rem;">{{ t('admin.settings_assets_readonly')|default('Nur Leserechte für diesen Manager.') }}</div>
                 {% endif %}
 
-                <small class="form-hint text-muted">{{ group_name }}.{{ setting.key }} ({{ setting.type }})</small>
-            </div>
-            {% endfor %}
+                <div class="card" style="margin-bottom:1rem;">
+                    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                        <strong>{{ t('admin.settings_assets_icon_sets')|default('Icon-Sets') }}</strong>
+                        <form method="post" action="/admin/settings" style="display:flex;gap:8px;align-items:center;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="asset_action" value="icons.set_sidebar">
+                            <select name="sidebar_icon_set" class="form-control" style="min-width:180px;">
+                                <option value="">-- {{ t('admin.settings_assets_select_after_search')|default('Select') }} --</option>
+                                {% for s in icon_sets|default([]) %}
+                                <option value="{{ s.id }}" {{ current_sidebar_icon_set == s.id ? 'selected' : '' }}>{{ s.name }} ({{ s.id }})</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-primary" {{ not can_manage_icons ? 'disabled' : '' }}>{{ t('admin.settings_assets_save_source')|default('Speichern') }}</button>
+                        </form>
+                    </div>
+                    <div class="card-body" style="overflow:auto;">
+                        <table class="table" style="margin:0;">
+                            <thead>
+                                <tr>
+                                    <th>{{ t('admin.settings_assets_name')|default('Name') }}</th>
+                                    <th>{{ t('admin.settings_assets_id')|default('ID') }}</th>
+                                    <th>CSS</th>
+                                    <th>{{ t('admin.settings_assets_areas')|default('Bereiche') }}</th>
+                                    <th>{{ t('admin.settings_assets_scope')|default('Freigabe für') }}</th>
+                                    <th>{{ t('admin.settings_assets_status')|default('Status') }}</th>
+                                    <th style="text-align:right;">{{ t('admin.settings_assets_actions')|default('Aktionen') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for set in icon_sets|default([]) %}
+                                <tr>
+                                    <td>{{ set.name }}</td>
+                                    <td><code>{{ set.id }}</code></td>
+                                    <td><code>{{ set.local_css }}</code></td>
+                                    <td>{{ (set.areas|default([]))|join(', ') }}</td>
+                                    <td>{{ (set.allow_for|default([]))|join(', ') }}</td>
+                                    <td>{{ set.status|default('active') }}</td>
+                                    <td style="text-align:right;white-space:nowrap;">
+                                        <button type="button" class="btn btn-sm btn-secondary" data-open-modal="iconSourceModal" data-source-url="{{ set.source_url|default('') }}" data-source-name="{{ set.name }}" data-source-id="{{ set.id }}" data-source-package="{{ set.package|default('') }}" data-source-template="{{ set.source_template|default('') }}" data-source-version="{{ set.version|default('') }}" {{ not can_manage_icons ? 'disabled' : '' }}>{{ t('admin.settings_assets_open_analysis')|default('Details') }}</button>
+                                        <a class="btn btn-sm btn-secondary" href="/admin/settings?tab=icons&export_type=icons&export_id={{ set.id }}">{{ t('admin.settings_assets_export')|default('Export') }}</a>
+                                        <form method="post" action="/admin/settings" style="display:inline-block;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="asset_action" value="icons.delete">
+                                            <input type="hidden" name="set_id" value="{{ set.id }}">
+                                            <button type="submit" class="btn btn-sm btn-danger" data-confirm="Set wirklich löschen?" {{ not can_manage_icons ? 'disabled' : '' }}>{{ t('admin.settings_assets_delete')|default('Löschen') }}</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="7" class="text-muted">{{ t('admin.settings_assets_no_sets')|default('Keine Sets vorhanden.') }}</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="grid" style="grid-template-columns: 1.5fr 1fr; gap: 12px; align-items:start;">
+                    <div class="card">
+                        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+                            <strong>{{ t('admin.settings_assets_known_sources')|default('Bekannte Quellen') }}</strong>
+                            <button type="button" class="btn btn-sm btn-primary" data-open-modal="iconSourceModal" {{ not can_manage_icons ? 'disabled' : '' }} title="{{ t('admin.settings_assets_add_source')|default('Quelle hinzufügen') }}">+</button>
+                        </div>
+                        <div class="card-body" style="overflow:auto;">
+                            <table class="table" style="margin:0;">
+                                <thead>
+                                    <tr>
+                                        <th>{{ t('admin.settings_assets_name')|default('Name') }}</th>
+                                        <th>{{ t('admin.settings_assets_source_url')|default('Quell-URL') }}</th>
+                                        <th>{{ t('admin.settings_assets_status')|default('Status') }}</th>
+                                        <th style="text-align:right;">{{ t('admin.settings_assets_actions')|default('Aktionen') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for source in icon_sources|default([]) %}
+                                    {% set installed = false %}
+                                    {% set installed_id = '' %}
+                                    {% for s in icon_sets|default([]) %}
+                                        {% if (s.source_url is defined and s.source_url == source.url) or (s.id is defined and s.id == (source.id|default(source.name|lower|replace({' ':'-'})|raw))) %}
+                                            {% set installed = true %}
+                                            {% set installed_id = s.id %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ source.name }}</strong>
+                                            {% if installed %}
+                                            <span class="badge badge-success" style="margin-left:8px;">{{ t('admin.installed')|default('installiert') }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td><code>{{ source.url }}</code></td>
+                                        <td>{{ installed ? t('admin.installed')|default('Installiert') : (source.status|default('known')) }}</td>
+                                        <td style="text-align:right;white-space:nowrap;">
+                                            {% if installed %}
+                                            <button type="button" class="btn btn-sm btn-info" data-open-modal="iconSourceModal" data-update="1" data-source-url="{{ source.url }}" data-source-name="{{ source.name }}" data-source-id="{{ source.id|default('') }}" data-source-package="{{ source.package|default('') }}" data-source-template="{{ source.template_id|default('') }}" data-source-version="{{ source.latest_version|default('') }}" {{ not can_manage_icons ? 'disabled' : '' }} title="{{ t('admin.settings_assets_check_updates')|default('Auf Updates prüfen') }}">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 3v6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            </button>
+                                            {% else %}
+                                            <form method="post" action="/admin/settings" style="display:inline-block;margin-right:6px;">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="asset_action" value="icons.install">
+                                                <input type="hidden" name="set_name" value="{{ source.name }}">
+                                                <input type="hidden" name="set_id" value="{{ source.id|default(source.name|lower|replace({' ':'-'})|raw) }}">
+                                                <input type="hidden" name="source_url" value="{{ source.url }}">
+                                                <button type="submit" class="btn btn-sm btn-success" {{ not can_manage_icons or installed ? 'disabled' : '' }} title="{{ t('admin.settings_assets_quick_install')|default('Schnell installieren') }}">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 4V14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M8 10L12 14L16 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 19H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                            <button type="button" class="btn btn-sm btn-secondary" data-open-modal="iconSourceModal" data-source-url="{{ source.url }}" data-source-name="{{ source.name }}" data-source-id="{{ source.id|default('') }}" data-source-package="{{ source.package|default('') }}" data-source-template="{{ source.template_id|default('') }}" data-source-version="{{ source.latest_version|default('') }}" {{ not can_manage_icons ? 'disabled' : '' }} title="{{ t('admin.edit')|default('Bearbeiten') }}">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M4 20H8L18 10L14 6L4 16V20Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 8L16 12" stroke="currentColor" stroke-width="2"/></svg>
+                                            </button>
+                                            {% if installed and installed_id != '' %}
+                                            <form method="post" action="/admin/settings" style="display:inline-block;margin-left:6px;">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="asset_action" value="icons.install">
+                                                <input type="hidden" name="set_name" value="{{ source.name }}">
+                                                <input type="hidden" name="set_id" value="{{ installed_id }}">
+                                                <input type="hidden" name="source_url" value="{{ source.url }}">
+                                                <button type="submit" class="btn btn-sm btn-success" {{ not can_manage_icons ? 'disabled' : '' }} title="{{ t('admin.settings_assets_reinstall')|default('Neu installieren') }}">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 3v6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                                </button>
+                                            </form>
+                                            <form method="post" action="/admin/settings" style="display:inline-block;margin-left:6px;">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="asset_action" value="icons.delete">
+                                                <input type="hidden" name="set_id" value="{{ installed_id }}">
+                                                <button type="submit" class="btn btn-sm btn-danger" data-confirm="Set wirklich löschen?" {{ not can_manage_icons ? 'disabled' : '' }} title="{{ t('admin.settings_assets_uninstall')|default('Deinstallieren') }}">🗑</button>
+                                            </form>
+                                            {% endif %}
+                                            <form method="post" action="/admin/settings" style="display:inline-block;margin-left:6px;">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="asset_action" value="icons.source.delete">
+                                                <input type="hidden" name="source_id" value="{{ source.id|default(source.name|lower|replace({' ':'-'})|raw) }}">
+                                                <button type="submit" class="btn btn-sm btn-danger" {{ not can_manage_icons ? 'disabled' : '' }} title="{{ t('admin.delete')|default('Löschen') }}">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M5 7H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9 7V5H15V7" stroke="currentColor" stroke-width="2"/><path d="M8 10V18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 10V18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M16 10V18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr><td colspan="4" class="text-muted">{{ t('admin.settings_assets_no_sets')|default('Keine Sets vorhanden.') }}</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="asset-side-tabs">
+                                <button type="button" class="btn btn-sm btn-secondary active" data-asset-side-tab="import">{{ t('admin.settings_assets_import')|default('Import') }}</button>
+                                <button type="button" class="btn btn-sm btn-secondary" data-asset-side-tab="export">{{ t('admin.settings_assets_export')|default('Export') }}</button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="asset-side-panel active" data-asset-side-panel="import">
+                                <form method="post" action="/admin/settings" style="display:grid;gap:8px;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="asset_action" value="icons.import">
+                                    <textarea class="form-control" name="import_json" rows="10" placeholder="{{ t('admin.settings_assets_import_json')|default('Import-JSON') }}" {{ not can_manage_icons ? 'disabled' : '' }}></textarea>
+                                    <button type="submit" class="btn btn-primary" {{ not can_manage_icons ? 'disabled' : '' }}>{{ t('admin.settings_assets_import')|default('Import') }}</button>
+                                </form>
+                            </div>
+                            <div class="asset-side-panel" data-asset-side-panel="export">
+                                <textarea class="form-control" rows="10" readonly>{{ asset_export_type == 'icons' ? asset_export_payload|default('') : '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    {% endfor %}
-    </div>
-    {% else %}
-    <div class="card">
-        <div class="card-body text-center text-muted">
-            {{ t('admin.no_settings')|default('Keine Einstellungen vorhanden.') }}
+
+    <div id="iconSourceModal" class="chamy-modal" aria-hidden="true" style="display:none;">
+        <div class="chamy-modal-dialog" role="dialog" aria-modal="true" style="max-width:980px; margin:0 auto;">
+            <div class="chamy-modal-content">
+                <div class="chamy-modal-header">
+                    <h4 style="margin:0;">{{ t('admin.settings_assets_action_modal_title')|default('Analysieren / Installieren') }}</h4>
+                    <button type="button" class="btn btn-sm btn-secondary" data-close-icon-modal>&times;</button>
+                </div>
+                <div class="chamy-modal-body" style="display:grid;grid-template-columns:1.2fr 1fr;gap:14px;">
+                    <div class="card" style="margin:0;">
+                        <div class="card-header"><strong>{{ t('admin.settings_assets_link_analysis')|default('Linkanalyse') }}</strong></div>
+                        <div class="card-body" style="display:grid;gap:10px;">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                <div>
+                                    <small class="text-muted">{{ t('admin.settings_assets_installed_version')|default('Installierte Version') }}</small><br>
+                                    <strong id="icon-installed-version">—</strong>
+                                </div>
+                                <div>
+                                    <small class="text-muted">{{ t('admin.settings_assets_latest_known_version')|default('Letzte bekannte Version') }}</small><br>
+                                    <strong id="icon-latest-version">—</strong>
+                                </div>
+                            </div>
+
+                            <label>{{ t('admin.settings_assets_template')|default('Template') }}</label>
+                            <select id="icon-template-select" class="form-control" {{ not can_manage_icons ? 'disabled' : '' }}>
+                                {% for template in icon_source_templates|default([]) %}
+                                <option value="{{ template.id }}" {{ loop.first ? 'selected' : '' }}>{{ template.name }}</option>
+                                {% endfor %}
+                            </select>
+
+                            <label>{{ t('admin.settings_assets_package')|default('Paket') }}</label>
+                            <input id="icon-package-input" class="form-control" type="text" placeholder="@tabler/icons-webfont" {{ not can_manage_icons ? 'disabled' : '' }}>
+
+                            <label>{{ t('admin.settings_assets_version_select')|default('Version wählen') }}</label>
+                            <input id="icon-version-input" class="form-control" type="text" placeholder="latest oder 3.35.0" {{ not can_manage_icons ? 'disabled' : '' }}>
+
+                            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:start;">
+                                <div>
+                                    <label>CSS</label>
+                                    <textarea id="icon-css-list" class="form-control" rows="6" placeholder="https://cdn.jsdelivr.net/npm/{package}@{version}/dist/tabler-icons.min.css\nhttps://unpkg.com/{package}@{version}/dist/icons.css" {{ not can_manage_icons ? 'disabled' : '' }}></textarea>
+                                </div>
+                                <div>
+                                    <label>JS</label>
+                                    <textarea id="icon-js-list" class="form-control" rows="6" placeholder="https://cdn.jsdelivr.net/npm/{package}@{version}/dist/icons.min.js" {{ not can_manage_icons ? 'disabled' : '' }}></textarea>
+                                </div>
+                                <div>
+                                    <label>Fonts</label>
+                                    <textarea id="icon-font-list" class="form-control" rows="6" placeholder="https://cdn.jsdelivr.net/npm/{package}@{version}/fonts/tabler-icons.woff2" {{ not can_manage_icons ? 'disabled' : '' }}></textarea>
+                                </div>
+                            </div>
+
+                            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                                <small class="text-muted">{{ t('admin.settings_assets_optional_check')|default('Optionale Prüfung, keine Voraussetzung für Installation.') }}</small>
+                                <button type="button" id="icon-check-package-btn" class="btn btn-secondary" {{ not can_manage_icons ? 'disabled' : '' }}>{{ t('admin.settings_assets_check_url')|default('Verfügbarkeit prüfen') }}</button>
+                            </div>
+                            <div id="icon-check-results" class="asset-check-results" style="display:none;"></div>
+                        </div>
+                    </div>
+
+                    <div class="card" style="margin:0;">
+                        <div class="card-header"><strong>{{ t('admin.settings_assets_settings_tabs')|default('Einstellungen') }}</strong></div>
+                        <div class="card-body">
+                            <div class="asset-modal-tabs" style="display:flex;gap:8px;margin-bottom:10px;">
+                                <button type="button" class="btn btn-sm btn-secondary active" data-modal-tab="source">{{ t('admin.settings_assets_source_tab')|default('Quelle') }}</button>
+                                <button type="button" class="btn btn-sm btn-secondary" data-modal-tab="templates">{{ t('admin.settings_assets_templates_tab')|default('Templates') }}</button>
+                                <button type="button" class="btn btn-sm btn-secondary" data-modal-tab="install">{{ t('admin.settings_assets_install_tab')|default('Installieren') }}</button>
+                            </div>
+
+                            <div class="asset-modal-panel active" data-modal-panel="source">
+                                <form method="post" action="/admin/settings" style="display:grid;gap:8px;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="asset_action" value="icons.source.add">
+                                    <input type="hidden" name="source_template_id" id="icon-source-template-id">
+                                    <input type="hidden" name="source_package" id="icon-source-package">
+                                    <input type="hidden" name="source_latest_version" id="icon-source-latest-version">
+                                    <input type="text" name="source_name" id="icon-source-name" class="form-control" placeholder="{{ t('admin.settings_assets_name')|default('Name') }}" required {{ not can_manage_icons ? 'disabled' : '' }}>
+                                    <input type="text" name="source_id" id="icon-source-id" class="form-control" placeholder="{{ t('admin.settings_assets_id')|default('ID') }}" {{ not can_manage_icons ? 'disabled' : '' }}>
+                                    <input type="url" name="source_url" id="icon-source-url-save" class="form-control" placeholder="{{ t('admin.settings_assets_source_url')|default('Quell-URL') }}" {{ not can_manage_icons ? 'disabled' : '' }}>
+                                    <div style="text-align:right;">
+                                        <button type="submit" class="btn btn-secondary" {{ not can_manage_icons ? 'disabled' : '' }}>{{ t('admin.settings_assets_save_source')|default('Quelle speichern') }}</button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div class="asset-modal-panel" data-modal-panel="templates">
+                                <div style="max-height:170px;overflow:auto;margin-bottom:10px;">
+                                    <table class="table" style="margin:0;">
+                                        <thead><tr><th>{{ t('admin.settings_assets_name')|default('Name') }}</th><th>ID</th><th></th></tr></thead>
+                                        <tbody>
+                                            {% for template in icon_source_templates|default([]) %}
+                                            <tr>
+                                                <td>{{ template.name }}</td>
+                                                <td><code>{{ template.id }}</code></td>
+                                                <td style="text-align:right;">
+                                                    {% if template.status|default('') != 'default' %}
+                                                    <form method="post" action="/admin/settings" style="display:inline-block;">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                        <input type="hidden" name="asset_action" value="icons.template.delete">
+                                                        <input type="hidden" name="template_id" value="{{ template.id }}">
+                                                        <button type="submit" class="btn btn-sm btn-danger" {{ not can_manage_icons ? 'disabled' : '' }}>{{ t('admin.settings_assets_delete')|default('Löschen') }}</button>
+                                                    </form>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <form method="post" action="/admin/settings" style="display:grid;gap:8px;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="asset_action" value="icons.template.add">
+                                    <input type="text" class="form-control" name="template_new_name" placeholder="{{ t('admin.settings_assets_template_name')|default('Template-Name') }}" required>
+                                    <input type="text" class="form-control" name="template_new_id" placeholder="{{ t('admin.settings_assets_template_id')|default('Template-ID') }}" required>
+                                    <select class="form-control" name="template_new_type">
+                                        <option value="npm">npm</option>
+                                        <option value="generic">generic</option>
+                                    </select>
+                                    <input type="text" class="form-control" name="template_new_url_template" placeholder="https://cdn.../{package}@{version}/{path}" required>
+                                    <input type="text" class="form-control" name="template_new_versions_api" placeholder="https://registry.npmjs.org/{package}">
+                                    <input type="text" class="form-control" name="template_new_default_path" placeholder="dist/icons.css">
+                                    <div style="text-align:right;">
+                                        <button type="submit" class="btn btn-secondary" {{ not can_manage_icons ? 'disabled' : '' }}>{{ t('admin.settings_assets_add_template')|default('Template hinzufügen') }}</button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div class="asset-modal-panel" data-modal-panel="install">
+                                <form id="icon-template-install-form" method="post" action="/admin/settings" style="display:grid;gap:8px;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="asset_action" value="icons.template.install">
+                                    <input type="hidden" name="template_id" id="icon-install-template-id">
+                                    <input type="hidden" name="template_package" id="icon-install-package">
+                                    <input type="hidden" name="template_version" id="icon-install-version">
+                                    <input type="hidden" name="template_css_urls" id="icon-install-css">
+                                    <input type="hidden" name="template_js_urls" id="icon-install-js">
+                                    <input type="hidden" name="template_font_urls" id="icon-install-fonts">
+                                    <input type="text" name="set_name" id="icon-set-name" class="form-control" placeholder="{{ t('admin.settings_assets_name')|default('Name') }}" required {{ not can_manage_icons ? 'disabled' : '' }}>
+                                    <input type="text" name="set_id" id="icon-set-id" class="form-control" placeholder="{{ t('admin.settings_assets_id')|default('ID') }}" {{ not can_manage_icons ? 'disabled' : '' }}>
+                                    <select class="form-control themed-multiselect" name="areas[]" multiple {{ not can_manage_icons ? 'disabled' : '' }}>
+                                        <option value="admin" selected>{{ t('themes.area_admin')|default('Admin') }}</option>
+                                        <option value="frontend" selected>{{ t('themes.area_frontend')|default('Frontend') }}</option>
+                                    </select>
+                                    <select class="form-control themed-multiselect" name="allow_for[]" multiple {{ not can_manage_icons ? 'disabled' : '' }}>
+                                        <option value="system" selected>System</option>
+                                        <option value="theme" selected>Theme</option>
+                                        <option value="mods" selected>Mods</option>
+                                    </select>
+                                    <div style="text-align:right;">
+                                        <button type="submit" class="btn btn-primary" {{ not can_manage_icons ? 'disabled' : '' }}>{{ t('admin.settings_assets_install')|default('Installieren') }}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    {% endif %}
 
-    {% if settings|length > 0 %}
-    <div style="text-align: right;">
-        <button type="submit" class="btn btn-primary" {{ not can_manage_settings ? 'disabled' : '' }}>{{ t('admin.save_settings')|default('Einstellungen speichern') }}</button>
+    <style>
+        .chamy-modal { position: fixed; inset: 0; z-index: 2100; display: flex; align-items: center; justify-content: center; }
+        .chamy-modal-dialog { width: calc(100% - 48px); box-shadow: 0px 0px 40px 10px rgba(var(--accent-rgb), 0.2); border-radius: 20px; }
+        .chamy-modal-content { background: rgba(11, 13, 14, 0.92); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; overflow: visible; }
+        .chamy-modal-header { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid rgba(255,255,255,0.04); }
+        .chamy-modal-body { padding: 14px; }
+        .themed-multiselect { min-height: 78px; background: var(--panel-bg, #10141a); color: var(--text, #e2e5e8); border: 1px solid rgba(255,255,255,0.08); }
+        .themed-multiselect option { background: var(--panel-bg, #10141a); color: var(--text, #e2e5e8); }
+        .table code, .card code { word-break: break-all; }
+        .card-body, .table, .table tbody { scrollbar-color: rgba(255,255,255,0.14) transparent; }
+        .card-body::-webkit-scrollbar, .table-responsive::-webkit-scrollbar, .themed-multiselect::-webkit-scrollbar { width: 8px; height: 8px; }
+        .card-body::-webkit-scrollbar-thumb, .table-responsive::-webkit-scrollbar-thumb, .themed-multiselect::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 6px; }
+        .asset-check-results { display:grid; gap:6px; padding:8px; border:1px solid rgba(255,255,255,0.08); border-radius:8px; max-height:150px; overflow:auto; }
+        .asset-check-line { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+        .asset-check-line code { font-size:12px; }
+        .asset-side-tabs, .asset-modal-tabs { display:flex; gap:8px; }
+        .asset-side-panel, .asset-modal-panel { display:none; }
+        .asset-side-panel.active, .asset-modal-panel.active { display:block; }
+        /* API badge custom styles (use specific classes to avoid theme overrides) */
+        button.api-badge { padding:4px 8px; border-radius:8px; font-size:0.85rem; min-width:56px; display:inline-block; cursor:pointer; border:1px solid rgba(0,0,0,0.06); }
+        button.api-badge.api-badge-ok { background-color:#28a745 !important; color:#fff !important; border-color:transparent !important; }
+        button.api-badge.api-badge-warning { background-color:#f39c12 !important; color:#fff !important; border-color:transparent !important; }
+        button.api-badge.api-badge-error { background-color:#e74c3c !important; color:#fff !important; border-color:transparent !important; }
+        button.api-badge.api-badge-checking { background-color:#f1c40f !important; color:#111 !important; border-color:transparent !important; }
+        /* Tooltip for API Key helper */
+        .tooltip-wrapper { position: relative; display:inline-block; }
+        .tooltip-box { display:none; position:absolute; left:0; top:calc(100% + 8px); background: rgba(11,13,14,0.96); color: #e6e8ea; padding:12px; border-radius:8px; width:340px; font-size:0.9rem; box-shadow:0 6px 24px rgba(0,0,0,0.45); border:1px solid rgba(255,255,255,0.04); z-index:2200; }
+        .tooltip-wrapper:focus-within .tooltip-box, .tooltip-wrapper:hover .tooltip-box { display:block; }
+        .tooltip-box h4 { margin:0 0 8px 0; font-size:0.95rem; }
+        .tooltip-box ul { margin:6px 0 0 18px; padding:0; }
+        .tooltip-box li { margin-bottom:6px; }
+    </style>
+
+    <script>
+        (function () {
+            var modal = document.getElementById('iconSourceModal');
+            var checkBtn = document.getElementById('icon-check-package-btn');
+            var checkResults = document.getElementById('icon-check-results');
+            var templateSelect = document.getElementById('icon-template-select');
+            var packageInput = document.getElementById('icon-package-input');
+            var versionInput = document.getElementById('icon-version-input');
+            var cssList = document.getElementById('icon-css-list');
+            var jsList = document.getElementById('icon-js-list');
+            var fontList = document.getElementById('icon-font-list');
+
+            function textOrEmpty(el) {
+                return el && typeof el.value === 'string' ? el.value.trim() : '';
+            }
+
+            function mirrorInstallFields() {
+                var mTemplate = document.getElementById('icon-install-template-id');
+                var mPackage = document.getElementById('icon-install-package');
+                var mVersion = document.getElementById('icon-install-version');
+                var mCss = document.getElementById('icon-install-css');
+                var mJs = document.getElementById('icon-install-js');
+                var mFonts = document.getElementById('icon-install-fonts');
+                var sTemplate = document.getElementById('icon-source-template-id');
+                var sPackage = document.getElementById('icon-source-package');
+                var sLatest = document.getElementById('icon-source-latest-version');
+
+                if (mTemplate) mTemplate.value = textOrEmpty(templateSelect);
+                if (mPackage) mPackage.value = textOrEmpty(packageInput);
+                if (mVersion) mVersion.value = textOrEmpty(versionInput) || 'latest';
+                if (mCss) mCss.value = cssList ? cssList.value : '';
+                if (mJs) mJs.value = jsList ? jsList.value : '';
+                if (mFonts) mFonts.value = fontList ? fontList.value : '';
+
+                if (sTemplate) sTemplate.value = textOrEmpty(templateSelect);
+                if (sPackage) sPackage.value = textOrEmpty(packageInput);
+                if (sLatest) sLatest.value = document.getElementById('icon-latest-version') ? document.getElementById('icon-latest-version').textContent.trim() : '';
+            }
+
+            function activateSideTab(tab) {
+                document.querySelectorAll('[data-asset-side-tab]').forEach(function(btn){ btn.classList.remove('active'); });
+                document.querySelectorAll('[data-asset-side-panel]').forEach(function(panel){ panel.classList.remove('active'); });
+                var activeBtn = document.querySelector('[data-asset-side-tab="' + tab + '"]');
+                var activePanel = document.querySelector('[data-asset-side-panel="' + tab + '"]');
+                if (activeBtn) activeBtn.classList.add('active');
+                if (activePanel) activePanel.classList.add('active');
+            }
+
+            function activateModalTab(tab) {
+                document.querySelectorAll('[data-modal-tab]').forEach(function(btn){ btn.classList.remove('active'); });
+                document.querySelectorAll('[data-modal-panel]').forEach(function(panel){ panel.classList.remove('active'); });
+                var activeBtn = document.querySelector('[data-modal-tab="' + tab + '"]');
+                var activePanel = document.querySelector('[data-modal-panel="' + tab + '"]');
+                if (activeBtn) activeBtn.classList.add('active');
+                if (activePanel) activePanel.classList.add('active');
+            }
+
+            function getTemplateById(id) {
+                if (!window.__ICON_TEMPLATES || !Array.isArray(window.__ICON_TEMPLATES)) return null;
+                for (var i = 0; i < window.__ICON_TEMPLATES.length; i++) {
+                    if (window.__ICON_TEMPLATES[i] && window.__ICON_TEMPLATES[i].id === id) return window.__ICON_TEMPLATES[i];
+                }
+                return null;
+            }
+
+            function parseLines(text) {
+                if (!text) return [];
+                return String(text).split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean);
+            }
+
+            function withTokens(value, pkg, version) {
+                return String(value || '').replace(/\{package\}/g, pkg || '').replace(/\{version\}/g, version || 'latest');
+            }
+
+            function fillDefaultsForTemplate() {
+                var tpl = getTemplateById(textOrEmpty(templateSelect));
+                if (!tpl) return;
+                if (cssList && textOrEmpty(cssList) === '') {
+                    if (tpl.url_template && tpl.default_path) {
+                        cssList.value = tpl.url_template.replace('{path}', tpl.default_path);
+                    }
+                }
+            }
+
+            function getInstalledVersionForPackage(pkg) {
+                if (!pkg || !window.__ICON_SETS || !Array.isArray(window.__ICON_SETS)) return '';
+                for (var i = 0; i < window.__ICON_SETS.length; i++) {
+                    var set = window.__ICON_SETS[i] || {};
+                    if (set.package && set.package === pkg) return String(set.version || '');
+                }
+                return '';
+            }
+
+            function updateVersionInfo(installed, latest) {
+                var i = document.getElementById('icon-installed-version');
+                var l = document.getElementById('icon-latest-version');
+                if (i) i.textContent = installed || '—';
+                if (l) l.textContent = latest || '—';
+                mirrorInstallFields();
+            }
+
+            function fetchLatestVersion() {
+                var tpl = getTemplateById(textOrEmpty(templateSelect));
+                var pkg = textOrEmpty(packageInput);
+                var installed = getInstalledVersionForPackage(pkg);
+                if (!tpl || !pkg) {
+                    updateVersionInfo(installed, '');
+                    return;
+                }
+
+                var latestFallback = '';
+                if (window.__ICON_SOURCES && Array.isArray(window.__ICON_SOURCES)) {
+                    for (var i = 0; i < window.__ICON_SOURCES.length; i++) {
+                        var src = window.__ICON_SOURCES[i] || {};
+                        if (src.package === pkg && src.latest_version) {
+                            latestFallback = String(src.latest_version);
+                            break;
+                        }
+                    }
+                }
+
+                if (!tpl.versions_api) {
+                    updateVersionInfo(installed, latestFallback);
+                    return;
+                }
+
+                var apiUrl = String(tpl.versions_api).replace('{package}', encodeURIComponent(pkg));
+                fetch(apiUrl, { headers: { 'Accept': 'application/json' } })
+                    .then(function (res) { return res.json(); })
+                    .then(function (json) {
+                        var latest = json && json['dist-tags'] && json['dist-tags'].latest ? String(json['dist-tags'].latest) : latestFallback;
+                        updateVersionInfo(installed, latest);
+                        if (versionInput && textOrEmpty(versionInput) === '') {
+                            versionInput.value = latest || 'latest';
+                        }
+                    })
+                    .catch(function () {
+                        updateVersionInfo(installed, latestFallback);
+                        if (versionInput && textOrEmpty(versionInput) === '') {
+                            versionInput.value = latestFallback || 'latest';
+                        }
+                    });
+            }
+
+            function openModal(url, name, id, pkg, tplId, version) {
+                if (!modal) return;
+                modal.style.display = 'flex';
+                modal.setAttribute('aria-hidden', 'false');
+
+                var sourceName = document.getElementById('icon-source-name');
+                var sourceId = document.getElementById('icon-source-id');
+                var sourceUrl = document.getElementById('icon-source-url-save');
+                var setName = document.getElementById('icon-set-name');
+                var setId = document.getElementById('icon-set-id');
+
+                if (sourceName) sourceName.value = name || '';
+                if (sourceId) sourceId.value = id || '';
+                if (sourceUrl) sourceUrl.value = url || '';
+                if (setName) setName.value = name || '';
+                if (setId) setId.value = id || '';
+
+                if (packageInput) packageInput.value = pkg || '';
+                if (versionInput) versionInput.value = version || '';
+
+                if (templateSelect) {
+                    var picked = tplId || textOrEmpty(templateSelect);
+                    if (picked) templateSelect.value = picked;
+                }
+
+                fillDefaultsForTemplate();
+                fetchLatestVersion();
+                mirrorInstallFields();
+
+                if (checkResults) {
+                    checkResults.style.display = 'none';
+                    checkResults.innerHTML = '';
+                }
+            }
+
+            function closeModal() {
+                if (!modal) return;
+                modal.style.display = 'none';
+                modal.setAttribute('aria-hidden', 'true');
+            }
+
+            function runOptionalCheck() {
+                if (!checkResults) return;
+
+                var pkg = textOrEmpty(packageInput);
+                var ver = textOrEmpty(versionInput) || 'latest';
+                var lines = [];
+                parseLines(cssList ? cssList.value : '').forEach(function (u) { lines.push({ type: 'css', url: withTokens(u, pkg, ver) }); });
+                parseLines(jsList ? jsList.value : '').forEach(function (u) { lines.push({ type: 'js', url: withTokens(u, pkg, ver) }); });
+                parseLines(fontList ? fontList.value : '').forEach(function (u) { lines.push({ type: 'font', url: withTokens(u, pkg, ver) }); });
+
+                var packageOk = pkg !== '';
+                var html = '<div class="asset-check-line"><strong>Paket</strong><span class="badge ' + (packageOk ? 'badge-success' : 'badge-danger') + '">' + (packageOk ? 'OK' : 'Fehlt') + '</span></div>';
+                checkResults.innerHTML = html;
+                checkResults.style.display = 'grid';
+
+                lines.forEach(function (entry) {
+                    var row = document.createElement('div');
+                    row.className = 'asset-check-line';
+                    row.innerHTML = '<code>' + entry.type.toUpperCase() + ': ' + entry.url + '</code><span class="badge badge-secondary">Prüfe...</span>';
+                    checkResults.appendChild(row);
+                    fetch(entry.url, { method: 'HEAD', mode: 'no-cors' })
+                        .then(function () {
+                            row.lastChild.className = 'badge badge-success';
+                            row.lastChild.textContent = 'OK';
+                        })
+                        .catch(function () {
+                            row.lastChild.className = 'badge badge-warning';
+                            row.lastChild.textContent = 'Unbestätigt';
+                        });
+                });
+            }
+
+            document.addEventListener('click', function (e) {
+                var sideTab = e.target.closest('[data-asset-side-tab]');
+                if (sideTab) {
+                    activateSideTab(sideTab.getAttribute('data-asset-side-tab'));
+                }
+
+                var modalTab = e.target.closest('[data-modal-tab]');
+                if (modalTab) {
+                    activateModalTab(modalTab.getAttribute('data-modal-tab'));
+                }
+
+                var opener = e.target.closest('[data-open-modal="iconSourceModal"]');
+                if (opener) {
+                    openModal(
+                        opener.getAttribute('data-source-url') || '',
+                        opener.getAttribute('data-source-name') || '',
+                        opener.getAttribute('data-source-id') || '',
+                        opener.getAttribute('data-source-package') || '',
+                        opener.getAttribute('data-source-template') || '',
+                        opener.getAttribute('data-source-version') || ''
+                    );
+                    activateModalTab('source');
+                }
+                if (e.target.closest('[data-close-icon-modal]')) {
+                    closeModal();
+                }
+            });
+
+            if (checkBtn) {
+                checkBtn.addEventListener('click', runOptionalCheck);
+            }
+            [templateSelect, packageInput, versionInput, cssList, jsList, fontList].forEach(function (el) {
+                if (!el) return;
+                el.addEventListener('change', function () {
+                    mirrorInstallFields();
+                    if (el === templateSelect || el === packageInput) {
+                        fillDefaultsForTemplate();
+                        fetchLatestVersion();
+                    }
+                });
+                el.addEventListener('input', mirrorInstallFields);
+            });
+            activateSideTab('import');
+            mirrorInstallFields();
+        })();
+    </script>
+
+    <script>
+        // Expose server-provided sources/sets to modal JS for lookups
+        window.__ICON_SOURCES = {{ icon_sources|default([])|json_encode|raw }};
+        window.__ICON_SETS = {{ icon_sets|default([])|json_encode|raw }};
+        window.__ICON_TEMPLATES = {{ icon_source_templates|default([])|json_encode|raw }};
+    </script>
+
+
+    <div id="tab-fonts" class="tab-panel {{ asset_active_tab == 'fonts' ? 'active' : '' }}">
+        {% set preview_set = font_sets|default([])|first %}
+        <div class="card" style="margin-bottom:1rem;">
+            <div class="card-header"><h3 style="margin:0;">{{ t('admin.settings_fonts_title')|default('Font-Manager') }}</h3></div>
+            <div class="card-body">
+                <p class="text-muted" style="margin-bottom:1rem;">{{ t('admin.settings_fonts_desc')|default('Webfonts analysieren, vollständig lokal installieren und in Themes verfügbar machen.') }}</p>
+                {% if not can_manage_fonts %}
+                <div class="alert alert-warning" style="margin-bottom:1rem;">{{ t('admin.settings_assets_readonly')|default('Nur Leserechte für diesen Manager.') }}</div>
+                {% endif %}
+
+                <div class="card" style="margin-bottom:1rem;">
+                    <div class="card-header"><strong>{{ t('admin.settings_assets_font_sets')|default('Installierte Font-Sets') }}</strong></div>
+                    <div class="card-body" style="overflow:auto;">
+                        <table class="table" style="margin:0;">
+                            <thead>
+                                <tr>
+                                    <th>{{ t('admin.settings_assets_name')|default('Name') }}</th>
+                                    <th>{{ t('admin.settings_assets_id')|default('ID') }}</th>
+                                    <th>{{ t('admin.settings_assets_provider')|default('Anbieter') }}</th>
+                                    <th>CSS</th>
+                                    <th>{{ t('admin.settings_assets_preview')|default('Vorschau') }}</th>
+                                    <th>{{ t('admin.settings_assets_status')|default('Status') }}</th>
+                                    <th style="text-align:right;">{{ t('admin.settings_assets_actions')|default('Aktionen') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for set in font_sets|default([]) %}
+                                <tr>
+                                    <td>{{ set.name }}</td>
+                                    <td><code>{{ set.id }}</code></td>
+                                    <td>{{ set.provider|default('custom') }}</td>
+                                    <td><code>{{ set.local_css|default('') }}</code></td>
+                                    <td>
+                                        <div class="font-inline-preview" style="font-family:'{{ set.name|e('html_attr') }}', sans-serif; font-size:15px; line-height:1.25;">
+                                            Aa Bb Cc 0123
+                                        </div>
+                                    </td>
+                                    <td>{{ set.status|default('active') }}</td>
+                                    <td style="text-align:right;white-space:nowrap;">
+                                        <button
+                                            type="button"
+                                            class="btn btn-sm btn-secondary"
+                                            data-font-preview
+                                            data-font-detail="1"
+                                            data-font-css="{{ set.local_css|default('') }}"
+                                            data-font-family="{{ set.name|e('html_attr') }}"
+                                            data-font-id="{{ set.id|e('html_attr') }}"
+                                            data-font-provider="{{ set.provider|default('custom')|e('html_attr') }}"
+                                            data-font-status="{{ set.status|default('active')|e('html_attr') }}"
+                                            data-font-source="{{ set.source_url|default('')|e('html_attr') }}"
+                                            data-font-styles="{{ (set.styles|default([]))|join(', ')|e('html_attr') }}"
+                                            data-font-assets="{{ (set.assets|default([]))|length }}"
+                                        >{{ t('admin.settings_assets_preview')|default('Vorschau') }}</button>
+                                        <form method="post" action="/admin/settings" style="display:inline-block; margin-left:6px;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="asset_action" value="fonts.install">
+                                            <input type="hidden" name="set_name" value="{{ set.name }}">
+                                            <input type="hidden" name="set_id" value="{{ set.id }}">
+                                            <input type="hidden" name="provider" value="{{ set.provider|default('custom') }}">
+                                            <input type="hidden" name="source_url" value="{{ set.source_url|default('') }}">
+                                            <button type="submit" class="btn btn-sm btn-success" {{ not can_manage_fonts ? 'disabled' : '' }}>{{ t('admin.settings_assets_reinstall')|default('Neu installieren') }}</button>
+                                        </form>
+                                        <a class="btn btn-sm btn-secondary" href="/admin/settings?tab=fonts&export_type=fonts&export_id={{ set.id }}">{{ t('admin.settings_assets_export')|default('Export') }}</a>
+                                        <form method="post" action="/admin/settings" style="display:inline-block; margin-left:6px;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="asset_action" value="fonts.delete">
+                                            <input type="hidden" name="set_id" value="{{ set.id }}">
+                                            <button type="submit" class="btn btn-sm btn-danger" data-confirm="Set wirklich löschen?" {{ not can_manage_fonts ? 'disabled' : '' }}>{{ t('admin.settings_assets_delete')|default('Löschen') }}</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="7" class="text-muted">{{ t('admin.settings_assets_no_sets')|default('Keine Sets vorhanden.') }}</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="grid" style="grid-template-columns:1.25fr 1fr; gap:12px; align-items:start;">
+                    <div class="card">
+                        <div class="card-header"><strong>{{ t('admin.settings_assets_preview')|default('Vorschau') }}</strong></div>
+                        <div class="card-body" style="display:grid;gap:10px;">
+                            <input id="fontPreviewFamily" class="form-control" type="text" value="{{ preview_set.name|default('Inter') }}" placeholder="{{ t('admin.settings_assets_font_family')|default('Font-Familie') }}">
+                            <input id="fontPreviewText" class="form-control" type="text" value="Sphinx of black quartz, judge my vow. 0123456789" placeholder="{{ t('admin.settings_assets_preview_text')|default('Vorschautext') }}">
+                            <input id="fontPreviewSize" class="form-control" type="number" min="12" max="72" value="32">
+                            <div id="fontPreviewBox" class="card" style="padding:14px; font-family:'{{ preview_set.name|default('Inter') }}', sans-serif; font-size:32px; line-height:1.3; min-height:120px; display:flex; align-items:center;">Sphinx of black quartz, judge my vow. 0123456789</div>
+                            <small id="fontPreviewMeta" class="text-muted">{{ preview_set.local_css|default('') }}</small>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; gap:12px;">
+                        <div class="card">
+                            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                                <strong>{{ t('admin.settings_assets_search')|default('Suche') }}</strong>
+                                <div style="display:flex;gap:8px;align-items:center;">
+                                    <button id="btn-open-analyze" type="button" class="btn btn-sm btn-outline-secondary">{{ t('admin.settings_assets_analyze')|default('Analysieren') }}</button>
+                                    <button id="btn-open-import" type="button" class="btn btn-sm btn-outline-secondary">{{ t('admin.settings_assets_import')|default('Import/Export') }}</button>
+                                    <button id="googleApiBadge" type="button" class="btn btn-sm api-badge" title="{{ t('admin.settings_api_status')|default('API') }}">API</button>
+                                </div>
+                            </div>
+                            <div class="card-body" style="display:grid;gap:10px;">
+                                <div style="display:grid;gap:8px;">
+                                    <div style="display:grid;grid-template-columns:1fr auto;gap:8px;">
+                                        <input id="liveGoogleQ" class="form-control" type="text" placeholder="{{ t('admin.settings_assets_google_search')|default('Google Fonts Suche') }}">
+                                        <select id="livePerPage" class="form-control" style="width:120px;">
+                                            <option value="5">5</option>
+                                            <option value="10" selected>10</option>
+                                            <option value="20">20</option>
+                                        </select>
+                                    </div>
+                                    <div style="display:flex;gap:8px;align-items:center;">
+                                        <label class="form-label" style="margin:0;">{{ t('admin.settings_assets_filter_category')|default('Kategorie') }}</label>
+                                        <select id="liveCategoryFilter" class="form-control" style="width:170px;">
+                                            <option value="">{{ t('admin.settings_assets_filter_all')|default('Alle') }}</option>
+                                        </select>
+                                        <select id="liveSubcategoryFilter" class="form-control" style="width:190px;display:none;"></select>
+                                    </div>
+                                    <div style="display:flex;gap:8px;align-items:center;">
+                                        <label class="form-label" style="margin:0;margin-right:8px;">{{ t('admin.settings_assets_filter_style')|default('Filter: Stil') }}</label>
+                                        <select id="liveStyleFilter" class="form-control" style="width:160px;">
+                                            <option value="">{{ t('admin.settings_assets_filter_all')|default('Alle') }}</option>
+                                            <option value="400">Regular (400)</option>
+                                            <option value="700">Bold (700)</option>
+                                            <option value="italic">Italic</option>
+                                        </select>
+                                    </div>
+                                    <div id="googleSearchResults" style="display:grid;gap:6px;max-height:260px;overflow:auto;"></div>
+                                    <div id="googleSearchPager" style="display:flex;gap:6px;justify-content:center;margin-top:6px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    {% endif %}
-</form>
+
+    <script>
+        (function () {
+            var familyInput = document.getElementById('fontPreviewFamily');
+            var textInput = document.getElementById('fontPreviewText');
+            var sizeInput = document.getElementById('fontPreviewSize');
+            var previewBox = document.getElementById('fontPreviewBox');
+            var previewMeta = document.getElementById('fontPreviewMeta');
+            var detailModal = document.getElementById('modal-font-detail');
+
+            function openDetailModal() {
+                if (!detailModal) return;
+                detailModal.style.display = 'flex';
+                detailModal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function setDetailField(id, value) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                el.textContent = value || '-';
+            }
+
+            function renderDetailPreview(family) {
+                var box = document.getElementById('fontDetailPreview');
+                if (!box) return;
+                box.style.fontFamily = "'" + family + "', sans-serif";
+            }
+
+            function renderPreview() {
+                if (!previewBox) return;
+                var family = (familyInput && familyInput.value ? familyInput.value : 'Inter').trim();
+                var text = textInput && textInput.value ? textInput.value : 'Sphinx of black quartz, judge my vow. 0123456789';
+                var size = sizeInput && sizeInput.value ? parseInt(sizeInput.value, 10) : 32;
+                if (Number.isNaN(size) || size < 12) size = 12;
+                if (size > 72) size = 72;
+
+                previewBox.style.fontFamily = "'" + family + "', sans-serif";
+                previewBox.style.fontSize = size + 'px';
+                previewBox.textContent = text;
+            }
+
+            document.addEventListener('click', function (e) {
+                var trigger = e.target.closest('[data-font-preview]');
+                if (!trigger) return;
+                var css = trigger.getAttribute('data-font-css') || '';
+                var family = trigger.getAttribute('data-font-family') || '';
+                if (css && window.ChamyFontLoader && typeof window.ChamyFontLoader.load === 'function') {
+                    window.ChamyFontLoader.load(css);
+                }
+                if (familyInput && family) {
+                    familyInput.value = family;
+                }
+                if (previewMeta) {
+                    previewMeta.textContent = css;
+                }
+                renderPreview();
+
+                if (trigger.hasAttribute('data-font-detail')) {
+                    setDetailField('fontDetailId', trigger.getAttribute('data-font-id') || '');
+                    setDetailField('fontDetailProvider', trigger.getAttribute('data-font-provider') || '');
+                    setDetailField('fontDetailStyles', trigger.getAttribute('data-font-styles') || '');
+                    setDetailField('fontDetailAssets', trigger.getAttribute('data-font-assets') || '0');
+                    setDetailField('fontDetailCss', css);
+                    setDetailField('fontDetailStatus', trigger.getAttribute('data-font-status') || '');
+                    setDetailField('fontDetailSource', trigger.getAttribute('data-font-source') || '');
+                    renderDetailPreview(family);
+                    openDetailModal();
+                }
+            });
+
+            [familyInput, textInput, sizeInput].forEach(function (el) {
+                if (!el) return;
+                el.addEventListener('input', renderPreview);
+                el.addEventListener('change', renderPreview);
+            });
+
+            renderPreview();
+        })();
+    </script>
+
+    <!-- Using existing .chamy-modal styles defined earlier in this file -->
+
+    <!-- Modals -->
+    <div id="modal-analyze" class="chamy-modal" aria-hidden="true" style="display:none;">
+        <div class="chamy-modal-dialog" role="dialog" aria-modal="true" style="max-width:820px; margin:0 auto;">
+            <div class="chamy-modal-content">
+                <div class="chamy-modal-header"><h5 class="modal-title">{{ t('admin.settings_assets_analyze')|default('Analysieren / Installieren') }}</h5><button type="button" class="btn btn-sm btn-secondary" data-close-font-modal>&times;</button></div>
+                <div class="chamy-modal-body">
+                    <form id="form-analyze" method="post" action="/admin/settings" style="display:grid;gap:8px;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input class="form-control" type="text" name="set_name" placeholder="{{ t('admin.settings_assets_name')|default('Name') }}" required {{ not can_manage_fonts ? 'disabled' : '' }}>
+                        <input class="form-control" type="text" name="set_id" placeholder="{{ t('admin.settings_assets_id')|default('ID') }}" {{ not can_manage_fonts ? 'disabled' : '' }}>
+                        <input class="form-control" type="text" name="provider" value="custom" placeholder="{{ t('admin.settings_assets_provider')|default('Anbieter') }}" {{ not can_manage_fonts ? 'disabled' : '' }}>
+                        <input class="form-control" type="url" name="source_url" placeholder="{{ t('admin.settings_assets_source_url')|default('Quell-URL') }}" required {{ not can_manage_fonts ? 'disabled' : '' }}>
+                        <div style="display:flex;gap:8px;justify-content:flex-end;">
+                            <button type="submit" name="asset_action" value="fonts.analyze" class="btn btn-secondary" {{ not can_manage_fonts ? 'disabled' : '' }}>{{ t('admin.settings_assets_analyze')|default('Analysieren') }}</button>
+                            <button type="submit" name="asset_action" value="fonts.install" class="btn btn-primary" {{ not can_manage_fonts ? 'disabled' : '' }}>{{ t('admin.settings_assets_install')|default('Installieren') }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-import" class="chamy-modal" aria-hidden="true" style="display:none;">
+        <div class="chamy-modal-dialog" role="dialog" aria-modal="true" style="max-width:720px; margin:0 auto;">
+            <div class="chamy-modal-content">
+                <div class="chamy-modal-header"><h5 class="modal-title">{{ t('admin.settings_assets_import_export')|default('Import / Export') }}</h5><button type="button" class="btn btn-sm btn-secondary" data-close-font-modal>&times;</button></div>
+                <div class="chamy-modal-body">
+                    <form method="post" action="/admin/settings" style="display:grid;gap:8px;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="asset_action" value="fonts.import">
+                        <textarea class="form-control" name="import_json" rows="8" placeholder="{{ t('admin.settings_assets_import_json')|default('Import-JSON') }}" {{ not can_manage_fonts ? 'disabled' : '' }}></textarea>
+                        <div style="display:flex;gap:8px;justify-content:flex-end;">
+                            <button type="submit" class="btn btn-primary" {{ not can_manage_fonts ? 'disabled' : '' }}>{{ t('admin.settings_assets_import')|default('Import') }}</button>
+                        </div>
+                    </form>
+                    <hr>
+                    <div><strong>{{ t('admin.settings_assets_export')|default('Export') }}</strong></div>
+                    <textarea class="form-control" rows="8" readonly>{{ asset_export_type == 'fonts' ? asset_export_payload|default('') : '' }}</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-font-detail" class="chamy-modal" aria-hidden="true" style="display:none;">
+        <div class="chamy-modal-dialog" role="dialog" aria-modal="true" style="max-width:760px; margin:0 auto;">
+            <div class="chamy-modal-content">
+                <div class="chamy-modal-header"><h5 class="modal-title">{{ t('admin.settings_assets_preview')|default('Vorschau') }}</h5><button type="button" class="btn btn-sm btn-secondary" data-close-font-modal>&times;</button></div>
+                <div class="chamy-modal-body" style="display:grid;gap:10px;">
+                    <div id="fontDetailPreview" class="card" style="padding:16px;min-height:130px;font-size:36px;line-height:1.2;display:flex;align-items:center;">Sphinx of black quartz, judge my vow. 0123456789</div>
+                    <div class="grid" style="grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px;">
+                        <div><small class="text-muted">ID</small><div><code id="fontDetailId">-</code></div></div>
+                        <div><small class="text-muted">Provider</small><div id="fontDetailProvider">-</div></div>
+                        <div><small class="text-muted">{{ t('admin.settings_assets_styles')|default('Stile') }}</small><div id="fontDetailStyles">-</div></div>
+                        <div><small class="text-muted">Assets</small><div id="fontDetailAssets">-</div></div>
+                        <div><small class="text-muted">CSS</small><div><code id="fontDetailCss">-</code></div></div>
+                        <div><small class="text-muted">{{ t('admin.settings_assets_status')|default('Status') }}</small><div id="fontDetailStatus">-</div></div>
+                    </div>
+                    <div>
+                        <small class="text-muted">Source</small>
+                        <div><code id="fontDetailSource">-</code></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-api" class="chamy-modal" aria-hidden="true" style="display:none;">
+        <div class="chamy-modal-dialog" role="dialog" aria-modal="true" style="max-width:720px; margin:0 auto;">
+            <div class="chamy-modal-content">
+                <div class="chamy-modal-header"><h5 class="modal-title">{{ t('admin.settings_api_key')|default('Google Fonts API') }}</h5><button type="button" class="btn btn-sm btn-secondary" data-close-font-modal>&times;</button></div>
+                <div class="chamy-modal-body">
+                    <div id="api-status-line" style="margin-bottom:8px;"></div>
+                    <form id="form-api-key" method="post" action="/admin/settings" style="display:grid;gap:8px;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="asset_action" value="google_api_key_save">
+                        <label>{{ t('admin.settings_api_key_label')|default('API Key') }}</label>
+                        <input class="form-control" type="text" name="google_api_key" placeholder="{{ t('admin.settings_api_key_placeholder')|default('API Key einfügen') }}">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <span class="tooltip-wrapper">
+                                <a class="btn btn-sm btn-link" href="https://console.cloud.google.com/apis/credentials" target="_blank">{{ t('admin.settings_api_get_key')|default('API-Key holen') }}</a>
+                                <div class="tooltip-box">{{ t('admin.settings_api_get_key_tooltip_html')|raw }}</div>
+                            </span>
+                            <div style="display:flex;gap:8px;align-items:center;">
+                                <button id="api-delete-btn" type="button" class="btn btn-sm btn-danger">{{ t('admin.settings_api_delete')|default('Löschen') }}</button>
+                                <button type="submit" class="btn btn-primary">{{ t('admin.settings_api_save')|default('Speichern') }}</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            // Open/close using project chamy-modal pattern
+            function openFontModal(id) { var m = document.getElementById(id); if (!m) return; m.style.display = 'flex'; m.setAttribute('aria-hidden','false'); document.body.style.overflow = 'hidden'; }
+            function closeFontModal(id) { var m = document.getElementById(id); if (!m) return; m.style.display = 'none'; m.setAttribute('aria-hidden','true'); document.body.style.overflow = ''; }
+            // Open API modal with additional behavior: refresh stored status and prompt for entry
+            function openApiModal() {
+                openFontModal('modal-api');
+                var line = document.getElementById('api-status-line');
+                if (line) line.textContent = '{{ t('admin.settings_api_prompt')|default('Trage deinen Key zur Prüfung ein') }}';
+                // refresh stored status quickly
+                fetch('/admin/api/google-fonts/status').then(function (r) { return r.json(); }).then(function (j) {
+                    var p = payloadFromResponse(j) || {};
+                    _lastApiStatus = p;
+                    if (p && p.message === 'No API key configured') {
+                        setBadgeState('none');
+                    } else if (p && p.ok) {
+                        setBadgeState('ok');
+                    } else {
+                        setBadgeState('error');
+                    }
+                    refreshStatusLineFromPayload(p);
+                }).catch(function () {
+                    setBadgeState('error');
+                });
+
+                    // Trigger input check if value present
+                    var form = document.getElementById('form-api-key');
+                    if (form) {
+                        var input = form.querySelector('input[name="google_api_key"]');
+                        setTimeout(function () { if (input && input.value) input.dispatchEvent(new Event('input')); }, 200);
+                    }
+                }
+
+            // Also refresh stored-key status when page/tab becomes visible
+            document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'visible') {
+                    fetch('/admin/api/google-fonts/status').then(function (r) { return r.json(); }).then(function (j) {
+                        var p = payloadFromResponse(j) || {};
+                        _lastApiStatus = p;
+                        if (p && p.message === 'No API key configured') setBadgeState('none'); else if (p && p.ok) setBadgeState('ok'); else setBadgeState('error');
+                        refreshStatusLineFromPayload(p);
+                    }).catch(function () {
+                        setBadgeState('error');
+                    });
+                }
+            });
+
+            document.getElementById('btn-open-analyze').addEventListener('click', function(){ openFontModal('modal-analyze'); });
+            document.getElementById('btn-open-import').addEventListener('click', function(){ openFontModal('modal-import'); });
+            document.getElementById('googleApiBadge').addEventListener('click', function(){ openApiModal(); });
+            document.querySelectorAll('[data-close-font-modal]').forEach(function(btn){ btn.addEventListener('click', function(e){ var m = e.target.closest('.chamy-modal'); if (m) closeFontModal(m.id); }); });
+            // close when clicking overlay outside dialog
+            document.querySelectorAll('.chamy-modal').forEach(function(m){
+                m.addEventListener('click', function(e){ if (e.target === m) { closeFontModal(m.id); } });
+            });
+
+            // API badge status: use explicit api-badge classes to avoid theme overrides
+            var badge = document.getElementById('googleApiBadge');
+            function setBadgeState(state) {
+                if (!badge) return;
+                // Normalize: always keep base btn btn-sm and our api-badge class
+                var base = 'btn btn-sm api-badge';
+                badge.textContent = 'API';
+                if (state === 'ok') {
+                    badge.className = base + ' api-badge-ok';
+                } else if (state === 'checking') {
+                    badge.className = base + ' api-badge-checking';
+                } else if (state === 'none') {
+                    badge.className = base + ' api-badge-warning';
+                } else {
+                    badge.className = base + ' api-badge-error';
+                }
+            }
+
+            setBadgeState('none');
+
+            // Helper to normalize API wrapper responses (Response::apiSuccess)
+            function payloadFromResponse(obj) {
+                if (!obj) return null;
+                if (obj.data !== undefined) return obj.data;
+                return obj;
+            }
+
+            // Track last known status
+            var _lastApiStatus = null;
+            function refreshStatusLineFromPayload(p) {
+                var line = document.getElementById('api-status-line');
+                if (!line) return;
+                if (!p) { line.textContent = '' ; return; }
+                if (p.message) { line.textContent = p.message; return; }
+                line.textContent = p.ok ? '{{ t('admin.settings_api_connected')|default('API verbunden') }}' : '{{ t('admin.settings_api_not_connected')|default('API nicht verbunden') }}';
+            }
+
+            // Initial status check using stored key on server
+            fetch('/admin/api/google-fonts/status').then(function (r) { return r.json(); }).then(function (j) {
+                var p = payloadFromResponse(j) || {};
+                _lastApiStatus = p;
+                if (p && p.message === 'No API key configured') {
+                    setBadgeState('none');
+                    var line = document.getElementById('api-status-line');
+                    if (line) line.textContent = '{{ t('admin.settings_api_not_connected_help')|default('Kein API‑Key konfiguriert.') }}';
+                    return;
+                }
+                if (p && p.ok) setBadgeState('ok'); else setBadgeState('error');
+                refreshStatusLineFromPayload(p);
+            }).catch(function () {
+                setBadgeState('error');
+                var line = document.getElementById('api-status-line');
+                if (line) line.innerHTML = '{{ t('admin.settings_api_not_connected_help')|default('API nicht verbunden. Klick auf Badge zum Eintragen/Erneuern des Keys.') }} <a href="https://console.cloud.google.com/apis/credentials" target="_blank">{{ t('admin.settings_api_get_key')|default('API-Key holen') }}</a>';
+            });
+
+            // Debounced in-place key check (POST /admin/api/google-fonts/check)
+            (function () {
+                var form = document.getElementById('form-api-key');
+                if (!form) return;
+                var input = form.querySelector('input[name="google_api_key"]');
+                var statusLine = document.getElementById('api-status-line');
+                var timer = null;
+
+                function doCheck(key) {
+                    // If no key provided in input, prefer stored key status if present
+                    if (!key || key.trim() === '') {
+                        if (_lastApiStatus && (_lastApiStatus.message !== 'No API key configured')) {
+                            // use last known stored-key status
+                            if (_lastApiStatus.ok) setBadgeState('ok'); else setBadgeState('error');
+                            if (statusLine) refreshStatusLineFromPayload(_lastApiStatus);
+                            return;
+                        }
+                        setBadgeState('none');
+                        if (statusLine) statusLine.textContent = '{{ t('admin.settings_api_not_connected_help')|default('Kein API‑Key konfiguriert. Trage deinen Key zur Prüfung ein.') }}';
+                        return;
+                    }
+                    // Quick regex validation for typical API keys (starts with 'AIza' + 35 chars)
+                    var keyRegex = /^AIza[0-9A-Za-z\-_]{35}$/;
+                    if (!keyRegex.test(key.trim())) {
+                        setBadgeState('error');
+                        if (statusLine) statusLine.textContent = '{{ t('admin.settings_api_key_invalid')|default('Key ungültig (Format stimmt nicht).') }}';
+                        return;
+                    }
+                    // Indicate checking
+                    setBadgeState('checking');
+                    if (statusLine) statusLine.textContent = '{{ t('admin.settings_api_checking')|default('Prüfe API‑Key...') }}';
+
+                    fetch('/admin/api/google-fonts/check', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'key=' + encodeURIComponent(key),
+                    }).then(function (r) { return r.json(); }).then(function (j) {
+                        var p = payloadFromResponse(j) || {};
+                        _lastApiStatus = p;
+                        if (p && p.ok) {
+                            setBadgeState('ok');
+                            if (statusLine) statusLine.textContent = p.message || '{{ t('admin.settings_api_connected')|default('API verbunden') }}';
+                        } else {
+                            setBadgeState('error');
+                            if (statusLine) statusLine.textContent = p.message || '{{ t('admin.settings_api_not_connected')|default('API nicht verbunden') }}';
+                        }
+                    }).catch(function () {
+                        setBadgeState('error');
+                        if (statusLine) statusLine.textContent = '{{ t('admin.settings_api_not_connected')|default('API nicht verbunden') }}';
+                    });
+                }
+
+                input && input.addEventListener('input', function () {
+                    if (timer) clearTimeout(timer);
+                    var k = input.value || '';
+                    timer = setTimeout(function () { doCheck(k); }, 500);
+                });
+
+                // Delete stored key: confirm, POST empty key, then refresh status
+                var deleteBtn = document.getElementById('api-delete-btn');
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', function () {
+                        var confirmMsg = '{{ t('admin.settings_api_confirm_delete')|default('Delete stored API key?') }}';
+                        if (!confirm(confirmMsg)) return;
+                        var csrfEl = form.querySelector('input[name="csrf_token"]');
+                        var csrf = csrfEl ? csrfEl.value : '';
+                        var body = 'csrf_token=' + encodeURIComponent(csrf) + '&asset_action=google_api_key_save&google_api_key=';
+                        fetch('/admin/settings', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body })
+                            .then(function () { return fetch('/admin/api/google-fonts/status'); })
+                            .then(function (r) { return r.json(); })
+                            .then(function (j) {
+                                var p = payloadFromResponse(j) || {};
+                                _lastApiStatus = p;
+                                if (p && p.message === 'No API key configured') setBadgeState('none'); else if (p && p.ok) setBadgeState('ok'); else setBadgeState('error');
+                                refreshStatusLineFromPayload(p);
+                                // clear input field
+                                var inp = form.querySelector('input[name="google_api_key"]'); if (inp) inp.value = '';
+                            }).catch(function () {
+                                setBadgeState('error');
+                                var s = document.getElementById('api-status-line'); if (s) s.textContent = '{{ t('admin.settings_api_not_connected')|default('API nicht verbunden') }}';
+                            });
+                    });
+                }
+
+                // When modal opens, try to check current value (if any)
+                function openApiModal() {
+                    openFontModal('modal-api');
+                    var line = document.getElementById('api-status-line');
+                    if (line) line.textContent = '{{ t('admin.settings_api_prompt')|default('Trage deinen Key zur Prüfung ein') }}';
+                    // refresh stored status quickly
+                    fetch('/admin/api/google-fonts/status').then(function (r) { return r.json(); }).then(function (j) {
+                        var p = payloadFromResponse(j) || {};
+                        _lastApiStatus = p;
+                        if (p && p.message === 'No API key configured') {
+                            setBadgeState('none');
+                        } else if (p && p.ok) {
+                            setBadgeState('ok');
+                        } else {
+                            setBadgeState('error');
+                        }
+                        refreshStatusLineFromPayload(p);
+                    }).catch(function () {
+                        setBadgeState('error');
+                    });
+
+                    // Trigger input check if value present
+                    setTimeout(function () { if (input && input.value) input.dispatchEvent(new Event('input')); }, 200);
+                }
+            })();
+        })();
+    </script>
+    <script>
+        (function () {
+            var input = document.getElementById('liveGoogleQ');
+            var results = document.getElementById('googleSearchResults');
+            var pager = document.getElementById('googleSearchPager');
+            var perPageSelect = document.getElementById('livePerPage');
+            var styleFilter = document.getElementById('liveStyleFilter');
+            var categoryFilter = document.getElementById('liveCategoryFilter');
+            var subcategoryFilter = document.getElementById('liveSubcategoryFilter');
+            var familyInput = document.getElementById('fontPreviewFamily');
+            var previewMeta = document.getElementById('fontPreviewMeta');
+            var page = 1;
+            var timer = null;
+
+            function payloadFromResponse(obj) {
+                if (!obj) return null;
+                if (obj.data !== undefined) return obj.data;
+                return obj;
+            }
+
+            function buildGoogleCssUrl(family, styles) {
+                var normalized = (styles || []).slice(0, 8);
+                var hasItalic = false;
+                var weights = [];
+                var italicWeights = [];
+                normalized.forEach(function (s) {
+                    var v = String(s || '').toLowerCase().trim();
+                    if (!v || v === 'regular') { weights.push('400'); return; }
+                    if (v === 'italic') { hasItalic = true; italicWeights.push('400'); return; }
+                    if (/^[0-9]{3}italic$/.test(v)) {
+                        hasItalic = true;
+                        italicWeights.push(v.replace('italic', ''));
+                        return;
+                    }
+                    if (/^[0-9]{3}$/.test(v)) {
+                        weights.push(v);
+                    }
+                });
+
+                weights = Array.from(new Set(weights)).sort();
+                italicWeights = Array.from(new Set(italicWeights)).sort();
+
+                var familyParam = String(family || '').replace(/\s+/g, '+');
+                if (hasItalic) {
+                    var pairs = [];
+                    weights.forEach(function (w) { pairs.push('0,' + w); });
+                    italicWeights.forEach(function (w) { pairs.push('1,' + w); });
+                    if (pairs.length === 0) pairs.push('0,400');
+                    familyParam += ':ital,wght@' + pairs.join(';');
+                } else if (weights.length > 0) {
+                    familyParam += ':wght@' + weights.join(';');
+                }
+
+                return 'https://fonts.googleapis.com/css2?family=' + encodeURI(familyParam) + '&display=swap';
+            }
+
+            function setLivePreview(font, cssUrl) {
+                if (cssUrl && window.ChamyFontLoader && typeof window.ChamyFontLoader.load === 'function') {
+                    window.ChamyFontLoader.load(cssUrl);
+                }
+                if (familyInput) {
+                    familyInput.value = font.family || '';
+                    familyInput.dispatchEvent(new Event('change'));
+                }
+                if (previewMeta) {
+                    previewMeta.textContent = cssUrl || '';
+                }
+            }
+
+            function renderCategoryFilters(data) {
+                if (!categoryFilter) return;
+                var current = categoryFilter.value || '';
+                var html = '<option value="">{{ t("admin.settings_assets_filter_all")|default("Alle") }}</option>';
+                (data.categories || []).forEach(function (cat) {
+                    html += '<option value="' + String(cat.id || '').replace(/"/g, '&quot;') + '">' + String(cat.label || cat.id || '') + '</option>';
+                });
+                categoryFilter.innerHTML = html;
+                if (current) categoryFilter.value = current;
+            }
+
+            function renderSubcategoryFilters(data) {
+                if (!subcategoryFilter) return;
+                var selectedCategory = categoryFilter && categoryFilter.value ? categoryFilter.value : '';
+                if (!selectedCategory) {
+                    subcategoryFilter.style.display = 'none';
+                    subcategoryFilter.innerHTML = '';
+                    return;
+                }
+
+                var current = subcategoryFilter.value || '';
+                var html = '<option value="">{{ t("admin.settings_assets_filter_all")|default("Alle") }}</option>';
+                (data.subcategories || []).forEach(function (sub) {
+                    html += '<option value="' + String(sub.id || '').replace(/"/g, '&quot;') + '">' + String(sub.label || sub.id || '') + '</option>';
+                });
+                subcategoryFilter.innerHTML = html;
+                subcategoryFilter.style.display = 'inline-block';
+                if (current) subcategoryFilter.value = current;
+            }
+
+            function renderResults(data) {
+                results.innerHTML = '';
+                (data.items || []).forEach(function (font) {
+                    var row = document.createElement('div');
+                    row.style.display = 'grid';
+                    row.style.gridTemplateColumns = '1fr auto';
+                    row.style.gap = '8px';
+
+                    var info = document.createElement('div');
+                    var title = document.createElement('strong');
+                    title.textContent = font.family;
+                    var meta = document.createElement('div');
+                    meta.className = 'text-muted';
+                    meta.style.fontSize = '12px';
+                    var styleList = (font.styles || []).slice(0, 6).join(', ');
+                    var parts = [font.category, font.subcategory, styleList].filter(Boolean);
+                    meta.textContent = parts.join(' | ');
+                    info.appendChild(title);
+                    info.appendChild(meta);
+                    if (font.installed) {
+                        var badge = document.createElement('div');
+                        badge.className = 'text-muted';
+                        badge.style.fontSize = '11px';
+                        badge.textContent = '{{ t("admin.installed")|default("Installiert") }}';
+                        info.appendChild(badge);
+                    }
+
+                    var actions = document.createElement('div');
+                    actions.style.display = 'flex';
+                    actions.style.gap = '6px';
+
+                    var previewBtn = document.createElement('button');
+                    previewBtn.type = 'button';
+                    previewBtn.className = 'btn btn-sm btn-secondary';
+                    previewBtn.textContent = '{{ t("admin.settings_assets_preview")|default("Vorschau") }}';
+                    previewBtn.addEventListener('click', function () {
+                        var family = font.family || '';
+                        // If installed: use only local CSS
+                        if (font.installed && font.installed_set && font.installed_set.local_css) {
+                            var cssUrl = font.installed_set.local_css;
+                            // remove any previously injected remote CSS
+                            var prev = document.getElementById('chamy-live-remote-css'); if (prev) prev.parentNode.removeChild(prev);
+                            setLivePreview(font, cssUrl);
+                        } else {
+                            // Not installed: fetch Google CSS via HTTP and inject into document head
+                            var cssUrl = buildGoogleCssUrl(family, font.styles || font.variants || []);
+                            // remove previous injected remote CSS link
+                            var prev = document.getElementById('chamy-live-remote-css'); if (prev) prev.parentNode.removeChild(prev);
+                            try {
+                                var linkEl = document.createElement('link');
+                                linkEl.id = 'chamy-live-remote-css';
+                                linkEl.rel = 'stylesheet';
+                                linkEl.href = cssUrl;
+                                // When the stylesheet loads, apply the preview family
+                                linkEl.onload = function () {
+                                    if (familyInput) { familyInput.value = family; familyInput.dispatchEvent(new Event('change')); }
+                                    if (previewMeta) previewMeta.textContent = cssUrl;
+                                };
+                                linkEl.onerror = function () {
+                                    console.error('Failed to load remote font CSS', cssUrl);
+                                    alert('{{ t("system.error")|default("Fehler") }}');
+                                };
+                                document.head.appendChild(linkEl);
+                            } catch (e) {
+                                console.error('Inject link failed', e);
+                                alert('{{ t("system.error")|default("Fehler") }}');
+                            }
+                        }
+                    });
+                    actions.appendChild(previewBtn);
+
+                    if (font.installed) {
+                        var installedBtn = document.createElement('button');
+                        installedBtn.type = 'button';
+                        installedBtn.className = 'btn btn-sm btn-success';
+                        installedBtn.disabled = true;
+                        installedBtn.textContent = '{{ t("admin.installed")|default("Installiert") }}';
+                        actions.appendChild(installedBtn);
+                    } else {
+                        var installForm = document.createElement('form');
+                        installForm.method = 'post';
+                        installForm.action = '/admin/settings';
+                        installForm.style.display = 'inline-block';
+                        installForm.innerHTML = '<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">'
+                            + '<input type="hidden" name="asset_action" value="fonts.google_install">'
+                            + '<input type="hidden" name="google_family" value="' + String(font.family || '').replace(/"/g, '&quot;') + '">';
+
+                        (font.styles || []).slice(0, 8).forEach(function (s) {
+                            var inp = document.createElement('input');
+                            inp.type = 'hidden';
+                            inp.name = 'google_styles[]';
+                            inp.value = s;
+                            installForm.appendChild(inp);
+                        });
+
+                        ['admin', 'frontend'].forEach(function (a) {
+                            var ia = document.createElement('input');
+                            ia.type = 'hidden';
+                            ia.name = 'areas[]';
+                            ia.value = a;
+                            installForm.appendChild(ia);
+                        });
+                        ['system', 'theme', 'mods'].forEach(function (a) {
+                            var ia = document.createElement('input');
+                            ia.type = 'hidden';
+                            ia.name = 'allow_for[]';
+                            ia.value = a;
+                            installForm.appendChild(ia);
+                        });
+
+                        var installBtn = document.createElement('button');
+                        installBtn.type = 'submit';
+                        installBtn.className = 'btn btn-sm btn-primary';
+                        installBtn.textContent = '{{ t("admin.settings_assets_install")|default("Installieren") }}';
+                        installForm.appendChild(installBtn);
+                        actions.appendChild(installForm);
+                    }
+
+                    row.appendChild(info);
+                    row.appendChild(actions);
+                    results.appendChild(row);
+                });
+            }
+
+            function renderPager(data) {
+                pager.innerHTML = '';
+                var total = parseInt(data.total || 0, 10) || 0;
+                var pages = parseInt(data.pages || 1, 10) || 1;
+                var currentPage = parseInt(data.page || 1, 10) || 1;
+
+                if (pages <= 1) {
+                    if (total === 0) {
+                        var empty = document.createElement('div');
+                        empty.className = 'text-muted';
+                        empty.textContent = '{{ t("admin.settings_assets_no_sets")|default("Keine Sets vorhanden.") }}';
+                        pager.appendChild(empty);
+                    }
+                    return;
+                }
+
+                var prev = document.createElement('button');
+                prev.type = 'button';
+                prev.className = 'btn btn-sm btn-secondary';
+                prev.textContent = '‹';
+                prev.disabled = currentPage <= 1;
+                prev.addEventListener('click', function () { page = Math.max(1, currentPage - 1); fetchSearch(); });
+
+                var next = document.createElement('button');
+                next.type = 'button';
+                next.className = 'btn btn-sm btn-secondary';
+                next.textContent = '›';
+                next.disabled = currentPage >= pages;
+                next.addEventListener('click', function () { page = Math.min(pages, currentPage + 1); fetchSearch(); });
+
+                var info = document.createElement('div');
+                info.style.alignSelf = 'center';
+                info.textContent = currentPage + ' / ' + pages + ' (' + total + ')';
+
+                pager.appendChild(prev);
+                pager.appendChild(info);
+                pager.appendChild(next);
+            }
+
+            function fetchSearch() {
+                var params = new URLSearchParams();
+                params.set('q', input && input.value ? input.value.trim() : '');
+                params.set('style', styleFilter && styleFilter.value ? styleFilter.value : '');
+                params.set('category', categoryFilter && categoryFilter.value ? categoryFilter.value : '');
+                params.set('subcategory', subcategoryFilter && subcategoryFilter.value ? subcategoryFilter.value : '');
+                params.set('page', String(page));
+                params.set('per_page', String(parseInt(perPageSelect.value, 10) || 10));
+
+                results.innerHTML = '<div class="text-muted">Lade…</div>';
+                fetch('/admin/api/google-fonts/search?' + params.toString(), { headers: { 'Accept': 'application/json' } })
+                    .then(function (r) { return r.json(); })
+                    .then(function (json) {
+                        var data = payloadFromResponse(json) || {};
+                        renderCategoryFilters(data);
+                        renderSubcategoryFilters(data);
+                        renderResults(data);
+                        renderPager(data);
+                    })
+                    .catch(function () {
+                        results.innerHTML = '<div class="text-muted">Suche fehlgeschlagen.</div>';
+                        pager.innerHTML = '';
+                    });
+            }
+
+            function onInputChanged() {
+                page = 1;
+                if (timer) clearTimeout(timer);
+                timer = setTimeout(fetchSearch, 250);
+            }
+
+            [input, perPageSelect, styleFilter].forEach(function (el) {
+                if (!el) return;
+                el.addEventListener('input', onInputChanged);
+                el.addEventListener('change', onInputChanged);
+            });
+
+            if (categoryFilter) {
+                categoryFilter.addEventListener('change', function () {
+                    page = 1;
+                    if (subcategoryFilter) subcategoryFilter.value = '';
+                    fetchSearch();
+                });
+            }
+
+            if (subcategoryFilter) {
+                subcategoryFilter.addEventListener('change', function () {
+                    page = 1;
+                    fetchSearch();
+                });
+            }
+
+            fetchSearch();
+        })();
+    </script>
+
+    {% for group_name, group_settings in settings %}
+    <div id="tab-settings-{{ group_name|lower|replace({' ':'-'}) }}" class="tab-panel {{ asset_active_tab == '' and loop.first ? 'active' : '' }}">
+        <form method="post" action="/admin/settings">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="card-header">
+                    <h3 style="margin: 0; text-transform: capitalize;">{{ group_name }}</h3>
+                </div>
+                <div class="card-body">
+                    <div class="settings-grid">
+                        {% for key, setting in group_settings %}
+                        <div class="form-group settings-item">
+                            <label class="form-label" for="setting_{{ setting.id }}">{{ setting.key }}</label>
+                            {% if setting.type == 'boolean' %}
+                            <select name="settings[{{ setting.id }}]" id="setting_{{ setting.id }}" class="form-control" {{ not can_manage_settings ? 'disabled' : '' }}>
+                                <option value="1" {{ setting.value == '1' ? 'selected' : '' }}>{{ t('admin.yes')|default('Ja') }}</option>
+                                <option value="0" {{ setting.value == '0' ? 'selected' : '' }}>{{ t('admin.no')|default('Nein') }}</option>
+                            </select>
+                            {% elseif setting.type == 'integer' %}
+                            <input type="number" name="settings[{{ setting.id }}]" id="setting_{{ setting.id }}" class="form-control" value="{{ setting.value }}" {{ not can_manage_settings ? 'disabled' : '' }}>
+                            {% else %}
+                            <input type="text" name="settings[{{ setting.id }}]" id="setting_{{ setting.id }}" class="form-control" value="{{ setting.value }}" {{ not can_manage_settings ? 'disabled' : '' }}>
+                            {% endif %}
+                            <small class="form-hint text-muted">{{ group_name }}.{{ setting.key }} ({{ setting.type }})</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <button type="submit" class="btn btn-primary" {{ not can_manage_settings ? 'disabled' : '' }}>{{ t('admin.save_settings')|default('Einstellungen speichern') }}</button>
+            </div>
+        </form>
+    </div>
+    {% endfor %}
+</div>
 {% endblock %}

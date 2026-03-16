@@ -1,0 +1,148 @@
+{% extends "base.twig" %}
+
+{% block title %}{{ t('admin.dashboard')|default('Dashboard') }} – Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+<span class="current">{{ t('admin.dashboard')|default('Dashboard') }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">{{ t('admin.dashboard')|default('Dashboard') }}</h1>
+        <p class="page-subtitle">{{ t('admin.welcome_back')|default('Willkommen zurück') }}, {{ user.username|default('Admin') }}</p>
+    </div>
+</div>
+
+{# ─── Stats Grid ─── #}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">{{ t('admin.stats.pages')|default('Seiten') }}</div>
+        <div class="stat-value">{{ stats.pages|default(0) }}</div>
+        <div class="stat-change">{{ t('admin.stats.published')|default('Veröffentlicht') }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">{{ t('admin.stats.articles')|default('Artikel') }}</div>
+        <div class="stat-value">{{ stats.articles|default(0) }}</div>
+        <div class="stat-change">{{ t('admin.stats.total')|default('Gesamt') }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">{{ t('admin.stats.drafts')|default('Entwürfe') }}</div>
+        <div class="stat-value">{{ stats.drafts|default(0) }}</div>
+        <div class="stat-change text-orange">{{ t('admin.stats.in_progress')|default('In Bearbeitung') }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">{{ t('admin.stats.modules')|default('Module') }}</div>
+        <div class="stat-value">{{ stats.modules|default(0) }}</div>
+        <div class="stat-change">{{ t('admin.stats.active')|default('Aktiv') }}</div>
+    </div>
+</div>
+
+{# ─── Recent Content + Quick Actions ─── #}
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;">
+
+    {# Recent entries #}
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">{{ t('admin.recent_content')|default('Letzte Inhalte') }}</span>
+        </div>
+        <div class="card-body" style="padding:0;">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>{{ t('admin.title')|default('Titel') }}</th>
+                            <th>{{ t('admin.type')|default('Typ') }}</th>
+                            <th>{{ t('admin.state')|default('Status') }}</th>
+                            <th>{{ t('admin.updated')|default('Aktualisiert') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in recent_entries|default([]) %}
+                        <tr>
+                            <td>
+                                <a href="/admin/content/{{ entry.content_type }}/{{ entry.id }}/edit">
+                                    {{ entry.title|default('Ohne Titel') }}
+                                </a>
+                            </td>
+                            <td class="text-muted">{{ entry.content_type }}</td>
+                            <td>
+                                <span class="badge badge-{{ entry.state|default('draft') }}">
+                                    {{ entry.state|default('draft') }}
+                                </span>
+                            </td>
+                            <td class="text-muted">{{ entry.updated_at|default('–') }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4">
+                                <div class="empty-state" style="padding:30px;">
+                                    <div class="empty-state-text">{{ t('admin.no_content_yet')|default('Noch keine Inhalte vorhanden.') }}</div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {# Quick Actions #}
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">{{ t('admin.quick_actions')|default('Schnellzugriff') }}</span>
+        </div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:8px;">
+            {% for type_key, type in content_types|default({}) %}
+            <a href="/admin/content/{{ type_key }}/create" class="btn btn-ghost" style="justify-content:flex-start;">
+                ＋ {{ type.label|default(type_key) }} {{ t('admin.create')|default('erstellen') }}
+            </a>
+            {% endfor %}
+
+            <div class="glow-divider"></div>
+
+            <a href="/admin/modules" class="btn btn-ghost" style="justify-content:flex-start;">
+                ⧉ {{ t('admin.modules')|default('Module') }}
+            </a>
+            <a href="/admin/settings" class="btn btn-ghost" style="justify-content:flex-start;">
+                ⚙ {{ t('admin.settings.title')|default('Einstellungen') }}
+            </a>
+        </div>
+    </div>
+
+</div>
+
+{# ─── System Info ─── #}
+<div class="mt-4">
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">{{ t('admin.system_info')|default('System-Info') }}</span>
+            <div class="flex gap-2" style="align-items:center;">
+                <span class="pulse-dot"></span>
+                <span class="text-green" style="font-size:12px;">Online</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;font-size:12px;">
+                <div>
+                    <span class="text-muted">Chamy CMS</span><br>
+                    <strong>v{{ app_version|default('1.0.0') }}</strong>
+                </div>
+                <div>
+                    <span class="text-muted">PHP</span><br>
+                    <strong>{{ php_version|default('8.2') }}</strong>
+                </div>
+                <div>
+                    <span class="text-muted">Theme</span><br>
+                    <strong>{{ current_theme|default('Neon Dark') }}</strong>
+                </div>
+                <div>
+                    <span class="text-muted">{{ t('admin.locale')|default('Sprache') }}</span><br>
+                    <strong>{{ app_locale|default('de') }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

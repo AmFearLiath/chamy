@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="{{ app_locale|default('de') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Chamy CMS{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Fira+Code:wght@400;500;700&family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="{{ theme_asset('css/admin.css') }}">
+    <link rel="stylesheet" href="{{ theme_asset('css/cybersec-overrides.css') }}">
+    {% for css in admin_icon_css|default([]) %}
+    <link rel="stylesheet" href="{{ css }}">
+    {% endfor %}
+    {% for css in admin_font_css|default([]) %}
+    <link rel="stylesheet" href="{{ css }}">
+    {% endfor %}
+    {% for css in head_styles|default([]) %}
+    <link rel="stylesheet" href="{{ css }}">
+    {% endfor %}
+    <link rel="icon" href="/docs/logo.png" type="image/png">
+    {% block head %}{% endblock %}
+</head>
+<body class="cybersec-admin {% block body_class %}{% endblock %}" data-theme="dark">
+
+<canvas id="matrixCanvas" aria-hidden="true"></canvas>
+<div id="hackParticles" aria-hidden="true"></div>
+
+{% block body %}
+<div class="admin-layout">
+
+    {# ─── Sidebar ─── #}
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="/admin" class="sidebar-logo">
+                <img src="/docs/logo.png" alt="Chamy" class="sidebar-logo-img">
+            </a>
+            {# Collapsed-state logo that slides in when sidebar is collapsed #}
+            <a href="/admin" class="sidebar-logo-collapsed" aria-hidden="true">
+                <img src="/docs/logo-collapsed.png" alt="Chamy" class="sidebar-logo-img sidebar-logo-collapsed-img">
+            </a>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-label">{{ t('admin.nav.main')|default('Hauptmenü') }}</div>
+
+                <a href="/admin" class="nav-item {{ current_route == 'dashboard' ? 'active' : '' }}">
+                    <span class="nav-item-icon">
+                        <!-- Tabler: layout-dashboard -->
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="13" y="3" width="8" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="13" y="10" width="8" height="11" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="13" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+                    </span>
+                    <span>{{ t('admin.dashboard')|default('Dashboard') }}</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-label">{{ t('admin.nav.content')|default('Inhalte') }}</div>
+
+                {% for type_key, type in content_types|default({}) %}
+                <a href="/admin/content/{{ type_key }}" class="nav-item {{ current_route == 'content.' ~ type_key ? 'active' : '' }}">
+                    <span class="nav-item-icon">
+                        <!-- Tabler: file-text -->
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 3v5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 13h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 17h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                    <span>{{ content_labels[type_key]|default(type.label_plural|default(type_key)) }}</span>
+                </a>
+                {% endfor %}
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-label">{{ t('admin.nav.system')|default('System') }}</div>
+
+                <a href="/admin/modules" class="nav-item {{ current_route == 'modules' ? 'active' : '' }}">
+                    <span class="nav-item-icon">
+                        <!-- Tabler: box -->
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4.03a2 2 0 0 0-2 0l-7 4.03A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4.03a2 2 0 0 0 2 0l7-4.03A2 2 0 0 0 21 16z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 3v9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                    <span>{{ t('admin.modules')|default('Module') }}</span>
+                </a>
+
+                <a href="/admin/themes" class="nav-item {{ current_route == 'themes' ? 'active' : '' }}">
+                    <span class="nav-item-icon">
+                        <!-- Tabler: palette -->
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 21a9 9 0 1 1 0-18c2.5 0 4.5 1 6 2.5C20.5 7 20 9 18.5 10.5 17 12 15 12 14 12c-1 0-2 .5-2.5 1.5C11 14.5 11 16 12 17c1 1 2 1 3 1 1 0 2-.2 2.5-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                    <span>{{ t('admin.themes')|default('Themes') }}</span>
+                </a>
+
+                <a href="/admin/users" class="nav-item {{ current_route == 'users' ? 'active' : '' }}">
+                    <span class="nav-item-icon">
+                        <!-- Tabler: users -->
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                    <span>{{ t('admin.users')|default('Benutzer') }}</span>
+                </a>
+
+                <a href="/admin/settings" class="nav-item {{ current_route == 'settings' ? 'active' : '' }}">
+                    <span class="nav-item-icon">
+                        <!-- Tabler: settings -->
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0 8a4 4 0 0 0 0-8z" stroke="currentColor" stroke-width="1.5"/><path d="M3 12h2m14 0h2M12 3v2m0 14v2m6.364-14.364l-1.414 1.414M7.05 16.95l-1.414 1.414m0-12.728L7.05 7.05m9.9 9.9l1.414 1.414" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    </span>
+                    <span>{{ t('admin.settings')|default('Einstellungen') }}</span>
+                </a>
+
+                <a href="/admin/trash" class="nav-item {{ current_route == 'trash' ? 'active' : '' }}">
+                    <span class="nav-item-icon">
+                        <!-- Tabler: trash -->
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                    <span>{{ t('admin.trash')|default('Papierkorb') }}</span>
+                </a>
+            </div>
+        </nav>
+
+
+        <script>
+            window.ChamyFontLoader = window.ChamyFontLoader || {
+                load: function (cssUrl) {
+                    if (!cssUrl) return;
+                    if (document.querySelector('link[data-font-loader="' + cssUrl + '"]')) return;
+                    var link = document.createElement('link');
+                    link.rel = 'stylesheet';
+                    link.href = cssUrl;
+                    link.setAttribute('data-font-loader', cssUrl);
+                    document.head.appendChild(link);
+                }
+            };
+        </script>
+        {# Sidebar footer intentionally left without profile; profile moved to topbar #}
+    </aside>
+
+    {# ─── Main ─── #}
+    <main class="main-content">
+
+        {# Topbar #}
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="topbar-btn" data-toggle-sidebar title="Sidebar">☰</button>
+                <div class="topbar-breadcrumb">
+                    {% block breadcrumb %}
+                    <a href="/admin">Dashboard</a>
+                    {% endblock %}
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-btn" data-theme-toggle title="Dark / Light umschalten">◐</button>
+                <button class="topbar-btn" title="{{ t('admin.clear_cache')|default('Cache leeren') }}">⟳</button>
+
+                {# Profile moved from sidebar to header (right-aligned) #}
+                <div class="topbar-profile" data-dropdown>
+                    <button class="topbar-btn" title="{{ user.username|default('Admin') }}">
+                        <span class="topbar-avatar">{{ user.username|default('A')|first|upper }}</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <div class="dropdown-profile-header">
+                            <div class="dropdown-avatar">{{ user.username|default('A')|first|upper }}</div>
+                            <div class="dropdown-userinfo">
+                                <div class="dropdown-name">{{ user.display_name|default(user.username|default('Admin')) }}</div>
+                                <div class="dropdown-email">{{ user.email|default('') }}</div>
+                            </div>
+                        </div>
+                        <div class="dropdown-actions">
+                            <a class="dropdown-item" href="/admin/profile">{{ t('admin.profile')|default('Profil') }}</a>
+                            <a class="dropdown-item" href="/admin/settings">{{ t('admin.settings')|default('Einstellungen') }}</a>
+                            <button class="dropdown-item" data-theme-toggle>{{ t('admin.toggle_theme')|default('Design wechseln') }}</button>
+                            <div class="dropdown-sep"></div>
+                            <a class="dropdown-item logout" href="/admin/logout">{{ t('admin.logout')|default('Abmelden') }}</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        {# Flash Messages #}
+        {% for type, message in flash_messages|default({}) %}
+        <div class="alert alert-{{ type }}" data-auto-dismiss="5000">{{ message }}</div>
+        {% endfor %}
+
+        {# Page Content #}
+        <div class="page-container">
+            {% block content %}{% endblock %}
+        </div>
+
+    </main>
+</div>
+{% endblock %}
+
+<script src="{{ theme_asset('js/admin.js') }}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script src="{{ theme_asset('js/cybersec.js') }}"></script>
+{% for js in footer_scripts|default([]) %}
+<script src="{{ js }}"></script>
+{% endfor %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

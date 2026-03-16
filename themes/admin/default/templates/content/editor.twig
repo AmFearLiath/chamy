@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="{{ app_locale|default('de') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor – {{ entry_data.title|default('Neuer Inhalt') }} – Chamy CMS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ theme_asset('css/admin.css') }}">
+    <link rel="stylesheet" href="{{ theme_asset('css/editor.css') }}">
+    {% for css in admin_icon_css|default([]) %}
+    <link rel="stylesheet" href="{{ css }}">
+    {% endfor %}
+    {% for css in admin_font_css|default([]) %}
+    <link rel="stylesheet" href="{{ css }}">
+    {% endfor %}
+    <link rel="icon" href="/docs/logo.png" type="image/png">
+</head>
+<body class="editor-body" data-theme="dark">
+
+{# ─── Editor App Container ─── #}
+<div id="chamy-editor"
+     class="editor-app"
+     data-content-id="{{ content_id }}"
+     data-content-type="{{ type_key }}"
+     data-content-status="{{ entry.state|default('draft') }}"
+     data-content-title="{{ entry_data.title|default('')|e('html_attr') }}"
+     data-csrf-token="{{ csrf_token }}"
+     data-api-base="/api/v1/editor">
+
+    {# ─── Editor Header ─── #}
+    <header class="editor-header">
+        <div class="editor-header__left">
+            <a href="/admin/content/{{ type_key }}/{{ content_id }}/edit" class="editor-header__back" title="{{ t('admin.back')|default('Zurück') }}">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </a>
+            <div class="editor-header__title">
+                <span class="editor-header__content-type">{{ type.label|default(type_key) }}</span>
+                <span class="editor-header__content-title" id="editor-title">{{ entry_data.title|default('Unbenannt') }}</span>
+            </div>
+            <div class="editor-header__status">
+                <div class="editor-status-dropdown" id="editor-status-dropdown">
+                    <button class="editor-status-badge" id="editor-status-badge" data-status="{{ entry.state|default('draft') }}" title="Status ändern">
+                        {{ entry.state|default('draft') }}
+                        <svg class="editor-status-badge__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="editor-status-dropdown__menu" id="editor-status-menu" style="display:none;"></div>
+                </div>
+                <span class="editor-dirty-indicator" id="editor-dirty" style="display:none;" title="Ungespeicherte Änderungen">●</span>
+            </div>
+        </div>
+
+        <div class="editor-header__center">
+            <div class="editor-device-switcher">
+                <button class="editor-device-btn active" data-device="desktop" title="Desktop">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                </button>
+                <button class="editor-device-btn" data-device="tablet" title="Tablet">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+                </button>
+                <button class="editor-device-btn" data-device="mobile" title="Mobile">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="editor-header__right">
+            <button class="editor-header-btn" id="editor-undo" title="Rückgängig (Ctrl+Z)" disabled>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            </button>
+            <button class="editor-header-btn" id="editor-redo" title="Wiederholen (Ctrl+Y)" disabled>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg>
+            </button>
+            <div class="editor-header-sep"></div>
+            <button class="editor-header-btn" id="editor-versions" title="Versionen">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </button>
+            <button class="editor-header-btn" id="editor-preview" title="Vorschau">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            <div class="editor-header-sep"></div>
+            <button class="editor-header-btn editor-header-btn--primary" id="editor-save" title="Speichern (Ctrl+S)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                <span>{{ t('admin.save')|default('Speichern') }}</span>
+            </button>
+        </div>
+    </header>
+
+    {# ─── Editor Body (3-column layout) ─── #}
+    <div class="editor-body-layout">
+
+        {# ─── Left Sidebar: Catalog ─── #}
+        <aside class="editor-sidebar editor-sidebar--left" id="editor-catalog-sidebar">
+            <div class="editor-sidebar__header">
+                <h3 class="editor-sidebar__title">{{ t('editor.catalog')|default('Katalog') }}</h3>
+                <button class="editor-sidebar__toggle" id="toggle-catalog" title="Katalog ein-/ausklappen">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+            </div>
+
+            <div class="editor-sidebar__body">
+                {# Search #}
+                <div class="editor-catalog-search">
+                    <input type="text" class="editor-catalog-search__input" id="catalog-search" placeholder="{{ t('editor.search')|default('Suchen...') }}">
+                </div>
+
+                {# Catalog tabs #}
+                <div class="editor-catalog-tabs">
+                    <button class="editor-catalog-tab active" data-catalog-tab="layouts">Layouts</button>
+                    <button class="editor-catalog-tab" data-catalog-tab="blocks">Blöcke</button>
+                    <button class="editor-catalog-tab" data-catalog-tab="components">Komponenten</button>
+                    <button class="editor-catalog-tab" data-catalog-tab="snippets">Snippets</button>
+                </div>
+
+                {# Catalog content (populated by JS) #}
+                <div class="editor-catalog-content" id="catalog-content">
+                    <div class="editor-catalog-panel active" data-catalog-panel="layouts"></div>
+                    <div class="editor-catalog-panel" data-catalog-panel="blocks"></div>
+                    <div class="editor-catalog-panel" data-catalog-panel="components"></div>
+                    <div class="editor-catalog-panel" data-catalog-panel="snippets"></div>
+                </div>
+            </div>
+        </aside>
+
+        {# ─── Canvas ─── #}
+        <main class="editor-canvas-wrapper" id="editor-canvas-wrapper">
+            <div class="editor-canvas" id="editor-canvas" data-device="desktop">
+                <div class="editor-canvas__inner" id="editor-canvas-inner">
+                    {# Canvas content rendered by JS #}
+                    <div class="editor-canvas__empty" id="editor-canvas-empty">
+                        <div class="editor-canvas__empty-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                <line x1="12" y1="8" x2="12" y2="16"/>
+                                <line x1="8" y1="12" x2="16" y2="12"/>
+                            </svg>
+                        </div>
+                        <p class="editor-canvas__empty-text">{{ t('editor.empty_canvas')|default('Ziehe Elemente aus dem Katalog hierher') }}</p>
+                    </div>
+                </div>
+            </div>
+
+            {# Breadcrumbs #}
+            <div class="editor-breadcrumbs" id="editor-breadcrumbs">
+                <span class="editor-breadcrumb" data-node-id="root_1">{{ type.label|default('Seite') }}</span>
+            </div>
+        </main>
+
+        {# ─── Right Sidebar: Inspector ─── #}
+        <aside class="editor-sidebar editor-sidebar--right" id="editor-inspector-sidebar">
+            <div class="editor-sidebar__header">
+                <h3 class="editor-sidebar__title" id="inspector-title">{{ t('editor.inspector')|default('Eigenschaften') }}</h3>
+                <button class="editor-sidebar__toggle" id="toggle-inspector" title="Inspector ein-/ausklappen">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+            </div>
+
+            <div class="editor-sidebar__body">
+                {# Inspector tabs #}
+                <div class="editor-inspector-tabs">
+                    <button class="editor-inspector-tab active" data-inspector-tab="content">{{ t('editor.content')|default('Inhalt') }}</button>
+                    <button class="editor-inspector-tab" data-inspector-tab="layout">Layout</button>
+                    <button class="editor-inspector-tab" data-inspector-tab="design">Design</button>
+                    <button class="editor-inspector-tab" data-inspector-tab="advanced">{{ t('editor.advanced')|default('Erweitert') }}</button>
+                </div>
+
+                {# Inspector content (populated by JS) #}
+                <div class="editor-inspector-content" id="inspector-content">
+                    <div class="editor-inspector-panel active" data-inspector-panel="content">
+                        <div class="editor-inspector-empty">
+                            <p>{{ t('editor.select_element')|default('Wähle ein Element aus, um es zu bearbeiten') }}</p>
+                        </div>
+                    </div>
+                    <div class="editor-inspector-panel" data-inspector-panel="layout"></div>
+                    <div class="editor-inspector-panel" data-inspector-panel="design"></div>
+                    <div class="editor-inspector-panel" data-inspector-panel="advanced"></div>
+                </div>
+            </div>
+        </aside>
+
+    </div>
+
+</div>
+
+{# ─── Preview Modal ─── #}
+<div class="editor-modal" id="editor-preview-modal" style="display:none;">
+    <div class="editor-modal__backdrop"></div>
+    <div class="editor-modal__content editor-modal__content--preview">
+        <div class="editor-modal__header">
+            <h3>{{ t('editor.preview')|default('Vorschau') }}</h3>
+            <button class="editor-modal__close" id="preview-close">&times;</button>
+        </div>
+        <div class="editor-modal__body">
+            <iframe id="editor-preview-frame" class="editor-preview-frame"></iframe>
+        </div>
+    </div>
+</div>
+
+{# ─── Versions Modal ─── #}
+<div class="editor-modal" id="editor-versions-modal" style="display:none;">
+    <div class="editor-modal__backdrop"></div>
+    <div class="editor-modal__content">
+        <div class="editor-modal__header">
+            <h3>{{ t('editor.versions')|default('Versionen') }}</h3>
+            <button class="editor-modal__close" id="versions-close">&times;</button>
+        </div>
+        <div class="editor-modal__body" id="versions-list">
+            <p class="text-muted">{{ t('editor.loading')|default('Wird geladen...') }}</p>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<!-- Floating sidebar toggles (appear when sidebars are collapsed) -->
+<button id="toggle-catalog-float" class="editor-sidebar-float-toggle editor-sidebar-float-toggle--left" title="Katalog ein-/ausklappen" aria-hidden="true">☰</button>
+<button id="toggle-inspector-float" class="editor-sidebar-float-toggle editor-sidebar-float-toggle--right" title="Inspector ein-/ausklappen" aria-hidden="true">☰</button>
+
+<script src="{{ theme_asset('js/editor/editor-app.js') }}"></script>
+</body>
+</html>

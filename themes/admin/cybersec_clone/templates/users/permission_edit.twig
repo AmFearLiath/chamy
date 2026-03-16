@@ -1,0 +1,88 @@
+{% extends 'base.twig' %}
+
+{% set is_edit = edit_permission.id is defined and edit_permission.id %}
+
+{% block title %}{{ is_edit ? t('admin.edit_permission')|default('Berechtigung bearbeiten') : t('admin.new_permission_title')|default('Neue Berechtigung') }} – Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">Dashboard</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/admin/users">{{ t('admin.users')|default('Benutzer') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ is_edit ? edit_permission.key : t('admin.new_permission_title')|default('Neue Berechtigung') }}</span>
+{% endblock %}
+
+{% block content %}
+<template id="tpl-role-options">
+    <div class="multi-select-popup-list">
+        {% for role in roles %}
+        <button type="button" class="multi-select-option" data-value="{{ role.id }}">{{ role.name }} <small class="muted">({{ role.key }})</small></button>
+        {% endfor %}
+    </div>
+</template>
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ is_edit ? t('admin.edit_permission')|default('Berechtigung bearbeiten') : t('admin.new_permission_title')|default('Neue Berechtigung') }}</h1>
+    </div>
+</div>
+
+<form method="post" action="{{ is_edit ? '/admin/permissions/' ~ edit_permission.id ~ '/update' : '/admin/permissions/store' }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="edit-layout">
+        <div class="edit-main">
+            <div class="card">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label" for="key">{{ t('admin.key')|default('Key') }} *</label>
+                        <input type="text" id="key" name="key" class="form-control"
+                               value="{{ edit_permission.key|default('') }}" {{ is_edit ? 'readonly' : 'required' }} autocomplete="off">
+                        <small class="form-hint text-muted">{{ t('admin.permission_key_hint')|default('Der Key wird für Systemprüfungen und Rollenzuweisungen verwendet.') }}</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="group">{{ t('admin.group')|default('Gruppe') }}</label>
+                        <input type="text" id="group" name="group" class="form-control"
+                               value="{{ edit_permission.group|default('system') }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="description">{{ t('admin.description')|default('Beschreibung') }} *</label>
+                        <textarea id="description" name="description" class="form-control" rows="4" required>{{ edit_permission.description|default('') }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="edit-sidebar">
+            <div class="card">
+                <div class="card-header">{{ t('admin.assigned_roles')|default('Zugewiesene Rollen') }}</div>
+                <div class="card-body">
+                    <div class="multi-select-container" data-popup-template="tpl-role-options">
+                        <input type="hidden" name="role_ids" value="{{ selected_role_ids|join(', ') }}">
+                        <input class="multi-select-input" placeholder="{{ t('admin.comma_separated_roles')|default('z. B. 1,2,3') }}" readonly>
+                        <button type="button" class="multi-select-add" aria-label="Hinzufügen">+</button>
+                    </div>
+                    <div class="muted small">{{ t('admin.click_to_add_roles')|default('Klicken, um Rollen hinzuzufügen') }}</div>
+                </div>
+                <div class="card-footer" style="display:flex; gap:12px; align-items:center;">
+                    <a href="/admin/users" class="btn btn-secondary" data-back="auto">{{ t('admin.back')|default('Zurück') }}</a>
+                    <button type="submit" class="btn btn-primary btn-block">{{ is_edit ? t('admin.save')|default('Speichern') : t('admin.create_permission_submit')|default('Berechtigung erstellen') }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+{% if is_edit and edit_permission.key not in ['admin.access', 'admin.dashboard', 'content.list', 'content.create', 'content.edit', 'content.delete', 'content.publish', 'users.manage', 'roles.manage', 'permissions.manage', 'system.manage'] %}
+<div class="card" style="margin-top: 1rem; max-width: 420px;">
+    <div class="card-header" style="color: var(--neon-red, #ff4444);">{{ t('admin.danger_zone')|default('Gefahrenzone') }}</div>
+    <div class="card-body">
+        <form method="post" action="/admin/permissions/{{ edit_permission.id }}/delete">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger btn-block" data-confirm="{{ t('admin.confirm_delete_permission')|default('Berechtigung wirklich löschen?') }}">{{ t('admin.delete_permission')|default('Berechtigung löschen') }}</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

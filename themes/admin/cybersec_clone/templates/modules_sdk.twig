@@ -1,0 +1,275 @@
+{% extends 'base.twig' %}
+
+{% block title %}{{ t('modules.sdk_title')|default('Modul-SDK') }} – Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">{{ t('admin.dashboard')|default('Dashboard') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/admin/modules">{{ t('admin.modules')|default('Module') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ t('modules.sdk_tab')|default('SDK') }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ t('modules.sdk_title')|default('Modul-SDK & Entwickler-Dokumentation') }}</h1>
+    </div>
+    <div class="page-header-right">
+        <a href="/admin/modules" class="btn btn-ghost">{{ t('modules.back_to_overview')|default('Zurück') }}</a>
+    </div>
+</div>
+
+{# ── Quick-Start ── #}
+<section class="card" style="margin-bottom:1.25rem;">
+    <div class="card-header">
+        <h3 class="card-title">{{ t('modules.sdk_quickstart')|default('Quick-Start') }}</h3>
+    </div>
+    <div class="card-body">
+        <p>{{ t('modules.sdk_quickstart_intro')|default('Erstelle in wenigen Schritten ein eigenes Chamy-Modul. Jedes Modul lebt in einem eigenen Verzeichnis unter') }} <code>modules/&lt;modul-id&gt;/</code>.</p>
+
+        <div class="mod-sdk-steps">
+            <div class="mod-sdk-step">
+                <span class="mod-sdk-step-nr">1</span>
+                <div>
+                    <strong>{{ t('modules.sdk_step1_title')|default('Verzeichnis anlegen') }}</strong>
+                    <p class="text-muted">{{ t('modules.sdk_step1_desc')|default('Erstelle einen neuen Ordner unter') }} <code>modules/mein-modul/</code></p>
+                </div>
+            </div>
+            <div class="mod-sdk-step">
+                <span class="mod-sdk-step-nr">2</span>
+                <div>
+                    <strong>{{ t('modules.sdk_step2_title')|default('Manifest erstellen') }}</strong>
+                    <p class="text-muted">{{ t('modules.sdk_step2_desc')|default('Lege eine') }} <code>manifest.json</code> {{ t('modules.sdk_step2_desc2')|default('mit den Modul-Metadaten an.') }}</p>
+                </div>
+            </div>
+            <div class="mod-sdk-step">
+                <span class="mod-sdk-step-nr">3</span>
+                <div>
+                    <strong>{{ t('modules.sdk_step3_title')|default('Entry-Datei schreiben') }}</strong>
+                    <p class="text-muted">{{ t('modules.sdk_step3_desc')|default('Erstelle die Einstiegsdatei (Standard:') }} <code>module.php</code>{{ t('modules.sdk_step3_desc2')|default(').') }}</p>
+                </div>
+            </div>
+            <div class="mod-sdk-step">
+                <span class="mod-sdk-step-nr">4</span>
+                <div>
+                    <strong>{{ t('modules.sdk_step4_title')|default('Modul aktivieren') }}</strong>
+                    <p class="text-muted">{{ t('modules.sdk_step4_desc')|default('Gehe zum Manager und aktiviere dein Modul.') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{# ── Manifest Reference ── #}
+<section class="card" style="margin-bottom:1.25rem;">
+    <div class="card-header">
+        <h3 class="card-title">{{ t('modules.sdk_manifest')|default('manifest.json Referenz') }}</h3>
+    </div>
+    <div class="card-body">
+        <p>{{ t('modules.sdk_manifest_desc')|default('Die manifest.json definiert alle Metadaten deines Moduls. Folgende Felder werden unterstützt:') }}</p>
+
+        <div class="mod-sdk-code">
+<pre><code>{
+  "id": "mein-modul",
+  "name": "Mein Modul",
+  "description": "Eine kurze Beschreibung des Moduls.",
+  "version": "1.0.0",
+  "author": "Dein Name",
+  "license": "MIT",
+  "entry": "module.php",
+  "hooks": ["content.before_save", "admin.sidebar"],
+  "requires": {
+    "chamy": ">=2.0.0",
+    "php": ">=8.1"
+  },
+  "languages": "lang/",
+  "content_types": "content-types/",
+  "config": true
+}</code></pre>
+        </div>
+
+        <table class="mod-sdk-table">
+            <thead>
+                <tr>
+                    <th>{{ t('modules.sdk_field')|default('Feld') }}</th>
+                    <th>{{ t('modules.sdk_type')|default('Typ') }}</th>
+                    <th>{{ t('modules.sdk_required')|default('Pflicht') }}</th>
+                    <th>{{ t('modules.sdk_desc')|default('Beschreibung') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td><code>id</code></td><td>string</td><td>✓</td><td>{{ t('modules.sdk_field_id')|default('Eindeutiger Bezeichner (slug-Format)') }}</td></tr>
+                <tr><td><code>name</code></td><td>string</td><td>✓</td><td>{{ t('modules.sdk_field_name')|default('Anzeigename des Moduls') }}</td></tr>
+                <tr><td><code>description</code></td><td>string</td><td></td><td>{{ t('modules.sdk_field_description')|default('Kurze Beschreibung') }}</td></tr>
+                <tr><td><code>version</code></td><td>string</td><td>✓</td><td>{{ t('modules.sdk_field_version')|default('Semver-konforme Version') }}</td></tr>
+                <tr><td><code>author</code></td><td>string</td><td></td><td>{{ t('modules.sdk_field_author')|default('Autor / Organisation') }}</td></tr>
+                <tr><td><code>license</code></td><td>string</td><td></td><td>{{ t('modules.sdk_field_license')|default('Lizenz (z.B. MIT, GPL-3.0)') }}</td></tr>
+                <tr><td><code>entry</code></td><td>string</td><td></td><td>{{ t('modules.sdk_field_entry')|default('Einstiegsdatei (Standard: module.php)') }}</td></tr>
+                <tr><td><code>hooks</code></td><td>array</td><td></td><td>{{ t('modules.sdk_field_hooks')|default('Liste der Hooks, die das Modul nutzt') }}</td></tr>
+                <tr><td><code>requires</code></td><td>object</td><td></td><td>{{ t('modules.sdk_field_requires')|default('Abhängigkeiten mit Version-Constraints') }}</td></tr>
+                <tr><td><code>languages</code></td><td>string</td><td></td><td>{{ t('modules.sdk_field_languages')|default('Pfad zum Sprachverzeichnis') }}</td></tr>
+                <tr><td><code>content_types</code></td><td>string</td><td></td><td>{{ t('modules.sdk_field_ctypes')|default('Pfad zum Content-Types-Verzeichnis') }}</td></tr>
+                <tr><td><code>config</code></td><td>boolean</td><td></td><td>{{ t('modules.sdk_field_config')|default('Ob das Modul eine config.json nutzt') }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{# ── Hook System ── #}
+<section class="card" style="margin-bottom:1.25rem;">
+    <div class="card-header">
+        <h3 class="card-title">{{ t('modules.sdk_hooks')|default('Hook-System') }}</h3>
+    </div>
+    <div class="card-body">
+        <p>{{ t('modules.sdk_hooks_desc')|default('Module können sich in verschiedene Hooks einklinken, um Funktionalität zu erweitern. Registriere Hooks in deiner Entry-Datei:') }}</p>
+
+        <div class="mod-sdk-code">
+<pre><code>&lt;?php
+// module.php
+
+return function ($kernel) {
+    // Hook: Vor dem Speichern von Inhalten
+    $kernel->on('content.before_save', function (&$data) {
+        // Validierung oder Transformation
+        $data['title'] = trim($data['title']);
+    });
+
+    // Hook: Admin-Sidebar erweitern
+    $kernel->on('admin.sidebar', function (&$items) {
+        $items[] = [
+            'label' => 'Mein Modul',
+            'icon'  => 'puzzle',
+            'url'   => '/admin/my-module'
+        ];
+    });
+
+    // Hook: Eigene Routen registrieren
+    $kernel->on('routes.register', function ($router) {
+        $router->get('/admin/my-module', function () {
+            return 'Hello from my module!';
+        });
+    });
+};</code></pre>
+        </div>
+
+        <h4 style="margin-top:1.5rem;">{{ t('modules.sdk_hooks_available')|default('Verfügbare Hooks') }}</h4>
+
+        <div class="mod-sdk-hook-grid">
+            <div class="mod-sdk-hook-card">
+                <div class="mod-sdk-hook-name"><code>content.before_save</code></div>
+                <p class="text-muted">{{ t('modules.sdk_hook_bsave')|default('Wird vor dem Speichern eines Inhaltsobjekts ausgelöst.') }}</p>
+            </div>
+            <div class="mod-sdk-hook-card">
+                <div class="mod-sdk-hook-name"><code>content.after_save</code></div>
+                <p class="text-muted">{{ t('modules.sdk_hook_asave')|default('Wird nach dem Speichern eines Inhaltsobjekts ausgelöst.') }}</p>
+            </div>
+            <div class="mod-sdk-hook-card">
+                <div class="mod-sdk-hook-name"><code>content.before_delete</code></div>
+                <p class="text-muted">{{ t('modules.sdk_hook_bdel')|default('Wird vor dem Löschen eines Inhaltsobjekts ausgelöst.') }}</p>
+            </div>
+            <div class="mod-sdk-hook-card">
+                <div class="mod-sdk-hook-name"><code>admin.sidebar</code></div>
+                <p class="text-muted">{{ t('modules.sdk_hook_sidebar')|default('Erlaubt das Hinzufügen eigener Menüpunkte zur Admin-Sidebar.') }}</p>
+            </div>
+            <div class="mod-sdk-hook-card">
+                <div class="mod-sdk-hook-name"><code>routes.register</code></div>
+                <p class="text-muted">{{ t('modules.sdk_hook_routes')|default('Erlaubt das Registrieren eigener Routen.') }}</p>
+            </div>
+            <div class="mod-sdk-hook-card">
+                <div class="mod-sdk-hook-name"><code>theme.header</code></div>
+                <p class="text-muted">{{ t('modules.sdk_hook_header')|default('Fügt HTML/CSS in den &lt;head&gt;-Bereich ein.') }}</p>
+            </div>
+            <div class="mod-sdk-hook-card">
+                <div class="mod-sdk-hook-name"><code>theme.footer</code></div>
+                <p class="text-muted">{{ t('modules.sdk_hook_footer')|default('Fügt HTML/JS vor das schließende &lt;/body&gt; ein.') }}</p>
+            </div>
+            <div class="mod-sdk-hook-card">
+                <div class="mod-sdk-hook-name"><code>user.after_login</code></div>
+                <p class="text-muted">{{ t('modules.sdk_hook_login')|default('Wird nach einem erfolgreichen Login ausgelöst.') }}</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+{# ── Module Scaffold ── #}
+<section class="card" style="margin-bottom:1.25rem;">
+    <div class="card-header">
+        <h3 class="card-title">{{ t('modules.sdk_scaffold')|default('Modul-Boilerplate') }}</h3>
+    </div>
+    <div class="card-body">
+        <p>{{ t('modules.sdk_scaffold_desc')|default('Empfohlene Verzeichnisstruktur für ein Modul:') }}</p>
+
+        <div class="mod-sdk-code">
+<pre><code>modules/mein-modul/
+├── manifest.json          # Modul-Metadaten
+├── module.php             # Einstiegsdatei
+├── config.json            # Standard-Konfiguration (optional)
+├── README.md              # Dokumentation (optional)
+├── lang/                  # Übersetzungen (optional)
+│   ├── de.json
+│   └── en.json
+├── content-types/         # Eigene Content-Types (optional)
+│   └── gallery.json
+├── templates/             # Eigene Twig-Templates (optional)
+│   └── widget.twig
+└── assets/                # CSS / JS / Bilder (optional)
+    ├── style.css
+    └── script.js</code></pre>
+        </div>
+    </div>
+</section>
+
+{# ── Best Practices ── #}
+<section class="card">
+    <div class="card-header">
+        <h3 class="card-title">{{ t('modules.sdk_best_practices')|default('Best Practices') }}</h3>
+    </div>
+    <div class="card-body">
+        <div class="mod-sdk-tips">
+            <div class="mod-sdk-tip">
+                <span class="mod-sdk-tip-icon">✓</span>
+                <div>
+                    <strong>{{ t('modules.sdk_tip1_title')|default('Namensräume nutzen') }}</strong>
+                    <p class="text-muted">{{ t('modules.sdk_tip1')|default('Verwende eindeutige Präfixe für Funktionen, Klassen und Hooks, um Konflikte zu vermeiden.') }}</p>
+                </div>
+            </div>
+            <div class="mod-sdk-tip">
+                <span class="mod-sdk-tip-icon">✓</span>
+                <div>
+                    <strong>{{ t('modules.sdk_tip2_title')|default('Konfiguration externalisieren') }}</strong>
+                    <p class="text-muted">{{ t('modules.sdk_tip2')|default('Verwende config.json für veränderbare Einstellungen statt hartcodierter Werte.') }}</p>
+                </div>
+            </div>
+            <div class="mod-sdk-tip">
+                <span class="mod-sdk-tip-icon">✓</span>
+                <div>
+                    <strong>{{ t('modules.sdk_tip3_title')|default('Übersetzungen vorsehen') }}</strong>
+                    <p class="text-muted">{{ t('modules.sdk_tip3')|default('Nutze das lang/-Verzeichnis und die t()-Funktion für mehrsprachige Unterstützung.') }}</p>
+                </div>
+            </div>
+            <div class="mod-sdk-tip">
+                <span class="mod-sdk-tip-icon">✓</span>
+                <div>
+                    <strong>{{ t('modules.sdk_tip4_title')|default('Minimale Abhängigkeiten') }}</strong>
+                    <p class="text-muted">{{ t('modules.sdk_tip4')|default('Halte requires schlank. Definiere nur tatsächlich benötigte Abhängigkeiten.') }}</p>
+                </div>
+            </div>
+            <div class="mod-sdk-tip">
+                <span class="mod-sdk-tip-icon">✓</span>
+                <div>
+                    <strong>{{ t('modules.sdk_tip5_title')|default('README pflegen') }}</strong>
+                    <p class="text-muted">{{ t('modules.sdk_tip5')|default('Eine README.md im Modulverzeichnis wird im Manager angezeigt.') }}</p>
+                </div>
+            </div>
+            <div class="mod-sdk-tip">
+                <span class="mod-sdk-tip-icon">✓</span>
+                <div>
+                    <strong>{{ t('modules.sdk_tip6_title')|default('Sicher entwickeln') }}</strong>
+                    <p class="text-muted">{{ t('modules.sdk_tip6')|default('Validiere Eingaben, nutze CSRF-Tokens und sanitize Ausgaben (|e Filter in Twig).') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

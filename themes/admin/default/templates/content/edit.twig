@@ -7,7 +7,7 @@
 {% block breadcrumb %}
 <a href="/admin">Dashboard</a>
 <span>›</span>
-<a href="/admin/content/{{ type_key }}">{{ type.label_plural|default(type_key) }}</a>
+<a href="/admin/content/{{ type_key }}">{{ content_labels[type_key]|default(type.label_plural|default(type_key)) }}</a>
 <span>›</span>
 <span class="current">{{ entry.id is defined ? (t('admin.edit')|default('Bearbeiten')) : (t('admin.create_new')|default('Neu erstellen')) }}</span>
 {% endblock %}
@@ -21,6 +21,9 @@
         </h1>
     </div>
     <div class="flex gap-2">
+        <a href="/admin/content/{{ type_key }}/{{ entry.id }}/editor" class="btn btn-primary" {% if entry.id is not defined %}style="display:none;"{% endif %}>
+            ✦ {{ t('admin.visual_editor')|default('Visueller Editor') }}
+        </a>
         <a href="/admin/content/{{ type_key }}" class="btn btn-ghost">← {{ t('admin.back')|default('Zurück') }}</a>
     </div>
 </div>

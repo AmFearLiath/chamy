@@ -1,9 +1,12 @@
 {% extends 'base.twig' %}
 
-{% block title %}Startseite – {{ site_name|default('Chamy CMS') }}{% endblock %}
-{% block body_class %}page-home{% endblock %}
+{% block title %}{{ home_data.seo_title|default(site_name|default('Chamy CMS')) }}{% endblock %}
+{% block body_class %}page-home{% if editor_content %} page-editor{% endif %}{% endblock %}
 
 {% block body %}
+{% if editor_content %}
+    {{ editor_content|raw }}
+{% else %}
 <section class="hero">
     <div class="container">
         <h1>Willkommen bei <span>{{ site_name|default('Chamy') }}</span></h1>
@@ -42,5 +45,6 @@
         {% endfor %}
     </div>
 </section>
+{% endif %}
 {% endif %}
 {% endblock %}

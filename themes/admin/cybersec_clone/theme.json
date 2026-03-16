@@ -1,0 +1,19 @@
+{
+    "id": "cybersec_clone",
+    "name": "Chamy Admin – CyberSec Clone",
+    "version": "1.0.0",
+    "author": "Chamy Team",
+    "description": "Clone of default admin theme with the CyberSec CodePen visual language (colors, gradients, glow and motion).",
+    "type": "admin",
+    "parent": "default",
+    "chamy": {
+        "min": "1.0",
+        "max": "1.x"
+    },
+    "features": {
+        "dark_mode": true,
+        "light_mode": false,
+        "animations": true
+    },
+    "disabled": false
+}

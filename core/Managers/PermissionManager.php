@@ -129,6 +129,8 @@ final class PermissionManager implements ManagerInterface
 
         $this->definePermission('system.mods', 'Benutzer darf Mods installieren, verwalten, bearbeiten, konfigurieren', 'system');
         $this->definePermission('system.themes', 'Benutzer darf Themes installieren, verwalten, bearbeiten, konfigurieren', 'system');
+        $this->definePermission('system.icons.manage', 'Icon-Manager verwalten', 'settings');
+        $this->definePermission('system.fonts.manage', 'Font-Manager verwalten', 'settings');
         $this->definePermission('users.manage', 'Benutzer verwalten', 'users');
         $this->definePermission('system.manage', 'Einstellungen verwalten', 'settings');
 

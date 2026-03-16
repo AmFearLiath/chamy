@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Chamy\Core\Controllers;
 
+use Chamy\Core\Editor\DefinitionRegistry;
 use Chamy\Core\Http\Request;
 use Chamy\Core\Http\Response;
 use Chamy\Core\Kernel;
@@ -89,15 +90,165 @@ final class AdminController
     private function baseData(): array
     {
         $types = $this->kernel->contentTypes()->getAllTypes();
+        $settings = $this->kernel->data()->getSettings();
+        $sidebarIconMode = $this->resolveSidebarIconMode($settings);
+        $adminIconCss = $this->resolveAdminIconCss();
+        $adminFontCss = $this->resolveAdminFontCss();
+        $sidebarIcons = $this->buildSidebarIconMap($sidebarIconMode);
 
         return [
             'user'          => $this->currentUser(),
             'content_types' => $types,
+            'content_labels' => [
+                'article' => 'Artikel',
+                'page' => 'Seiten',
+                'media_entry' => 'Medien',
+                'documentation' => 'Dokumentationen',
+            ],
             'app_locale'    => $this->kernel->config()->get('APP_LOCALE', 'de'),
             'app_version'   => '1.0.0',
             'php_version'   => PHP_VERSION,
             'current_theme' => 'Neon Dark',
             'flash_messages'=> $this->kernel->session()->getAllFlash(),
+            'admin_icon_css' => $adminIconCss,
+            'admin_font_css' => $adminFontCss,
+            'sidebar_icon_mode' => $sidebarIconMode,
+            'sidebar_icons' => $sidebarIcons,
+        ];
+    }
+
+    private function resolveSidebarIconMode(array $settings): string
+    {
+        $groups = ['system', 'appearance', 'theme', 'general'];
+        $keys = [
+            'admin_sidebar_icons',
+            'sidebar_icons',
+            'sidebar_icon_set',
+            'admin_icon_set',
+            'admin_nav_icons',
+            'nav_icon_set',
+        ];
+
+        foreach ($groups as $group) {
+            foreach ($keys as $key) {
+                $value = $this->findSettingValue($settings, $group, $key);
+                if ($value === null || $value === '') {
+                    continue;
+                }
+                $normalized = strtolower(trim($value));
+                if (in_array($normalized, ['tabler', 'ti', 'tabler-icons', 'tabler_icons'], true)) {
+                    return 'tabler';
+                }
+                if (in_array($normalized, ['unicode', 'classic', 'emoji', 'text'], true)) {
+                    return 'classic';
+                }
+            }
+        }
+
+        foreach ($this->kernel->assetLibrary()->listIconSets() as $set) {
+            if (!is_array($set)) {
+                continue;
+            }
+            $areas = $set['areas'] ?? [];
+            $inAdmin = is_array($areas) ? in_array('admin', $areas, true) : true;
+            if (!$inAdmin) {
+                continue;
+            }
+            $needle = strtolower((string) (($set['id'] ?? '') . ' ' . ($set['name'] ?? '')));
+            if (str_contains($needle, 'tabler')) {
+                return 'tabler';
+            }
+        }
+
+        return 'classic';
+    }
+
+    private function findSettingValue(array $settings, string $group, string $key): ?string
+    {
+        $groupRows = $settings[$group] ?? null;
+        if (!is_array($groupRows)) {
+            return null;
+        }
+        foreach ($groupRows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            if ((string) ($row['key'] ?? '') !== $key) {
+                continue;
+            }
+            return trim((string) ($row['value'] ?? ''));
+        }
+        return null;
+    }
+
+    private function resolveAdminIconCss(): array
+    {
+        $css = [];
+        foreach ($this->kernel->assetLibrary()->listIconSets() as $set) {
+            if (!is_array($set)) {
+                continue;
+            }
+            if ((string) ($set['status'] ?? 'active') !== 'active') {
+                continue;
+            }
+            $areas = $set['areas'] ?? [];
+            if (is_array($areas) && $areas !== [] && !in_array('admin', $areas, true)) {
+                continue;
+            }
+            $localCss = trim((string) ($set['local_css'] ?? ''));
+            if ($localCss !== '') {
+                $css[] = $localCss;
+            }
+        }
+
+        return array_values(array_unique($css));
+    }
+
+    private function resolveAdminFontCss(): array
+    {
+        $css = [];
+        foreach ($this->kernel->assetLibrary()->listFontSets() as $set) {
+            if (!is_array($set)) {
+                continue;
+            }
+            if ((string) ($set['status'] ?? 'active') !== 'active') {
+                continue;
+            }
+            $areas = $set['areas'] ?? [];
+            if (is_array($areas) && $areas !== [] && !in_array('admin', $areas, true)) {
+                continue;
+            }
+            $localCss = trim((string) ($set['local_css'] ?? ''));
+            if ($localCss !== '') {
+                $css[] = $localCss;
+            }
+        }
+
+        return array_values(array_unique($css));
+    }
+
+    private function buildSidebarIconMap(string $mode): array
+    {
+        if ($mode === 'tabler') {
+            return [
+                'dashboard' => 'ti ti-layout-dashboard',
+                'content' => 'ti ti-file-text',
+                'modules' => 'ti ti-box',
+                'themes' => 'ti ti-palette',
+                'users' => 'ti ti-users',
+                'settings' => 'ti ti-settings',
+                'trash' => 'ti ti-trash',
+            ];
+        }
+
+        return [
+            'dashboard' => '⊞',
+            'content' => '◉',
+            'modules' => '⧉',
+            'themes' => '◈',
+            'users' => '◎',
+            'settings' => '⚙',
+            'trash' => '🗑',
         ];
     }
 
@@ -248,6 +399,8 @@ final class AdminController
             'users.manage',
             'roles.manage',
             'permissions.manage',
+            'system.icons.manage',
+            'system.fonts.manage',
             'system.manage',
         ];
     }
@@ -674,6 +827,431 @@ final class AdminController
                 'versions'      => $versions,
             ]))
         );
+    }
+
+    /* ───────────────────────────────────────────────
+     *  Content – Visual Editor (GET)
+     * ─────────────────────────────────────────────── */
+
+    public function contentEditor(Request $request): Response
+    {
+        $redirect = $this->requireAuth();
+        if ($redirect) {
+            return $redirect;
+        }
+
+        $typeKey = $request->getRouteParam('type');
+        $id      = (int) $request->getRouteParam('id');
+        $type    = $this->kernel->contentTypes()->getType($typeKey);
+
+        if (!$type) {
+            return Response::notFound('Content type not found.');
+        }
+
+        $entry = $this->kernel->data()->getContentById($id);
+        if (!$entry || $entry['content_type'] !== $typeKey) {
+            return Response::notFound('Entry not found.');
+        }
+
+        $entryData = $entry['_data'] ?? (is_array($entry['data']) ? $entry['data'] : json_decode($entry['data'] ?? '{}', true));
+        $entry['state'] = $entry['status'];
+
+        return Response::html(
+            $this->kernel->themes()->render('content/editor.twig', [
+                'user'          => $this->currentUser(),
+                'app_locale'    => $this->kernel->config()->get('APP_LOCALE', 'de'),
+                'current_route' => 'content.' . $typeKey,
+                'type_key'      => $typeKey,
+                'type'          => $type,
+                'entry'         => $entry,
+                'entry_data'    => $entryData,
+                'content_id'    => $id,
+                'csrf_token'    => $this->kernel->session()->get('csrf_token', ''),
+                'admin_icon_css' => $this->resolveAdminIconCss(),
+                'admin_font_css' => $this->resolveAdminFontCss(),
+            ])
+        );
+    }
+
+    /* ───────────────────────────────────────────────
+     *  Editor Manager (System Elements)
+     * ─────────────────────────────────────────────── */
+
+    private function editorStorageDir(): string
+    {
+        return rtrim($this->kernel->config()->get('STORAGE_PATH', 'storage'), '/\\') . '/editor';
+    }
+
+    private function editorCustomDefinitionsFile(): string
+    {
+        return $this->editorStorageDir() . '/custom-definitions.json';
+    }
+
+    private function readJsonFile(string $filePath, array $fallback = []): array
+    {
+        if (!file_exists($filePath)) {
+            return $fallback;
+        }
+
+        $data = json_decode((string) file_get_contents($filePath), true);
+        return is_array($data) ? $data : $fallback;
+    }
+
+    /**
+     * Accept both supported custom definition formats:
+     * 1) keyed map: {"components": {"hero": {...}}}
+     * 2) list format: {"components": [{"id":"hero", ...}]}
+     */
+    private function normalizeEditorDefinitions(array $definitions): array
+    {
+        $normalized = [
+            'layouts' => [],
+            'blocks' => [],
+            'components' => [],
+            'snippets' => [],
+        ];
+
+        foreach (array_keys($normalized) as $group) {
+            $items = $definitions[$group] ?? [];
+            if (!is_array($items)) {
+                continue;
+            }
+
+            foreach ($items as $key => $def) {
+                if (!is_array($def)) {
+                    continue;
+                }
+
+                $id = (string) ($def['id'] ?? $key);
+                $id = strtolower(trim($id));
+                $id = preg_replace('/[^a-z0-9_\-]/', '_', $id);
+                if ($id === '') {
+                    continue;
+                }
+
+                unset($def['id']);
+                $normalized[$group][$id] = $def;
+            }
+        }
+
+        return $normalized;
+    }
+
+    private function loadEditorCustomDefinitions(): array
+    {
+        $raw = $this->readJsonFile($this->editorCustomDefinitionsFile(), [
+            'layouts' => [],
+            'blocks' => [],
+            'components' => [],
+            'snippets' => [],
+        ]);
+
+        return $this->normalizeEditorDefinitions($raw);
+    }
+
+    private function writeJsonFile(string $filePath, array $data): void
+    {
+        $dir = dirname($filePath);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        file_put_contents($filePath, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
+
+    public function editorManager(Request $request): Response
+    {
+        $redirect = $this->requireAuth();
+        if ($redirect) {
+            return $redirect;
+        }
+
+        $registry = new DefinitionRegistry($this->kernel);
+        $definitions = $registry->getAll();
+
+        $customDefinitions = $this->loadEditorCustomDefinitions();
+
+        $packagesDir = $this->editorStorageDir() . '/packages';
+        $packages = [];
+        if (is_dir($packagesDir)) {
+            foreach (glob($packagesDir . '/*.json') ?: [] as $file) {
+                $pkg = $this->readJsonFile($file, []);
+                $packages[] = [
+                    'file' => basename($file),
+                    'name' => (string) ($pkg['name'] ?? basename($file, '.json')),
+                    'version' => (string) ($pkg['version'] ?? '1.0.0'),
+                    'updated_at' => date('Y-m-d H:i:s', (int) filemtime($file)),
+                    'counts' => [
+                        'layouts' => count($pkg['definitions']['layouts'] ?? []),
+                        'blocks' => count($pkg['definitions']['blocks'] ?? []),
+                        'components' => count($pkg['definitions']['components'] ?? []),
+                        'snippets' => count($pkg['definitions']['snippets'] ?? []),
+                    ],
+                ];
+            }
+        }
+
+        return Response::html(
+            $this->kernel->themes()->render('editor/manager.twig', array_merge($this->baseData(), [
+                'current_route' => 'editor',
+                'definitions' => $definitions,
+                'custom_definitions' => $customDefinitions,
+                'packages' => $packages,
+            ]))
+        );
+    }
+
+    public function editorCreateElement(Request $request): Response
+    {
+        $redirect = $this->requireAuth();
+        if ($redirect) {
+            return $redirect;
+        }
+
+        if (!$this->kernel->session()->verifyCsrfToken($request->getPost('csrf_token', ''))) {
+            $this->kernel->session()->flash('danger', 'Ungültige Anfrage.');
+            return Response::redirect('/admin/editor');
+        }
+
+        $type = (string) $request->getPost('element_type', '');
+        $id = strtolower(trim((string) $request->getPost('element_id', '')));
+        $id = preg_replace('/[^a-z0-9_\-]/', '_', $id);
+        $label = trim((string) $request->getPost('element_label', ''));
+        $description = trim((string) $request->getPost('element_description', ''));
+        $category = trim((string) $request->getPost('element_category', 'custom'));
+        $icon = trim((string) $request->getPost('element_icon', 'custom'));
+
+        $fieldsJson = trim((string) $request->getPost('element_fields_json', '[]'));
+        $defaultPropsJson = trim((string) $request->getPost('element_default_props_json', '{}'));
+
+        $groupMap = [
+            'layout' => 'layouts',
+            'block' => 'blocks',
+            'component' => 'components',
+            'snippet' => 'snippets',
+        ];
+
+        if (!isset($groupMap[$type]) || $id === '' || $label === '') {
+            $this->kernel->session()->flash('danger', 'Typ, ID und Label sind erforderlich.');
+            return Response::redirect('/admin/editor');
+        }
+
+        $fields = json_decode($fieldsJson, true);
+        $defaultProps = json_decode($defaultPropsJson, true);
+        if (!is_array($fields) || !is_array($defaultProps)) {
+            $this->kernel->session()->flash('danger', 'Ungültiges JSON in Felder oder Default Props.');
+            return Response::redirect('/admin/editor');
+        }
+
+        $file = $this->editorCustomDefinitionsFile();
+        $custom = $this->loadEditorCustomDefinitions();
+
+        $group = $groupMap[$type];
+        $custom[$group][$id] = [
+            'label' => $label,
+            'description' => $description,
+            'category' => $category,
+            'icon' => $icon,
+            'source' => 'user',
+            'fields' => $fields,
+            'defaultProps' => $defaultProps,
+            'allowedChildren' => $type === 'layout' ? ['layout', 'block', 'component', 'snippet'] : [],
+        ];
+
+        $this->writeJsonFile($file, $custom);
+        $this->kernel->session()->flash('success', 'Element gespeichert: ' . $label);
+        return Response::redirect('/admin/editor');
+    }
+
+    public function editorImportPackage(Request $request): Response
+    {
+        $redirect = $this->requireAuth();
+        if ($redirect) {
+            return $redirect;
+        }
+
+        if (!$this->kernel->session()->verifyCsrfToken($request->getPost('csrf_token', ''))) {
+            $this->kernel->session()->flash('danger', 'Ungültige Anfrage.');
+            return Response::redirect('/admin/editor');
+        }
+
+        $raw = trim((string) $request->getPost('package_json', ''));
+        if ($raw === '') {
+            $this->kernel->session()->flash('danger', 'Kein Paket-JSON übergeben.');
+            return Response::redirect('/admin/editor');
+        }
+
+        $pkg = json_decode($raw, true);
+        if (!is_array($pkg)) {
+            $this->kernel->session()->flash('danger', 'Paket-JSON ist ungültig.');
+            return Response::redirect('/admin/editor');
+        }
+
+        $definitions = $pkg['definitions'] ?? $pkg;
+        if (!is_array($definitions)) {
+            $this->kernel->session()->flash('danger', 'Paket enthält keine Definitionsdaten.');
+            return Response::redirect('/admin/editor');
+        }
+
+        $file = $this->editorCustomDefinitionsFile();
+        $custom = $this->loadEditorCustomDefinitions();
+
+        foreach (['layouts', 'blocks', 'components', 'snippets'] as $group) {
+            $incoming = $definitions[$group] ?? [];
+            if (!is_array($incoming)) {
+                continue;
+            }
+            foreach ($incoming as $id => $def) {
+                if (!is_array($def)) {
+                    continue;
+                }
+                $def['source'] = 'user';
+                $custom[$group][$id] = $def;
+            }
+        }
+
+        $this->writeJsonFile($file, $custom);
+
+        $packagesDir = $this->editorStorageDir() . '/packages';
+        if (!is_dir($packagesDir)) {
+            mkdir($packagesDir, 0755, true);
+        }
+        $packageName = preg_replace('/[^a-z0-9_\-]/', '_', strtolower((string) ($pkg['name'] ?? 'imported-package')));
+        $packageFile = $packagesDir . '/' . $packageName . '-' . date('Ymd-His') . '.json';
+        $this->writeJsonFile($packageFile, $pkg);
+
+        $this->kernel->session()->flash('success', 'Paket importiert: ' . ($pkg['name'] ?? 'Unbenannt'));
+        return Response::redirect('/admin/editor');
+    }
+
+    public function editorExportPackage(Request $request): Response
+    {
+        $redirect = $this->requireAuth();
+        if ($redirect) {
+            return $redirect;
+        }
+
+        $registry = new DefinitionRegistry($this->kernel);
+        $payload = [
+            'name' => 'chamy-editor-export',
+            'version' => '1.0.0',
+            'exported_at' => date('c'),
+            'definitions' => $registry->getAll(),
+        ];
+
+        $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        return new Response((string) $json, 200, [
+            'Content-Type' => 'application/json; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="editor-package-' . date('Ymd-His') . '.json"',
+        ]);
+    }
+
+    public function editorUpdateElement(Request $request): Response
+    {
+        $redirect = $this->requireAuth();
+        if ($redirect) {
+            return $redirect;
+        }
+
+        if (!$this->kernel->session()->verifyCsrfToken($request->getPost('csrf_token', ''))) {
+            $this->kernel->session()->flash('danger', 'Ungültige Anfrage.');
+            return Response::redirect('/admin/editor');
+        }
+
+        $type = (string) $request->getPost('element_type', '');
+        $id = strtolower(trim((string) $request->getPost('element_id', '')));
+        $id = preg_replace('/[^a-z0-9_\-]/', '_', $id);
+        $label = trim((string) $request->getPost('element_label', ''));
+        $description = trim((string) $request->getPost('element_description', ''));
+        $category = trim((string) $request->getPost('element_category', 'custom'));
+        $icon = trim((string) $request->getPost('element_icon', 'custom'));
+
+        $fieldsJson = trim((string) $request->getPost('element_fields_json', '[]'));
+        $defaultPropsJson = trim((string) $request->getPost('element_default_props_json', '{}'));
+
+        $groupMap = [
+            'layout' => 'layouts',
+            'block' => 'blocks',
+            'component' => 'components',
+            'snippet' => 'snippets',
+        ];
+
+        if (!isset($groupMap[$type]) || $id === '' || $label === '') {
+            $this->kernel->session()->flash('danger', 'Typ, ID und Label sind erforderlich.');
+            return Response::redirect('/admin/editor');
+        }
+
+        $fields = json_decode($fieldsJson, true);
+        $defaultProps = json_decode($defaultPropsJson, true);
+        if (!is_array($fields) || !is_array($defaultProps)) {
+            $this->kernel->session()->flash('danger', 'Ungültiges JSON in Felder oder Default Props.');
+            return Response::redirect('/admin/editor');
+        }
+
+        $file = $this->editorCustomDefinitionsFile();
+        $custom = $this->loadEditorCustomDefinitions();
+
+        $group = $groupMap[$type];
+        if (!isset($custom[$group][$id])) {
+            $this->kernel->session()->flash('danger', 'Element nicht gefunden: ' . $id);
+            return Response::redirect('/admin/editor');
+        }
+
+        $custom[$group][$id] = array_merge($custom[$group][$id], [
+            'label' => $label,
+            'description' => $description,
+            'category' => $category,
+            'icon' => $icon,
+            'fields' => $fields,
+            'defaultProps' => $defaultProps,
+        ]);
+
+        $this->writeJsonFile($file, $custom);
+        $this->kernel->session()->flash('success', 'Element aktualisiert: ' . $label);
+        return Response::redirect('/admin/editor');
+    }
+
+    public function editorDeleteElement(Request $request): Response
+    {
+        $redirect = $this->requireAuth();
+        if ($redirect) {
+            return $redirect;
+        }
+
+        if (!$this->kernel->session()->verifyCsrfToken($request->getPost('csrf_token', ''))) {
+            $this->kernel->session()->flash('danger', 'Ungültige Anfrage.');
+            return Response::redirect('/admin/editor');
+        }
+
+        $type = (string) $request->getPost('element_type', '');
+        $id = strtolower(trim((string) $request->getPost('element_id', '')));
+        $id = preg_replace('/[^a-z0-9_\-]/', '_', $id);
+
+        $groupMap = [
+            'layout' => 'layouts',
+            'block' => 'blocks',
+            'component' => 'components',
+            'snippet' => 'snippets',
+        ];
+
+        if (!isset($groupMap[$type]) || $id === '') {
+            $this->kernel->session()->flash('danger', 'Typ und ID sind erforderlich.');
+            return Response::redirect('/admin/editor');
+        }
+
+        $file = $this->editorCustomDefinitionsFile();
+        $custom = $this->loadEditorCustomDefinitions();
+
+        $group = $groupMap[$type];
+        if (isset($custom[$group][$id])) {
+            unset($custom[$group][$id]);
+            $this->writeJsonFile($file, $custom);
+            $this->kernel->session()->flash('success', 'Element gelöscht: ' . $id);
+        } else {
+            $this->kernel->session()->flash('danger', 'Element nicht gefunden: ' . $id);
+        }
+
+        return Response::redirect('/admin/editor');
     }
 
     /* ───────────────────────────────────────────────
@@ -1483,10 +2061,161 @@ final class AdminController
      *  Settings
      * ─────────────────────────────────────────────── */
 
+    private function canManageIconLibraries(?array $user): bool
+    {
+        if ($user === null) {
+            return false;
+        }
+
+        return $this->kernel->permissions()->userCan($user, 'system.manage')
+            || $this->kernel->permissions()->userCan($user, 'system.icons.manage');
+    }
+
+    private function canManageFontLibraries(?array $user): bool
+    {
+        if ($user === null) {
+            return false;
+        }
+
+        return $this->kernel->permissions()->userCan($user, 'system.manage')
+            || $this->kernel->permissions()->userCan($user, 'system.fonts.manage');
+    }
+
+    /** @return array<int, string> */
+    private function parseMultiSelect(mixed $value): array
+    {
+        if (is_string($value)) {
+            $value = explode(',', $value);
+        }
+
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $items = array_values(array_unique(array_filter(array_map(
+            static fn(mixed $item): string => trim((string) $item),
+            $value
+        ))));
+
+        sort($items);
+        return $items;
+    }
+
+    /** @return array<int, string> */
+    private function parseLineList(mixed $value): array
+    {
+        if (!is_string($value)) {
+            return [];
+        }
+
+        $lines = preg_split('/\r\n|\r|\n/', $value) ?: [];
+        $items = array_values(array_unique(array_filter(array_map(
+            static fn(string $line): string => trim($line),
+            $lines
+        ))));
+
+        return $items;
+    }
+
+    /**
+     * Auto-add missing i18n keys for settings icon/font managers.
+     */
+    private function ensureSettingsAssetTranslations(): void
+    {
+        $keys = [
+            'admin' => [
+                'settings_tab_icons' => ['de' => 'Icons', 'en' => 'Icons'],
+                'settings_tab_fonts' => ['de' => 'Schriftarten', 'en' => 'Fonts'],
+                'settings_icons_title' => ['de' => 'Icon-Manager', 'en' => 'Icon manager'],
+                'settings_icons_desc' => ['de' => 'Icon-Fonts analysieren, lokal installieren und als Sets verwalten.', 'en' => 'Analyze icon fonts, install them locally, and manage them as sets.'],
+                'settings_fonts_title' => ['de' => 'Font-Manager', 'en' => 'Font manager'],
+                'settings_fonts_desc' => ['de' => 'Fonts installieren, lokal verwalten und für Bereiche freigeben.', 'en' => 'Install fonts, manage them locally, and assign area availability.'],
+                'settings_assets_known_sources' => ['de' => 'Bekannte Quellen', 'en' => 'Known sources'],
+                'settings_assets_source_url' => ['de' => 'Quell-URL', 'en' => 'Source URL'],
+                'settings_assets_analyze' => ['de' => 'Analysieren', 'en' => 'Analyze'],
+                'settings_assets_install' => ['de' => 'Installieren', 'en' => 'Install'],
+                'settings_assets_name' => ['de' => 'Name', 'en' => 'Name'],
+                'settings_assets_id' => ['de' => 'ID', 'en' => 'ID'],
+                'settings_assets_areas' => ['de' => 'Bereiche', 'en' => 'Areas'],
+                'settings_assets_scope' => ['de' => 'Freigabe für', 'en' => 'Allowed for'],
+                'settings_assets_status' => ['de' => 'Status', 'en' => 'Status'],
+                'settings_assets_actions' => ['de' => 'Aktionen', 'en' => 'Actions'],
+                'settings_assets_export' => ['de' => 'Export', 'en' => 'Export'],
+                'settings_assets_import' => ['de' => 'Import', 'en' => 'Import'],
+                'settings_assets_delete' => ['de' => 'Löschen', 'en' => 'Delete'],
+                'settings_assets_google_search' => ['de' => 'Google Fonts Suche', 'en' => 'Google Fonts search'],
+                'settings_assets_styles' => ['de' => 'Stile', 'en' => 'Styles'],
+                'settings_assets_provider' => ['de' => 'Anbieter', 'en' => 'Provider'],
+                'settings_assets_install_google' => ['de' => 'Google Font installieren', 'en' => 'Install Google font'],
+                'settings_assets_import_json' => ['de' => 'Import-JSON', 'en' => 'Import JSON'],
+                'settings_assets_export_json' => ['de' => 'Export-JSON', 'en' => 'Export JSON'],
+                'settings_assets_readonly' => ['de' => 'Nur Leserechte für diesen Manager.', 'en' => 'Read-only access for this manager.'],
+                'settings_assets_no_sets' => ['de' => 'Keine Sets vorhanden.', 'en' => 'No sets available.'],
+            ],
+        ];
+
+        $de = [];
+        $en = [];
+        foreach ($keys as $group => $items) {
+            foreach ($items as $key => $values) {
+                $de[$group][$key] = $values['de'];
+                $en[$group][$key] = $values['en'];
+            }
+        }
+
+        $this->ensureLocaleKeys('de', $de);
+        $this->ensureLocaleKeys('en', $en);
+    }
+
+    private function ensureLocaleKeys(string $locale, array $keys): void
+    {
+        $file = $this->kernel->path('languages', $locale . '.php');
+        if (!is_file($file)) {
+            return;
+        }
+
+        $data = include $file;
+        if (!is_array($data)) {
+            return;
+        }
+
+        $changed = false;
+        $merge = function (array $target, array $incoming) use (&$merge, &$changed): array {
+            foreach ($incoming as $key => $value) {
+                if (is_array($value)) {
+                    $targetValue = $target[$key] ?? [];
+                    if (!is_array($targetValue)) {
+                        $targetValue = [];
+                    }
+                    $target[$key] = $merge($targetValue, $value);
+                    continue;
+                }
+                if (!array_key_exists($key, $target)) {
+                    $target[$key] = $value;
+                    $changed = true;
+                }
+            }
+            return $target;
+        };
+
+        $newData = $merge($data, $keys);
+        if (!$changed) {
+            return;
+        }
+
+        @file_put_contents(
+            $file,
+            "<?php\n\nreturn " . var_export($newData, true) . ";\n",
+            LOCK_EX
+        );
+    }
+
     public function settingsPage(Request $request): Response
     {
         $redirect = $this->requireAuth();
         if ($redirect) return $redirect;
+
+        $this->ensureSettingsAssetTranslations();
 
         $settings = $this->kernel->data()->getSettings();
         unset($settings['theme']);
@@ -1507,25 +2236,335 @@ final class AdminController
 
         $user = $this->currentUser();
         $canManageSettings = $user !== null && $this->kernel->permissions()->userCan($user, 'system.manage');
+        $canManageIcons = $this->canManageIconLibraries($user);
+        $canManageFonts = $this->canManageFontLibraries($user);
+
+        $activeTab = (string) $request->getQuery('tab', '');
+        if (!in_array($activeTab, ['icons', 'fonts'], true)) {
+            $activeTab = '';
+        }
+
+        $assetLibrary = $this->kernel->assetLibrary();
+        $iconSets = $assetLibrary->listIconSets();
+        $fontSets = $assetLibrary->listFontSets();
+
+        $googleQuery = (string) $request->getQuery('google_q', '');
+        $googleCatalog = $assetLibrary->getGoogleFontCatalog($googleQuery);
+
+        $iconsAnalysis = $this->kernel->session()->get('settings_icons_analysis', null);
+        $fontsAnalysis = $this->kernel->session()->get('settings_fonts_analysis', null);
+
+        $exportType = (string) $request->getQuery('export_type', '');
+        $exportId = (string) $request->getQuery('export_id', '');
+        $exportPayload = null;
+        if ($exportType !== '' && $exportId !== '') {
+            $exportPayload = $assetLibrary->exportSet($exportType, $exportId);
+        }
 
         return Response::html(
             $this->kernel->themes()->render('settings.twig', array_merge($this->baseData(), [
                 'current_route' => 'settings',
                 'settings'      => $ordered,
                 'can_manage_settings' => $canManageSettings,
+                'can_manage_icons' => $canManageIcons,
+                'can_manage_fonts' => $canManageFonts,
+                'asset_active_tab' => $activeTab,
+                'icon_sources' => $assetLibrary->knownIconSources(),
+                'icon_source_templates' => $assetLibrary->knownSourceTemplates(),
+                'icon_sets' => $iconSets,
+                'current_sidebar_icon_set' => $this->findSettingValue($settings, 'appearance', 'sidebar_icon_set') ?? '',
+                'font_sets' => $fontSets,
+                'google_q' => $googleQuery,
+                'google_catalog' => $googleCatalog,
+                'icons_analysis' => $iconsAnalysis,
+                'icons_template_result' => $this->kernel->session()->get('settings_icons_template_result', null),
+                'fonts_analysis' => $fontsAnalysis,
+                'asset_export_payload' => $exportPayload,
+                'asset_export_type' => $exportType,
+                'asset_export_id' => $exportId,
             ]))
         );
     }
 
     public function settingsUpdate(Request $request): Response
     {
-        $redirect = $this->requirePermission('system.manage');
+        $redirect = $this->requireAuth();
         if ($redirect) return $redirect;
 
         if (!$this->kernel->session()->verifyCsrfToken($request->getPost('csrf_token', ''))) {
             $this->kernel->session()->flash('danger', 'Ungültige Anfrage.');
             return Response::redirect('/admin/settings');
         }
+
+        $assetAction = trim((string) $request->getPost('asset_action', ''));
+        if ($assetAction !== '') {
+            $user = $this->currentUser();
+            $assetLibrary = $this->kernel->assetLibrary();
+
+            if (str_starts_with($assetAction, 'icons.') && !$this->canManageIconLibraries($user)) {
+                $this->kernel->session()->flash('danger', 'Keine Berechtigung für den Icon-Manager.');
+                return Response::redirect('/admin/settings?tab=icons');
+            }
+
+            if (str_starts_with($assetAction, 'fonts.') && !$this->canManageFontLibraries($user)) {
+                $this->kernel->session()->flash('danger', 'Keine Berechtigung für den Font-Manager.');
+                return Response::redirect('/admin/settings?tab=fonts');
+            }
+
+            if ($assetAction === 'icons.analyze') {
+                $analysis = $assetLibrary->analyzeIconCss((string) $request->getPost('source_url', ''));
+                $this->kernel->session()->set('settings_icons_analysis', $analysis);
+                $this->kernel->session()->flash($analysis['success'] ? 'success' : 'danger', (string) ($analysis['message'] ?? 'Analyse fehlgeschlagen.'));
+                return Response::redirect('/admin/settings?tab=icons');
+            }
+
+            if ($assetAction === 'icons.install') {
+                $result = $assetLibrary->installIconSetFromUrl([
+                    'id' => (string) $request->getPost('set_id', ''),
+                    'name' => (string) $request->getPost('set_name', ''),
+                    'source_url' => (string) $request->getPost('source_url', ''),
+                    'areas' => $this->parseMultiSelect($request->getPost('areas', [])),
+                    'allow_for' => $this->parseMultiSelect($request->getPost('allow_for', [])),
+                    'status' => (string) $request->getPost('status', 'active'),
+                ]);
+                if (($result['success'] ?? false) === true && is_array($result['set'] ?? null)) {
+                    $assetLibrary->ensureIconSourceFromSet($result['set']);
+                }
+                $this->kernel->session()->flash($result['success'] ? 'success' : 'danger', (string) ($result['message'] ?? 'Installation fehlgeschlagen.'));
+                return Response::redirect('/admin/settings?tab=icons');
+            }
+
+            if ($assetAction === 'icons.source.add') {
+                $result = $assetLibrary->addIconSource([
+                    'id' => (string) $request->getPost('source_id', ''),
+                    'name' => (string) $request->getPost('source_name', ''),
+                    'url' => (string) $request->getPost('source_url', ''),
+                    'template_id' => (string) $request->getPost('source_template_id', ''),
+                    'package' => (string) $request->getPost('source_package', ''),
+                    'latest_version' => (string) $request->getPost('source_latest_version', ''),
+                    'last_checked' => date('Y-m-d H:i:s'),
+                    'status' => 'known',
+                ]);
+                $this->kernel->session()->flash($result['success'] ? 'success' : 'danger', (string) ($result['message'] ?? 'Quelle konnte nicht gespeichert werden.'));
+                return Response::redirect('/admin/settings?tab=icons');
+            }
+
+            if ($assetAction === 'icons.template.search') {
+                $result = $assetLibrary->resolveIconSourceByTemplate([
+                    'template_id' => (string) $request->getPost('template_id', ''),
+                    'query' => (string) $request->getPost('template_query', ''),
+                    'path' => (string) $request->getPost('template_path', ''),
+                    'version' => (string) $request->getPost('template_version', ''),
+                ]);
+                $this->kernel->session()->set('settings_icons_template_result', $result);
+                $this->kernel->session()->flash(($result['success'] ?? false) ? 'success' : 'danger', (string) ($result['message'] ?? 'Suche fehlgeschlagen.'));
+                return Response::redirect('/admin/settings?tab=icons');
+            }
+
+            if ($assetAction === 'icons.template.install') {
+                $cssItems = $this->parseLineList($request->getPost('template_css_urls', ''));
+                $jsItems = $this->parseLineList($request->getPost('template_js_urls', ''));
+                $fontItems = $this->parseLineList($request->getPost('template_font_urls', ''));
+
+                $entries = [];
+                foreach ($cssItems as $item) {
+                    $entries[] = ['type' => 'css', 'path' => $item];
+                }
+                foreach ($jsItems as $item) {
+                    $entries[] = ['type' => 'js', 'path' => $item];
+                }
+                foreach ($fontItems as $item) {
+                    $entries[] = ['type' => 'font', 'path' => $item];
+                }
+
+                $result = $assetLibrary->installIconSetFromTemplate([
+                    'id' => (string) $request->getPost('set_id', ''),
+                    'name' => (string) $request->getPost('set_name', ''),
+                    'template_id' => (string) $request->getPost('template_id', ''),
+                    'package' => (string) $request->getPost('template_package', ''),
+                    'version' => (string) $request->getPost('template_version', 'latest'),
+                    'asset_entries' => $entries,
+                    'areas' => $this->parseMultiSelect($request->getPost('areas', [])),
+                    'allow_for' => $this->parseMultiSelect($request->getPost('allow_for', [])),
+                    'status' => (string) $request->getPost('status', 'active'),
+                ]);
+                if (($result['success'] ?? false) === true && is_array($result['set'] ?? null)) {
+                    $assetLibrary->ensureIconSourceFromSet($result['set']);
+                }
+
+                $this->kernel->session()->flash($result['success'] ? 'success' : 'danger', (string) ($result['message'] ?? 'Template-Installation fehlgeschlagen.'));
+                return Response::redirect('/admin/settings?tab=icons');
+            }
+
+            if ($assetAction === 'icons.template.add') {
+                $result = $assetLibrary->addSourceTemplate([
+                    'id' => (string) $request->getPost('template_new_id', ''),
+                    'name' => (string) $request->getPost('template_new_name', ''),
+                    'type' => (string) $request->getPost('template_new_type', 'generic'),
+                    'url_template' => (string) $request->getPost('template_new_url_template', ''),
+                    'versions_api' => (string) $request->getPost('template_new_versions_api', ''),
+                    'default_path' => (string) $request->getPost('template_new_default_path', ''),
+                ]);
+                $this->kernel->session()->flash($result['success'] ? 'success' : 'danger', (string) ($result['message'] ?? 'Template konnte nicht gespeichert werden.'));
+                return Response::redirect('/admin/settings?tab=icons');
+            }
+
+            if ($assetAction === 'icons.template.delete') {
+                $id = (string) $request->getPost('template_id', '');
+                $ok = $assetLibrary->removeSourceTemplate($id);
+                $this->kernel->session()->flash($ok ? 'success' : 'danger', $ok ? 'Template entfernt.' : 'Template nicht gefunden.');
+                return Response::redirect('/admin/settings?tab=icons');
+            }
+
+            if ($assetAction === 'icons.source.delete') {
+                $id = (string) $request->getPost('source_id', '');
+                $ok = $assetLibrary->removeIconSource($id);
+                $this->kernel->session()->flash($ok ? 'success' : 'danger', $ok ? 'Quelle entfernt.' : 'Quelle nicht gefunden.');
+                return Response::redirect('/admin/settings?tab=icons');
+            }
+
+            if ($assetAction === 'icons.update') {
+                $id = (string) $request->getPost('set_id', '');
+                $ok = $assetLibrary->updateSet('icons', $id, [
+                    'name' => (string) $request->getPost('set_name', ''),
+                    'areas' => $this->parseMultiSelect($request->getPost('areas', [])),
+                    'allow_for' => $this->parseMultiSelect($request->getPost('allow_for', [])),
+                    'status' => (string) $request->getPost('status', 'active'),
+                ]);
+                $this->kernel->session()->flash($ok ? 'success' : 'danger', $ok ? 'Icon-Set gespeichert.' : 'Icon-Set nicht gefunden.');
+                return Response::redirect('/admin/settings?tab=icons');
+            }
+
+            if ($assetAction === 'icons.delete') {
+                $assetLibrary->deleteSet('icons', (string) $request->getPost('set_id', ''));
+                $this->kernel->session()->flash('success', 'Icon-Set gelöscht.');
+                return Response::redirect('/admin/settings?tab=icons');
+            }
+
+            if ($assetAction === 'icons.import') {
+                $result = $assetLibrary->importSetJson((string) $request->getPost('import_json', ''));
+                $this->kernel->session()->flash($result['success'] ? 'success' : 'danger', (string) ($result['message'] ?? 'Import fehlgeschlagen.'));
+                return Response::redirect('/admin/settings?tab=icons');
+            }
+
+            if ($assetAction === 'fonts.google_install') {
+                $result = $assetLibrary->installGoogleFont(
+                    (string) $request->getPost('google_family', ''),
+                    $this->parseMultiSelect($request->getPost('google_styles', [])),
+                    [
+                        'areas' => $this->parseMultiSelect($request->getPost('areas', [])),
+                        'allow_for' => $this->parseMultiSelect($request->getPost('allow_for', [])),
+                        'status' => (string) $request->getPost('status', 'active'),
+                    ]
+                );
+                $this->kernel->session()->flash($result['success'] ? 'success' : 'danger', (string) ($result['message'] ?? 'Installation fehlgeschlagen.'));
+                return Response::redirect('/admin/settings?tab=fonts');
+            }
+
+            if ($assetAction === 'fonts.analyze') {
+                $analysis = $assetLibrary->analyzeFontCss((string) $request->getPost('source_url', ''));
+                $this->kernel->session()->set('settings_fonts_analysis', $analysis);
+                $this->kernel->session()->flash($analysis['success'] ? 'success' : 'danger', (string) ($analysis['message'] ?? 'Analyse fehlgeschlagen.'));
+                return Response::redirect('/admin/settings?tab=fonts');
+            }
+
+            if ($assetAction === 'fonts.install') {
+                $result = $assetLibrary->installFontSetFromUrl([
+                    'id' => (string) $request->getPost('set_id', ''),
+                    'name' => (string) $request->getPost('set_name', ''),
+                    'provider' => (string) $request->getPost('provider', 'custom'),
+                    'source_url' => (string) $request->getPost('source_url', ''),
+                    'areas' => $this->parseMultiSelect($request->getPost('areas', [])),
+                    'allow_for' => $this->parseMultiSelect($request->getPost('allow_for', [])),
+                    'status' => (string) $request->getPost('status', 'active'),
+                ]);
+                $this->kernel->session()->flash($result['success'] ? 'success' : 'danger', (string) ($result['message'] ?? 'Installation fehlgeschlagen.'));
+                return Response::redirect('/admin/settings?tab=fonts');
+            }
+
+            if ($assetAction === 'fonts.update') {
+                $id = (string) $request->getPost('set_id', '');
+                $ok = $assetLibrary->updateSet('fonts', $id, [
+                    'name' => (string) $request->getPost('set_name', ''),
+                    'areas' => $this->parseMultiSelect($request->getPost('areas', [])),
+                    'allow_for' => $this->parseMultiSelect($request->getPost('allow_for', [])),
+                    'status' => (string) $request->getPost('status', 'active'),
+                ]);
+                $this->kernel->session()->flash($ok ? 'success' : 'danger', $ok ? 'Font-Set gespeichert.' : 'Font-Set nicht gefunden.');
+                return Response::redirect('/admin/settings?tab=fonts');
+            }
+
+            if ($assetAction === 'fonts.delete') {
+                $assetLibrary->deleteSet('fonts', (string) $request->getPost('set_id', ''));
+                $this->kernel->session()->flash('success', 'Font-Set gelöscht.');
+                return Response::redirect('/admin/settings?tab=fonts');
+            }
+
+            if ($assetAction === 'fonts.import') {
+                $result = $assetLibrary->importSetJson((string) $request->getPost('import_json', ''));
+                $this->kernel->session()->flash($result['success'] ? 'success' : 'danger', (string) ($result['message'] ?? 'Import fehlgeschlagen.'));
+                return Response::redirect('/admin/settings?tab=fonts');
+            }
+
+            if ($assetAction === 'icons.set_sidebar') {
+                $setId = (string) $request->getPost('sidebar_icon_set', '');
+                // try to update existing setting row if present
+                $appearance = $this->getSettingsByGroup('appearance');
+                $found = false;
+                foreach ($appearance as $row) {
+                    if ((string) ($row['key'] ?? '') === 'sidebar_icon_set') {
+                        $this->kernel->data()->updateSetting((int) ($row['id'] ?? 0), $setId);
+                        $found = true;
+                        break;
+                    }
+                }
+                if (!$found) {
+                    // insert new setting row
+                    $now = date('Y-m-d H:i:s');
+                    try {
+                        $this->kernel->db()->insert('settings', [
+                            'group' => 'appearance',
+                            'key' => 'sidebar_icon_set',
+                            'value' => $setId,
+                            'type' => 'string',
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ]);
+                        $found = true;
+                    } catch (\Throwable $e) {
+                        $found = false;
+                    }
+                }
+
+                $this->kernel->session()->flash($found ? 'success' : 'danger', $found ? 'Sidebar Icon-Set gespeichert.' : 'Konnte nicht gespeichert werden.');
+                return Response::redirect('/admin/settings?tab=icons');
+            }
+
+            if ($assetAction === 'google_api_key_save') {
+                $key = trim((string) $request->getPost('google_api_key', ''));
+                $secretsDir = $this->kernel->getBasePath() . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'secrets';
+                if (!is_dir($secretsDir)) {
+                    @mkdir($secretsDir, 0750, true);
+                }
+                $file = $secretsDir . DIRECTORY_SEPARATOR . 'google_fonts_api_key';
+                $ok = false;
+                if ($key !== '') {
+                    $ok = @file_put_contents($file, $key, LOCK_EX) !== false;
+                } else {
+                    // empty => remove
+                    if (is_file($file)) {
+                        $ok = @unlink($file);
+                    } else {
+                        $ok = true;
+                    }
+                }
+                $this->kernel->session()->flash($ok ? 'success' : 'danger', $ok ? 'API‑Key gespeichert.' : 'API‑Key konnte nicht gespeichert werden.');
+                return Response::redirect('/admin/settings?tab=fonts');
+            }
+        }
+
+        $redirect = $this->requirePermission('system.manage');
+        if ($redirect) return $redirect;
 
         $values = $request->getPost('settings', []);
 
@@ -1537,31 +2576,6 @@ final class AdminController
 
         $this->kernel->session()->flash('success', 'Einstellungen wurden gespeichert.');
         return Response::redirect('/admin/settings');
-    }
-
-    /* ───────────────────────────────────────────────
-     *  Modules
-     * ─────────────────────────────────────────────── */
-
-    public function modulesList(Request $request): Response
-    {
-        $redirect = $this->requireAuth();
-        if ($redirect) return $redirect;
-
-        $modules   = $this->kernel->modules()->getInstalled();
-        $active    = $this->kernel->modules()->getActive();
-        $user = $this->currentUser();
-        $canManageModules = $user !== null
-            && $this->kernel->permissions()->userCan($user, 'system.mods');
-
-        return Response::html(
-            $this->kernel->themes()->render('modules.twig', array_merge($this->baseData(), [
-                'current_route' => 'modules',
-                'modules'       => $modules,
-                'active'        => $active,
-                'can_manage_modules' => $canManageModules,
-            ]))
-        );
     }
 
     /* ───────────────────────────────────────────────
@@ -1704,6 +2718,15 @@ final class AdminController
             'disabled' => $request->getPost('disabled', '0') === '1',
         ];
 
+        if ($manifest['name'] === '') {
+            $this->kernel->session()->flash('danger', 'Der Theme-Name darf nicht leer sein.');
+            return Response::redirect('/admin/themes/installed/' . $area . '/' . $id);
+        }
+        if ($manifest['version'] !== '' && !preg_match('/^[a-zA-Z0-9._-]{1,32}$/', $manifest['version'])) {
+            $this->kernel->session()->flash('danger', 'Die Version ist ungültig. Erlaubt sind Buchstaben, Zahlen, Punkt, Unterstrich und Bindestrich.');
+            return Response::redirect('/admin/themes/installed/' . $area . '/' . $id);
+        }
+
         $ok = $this->kernel->themes()->updateThemeManifest($area, $id, $manifest);
         $this->audit('info', 'theme.detail.update', ['user_id' => $this->kernel->session()->get('user_id'), 'area' => $area, 'id' => $id, 'ok' => $ok]);
 
@@ -1741,6 +2764,10 @@ final class AdminController
             $this->kernel->session()->flash('danger', 'Child-ID ist ungültig. Erlaubt sind a-z, 0-9, - und _.');
             return Response::redirect('/admin/themes/installed/' . $area . '/' . $id);
         }
+        if ($name === '') {
+            $this->kernel->session()->flash('danger', 'Child-Name darf nicht leer sein.');
+            return Response::redirect('/admin/themes/installed/' . $area . '/' . $id);
+        }
 
         $child = $this->kernel->themes()->createChildTheme($area, $id, $childId, $name, $author, $description);
         $ok = is_array($child);
@@ -1776,6 +2803,12 @@ final class AdminController
             return Response::redirect('/admin/themes/installed');
         }
 
+        $theme = $this->kernel->themes()->getTheme($area, $id);
+        if (is_array($theme) && !empty($theme['disabled'])) {
+            $this->kernel->session()->flash('danger', 'Dieses Theme ist deaktiviert. Aktivieren Sie zuerst den Theme-Status.');
+            return Response::redirect('/admin/themes/installed');
+        }
+
         $ok = false;
         if ($area === 'admin') {
             $ok = $this->kernel->themes()->setAdminThemeId($id);
@@ -1783,8 +2816,11 @@ final class AdminController
             $ok = $this->kernel->themes()->setFrontendThemeId($id);
         }
 
-        // Persist to appearance settings if possible
-        $settings = $this->getSettingsByGroup('appearance');
+        // Persist selected theme in settings table (support both legacy and current groups).
+        $settings = array_merge(
+            $this->getSettingsByGroup('theme'),
+            $this->getSettingsByGroup('appearance')
+        );
         $values = [];
         if ($area === 'admin') $values['admin_theme'] = $id;
         if ($area === 'frontend') $values['frontend_theme'] = $id;
@@ -1816,6 +2852,14 @@ final class AdminController
         $id = (string) $request->getRouteParam('id', '');
         if (!in_array($area, ['admin', 'frontend'], true) || $id === '') {
             return Response::notFound('Theme nicht gefunden.');
+        }
+
+        $isActive = ($area === 'admin' && $id === $this->kernel->themes()->getAdminThemeId())
+            || ($area === 'frontend' && $id === $this->kernel->themes()->getFrontendThemeId());
+        $theme = $this->kernel->themes()->getTheme($area, $id);
+        if ($isActive && is_array($theme) && empty($theme['disabled'])) {
+            $this->kernel->session()->flash('danger', 'Das aktuell aktive Theme kann nicht deaktiviert werden. Bitte aktivieren Sie zuerst ein anderes Theme.');
+            return Response::redirect('/admin/themes/installed');
         }
 
         $new = $this->kernel->themes()->toggleThemeDisabled($area, $id);
@@ -1890,6 +2934,162 @@ final class AdminController
         return Response::redirect('/admin/themes/installed');
     }
 
+    /**
+     * Lightweight API endpoint for admin UI to validate Google Fonts API key.
+     */
+    public function googleFontsStatus(Request $request): Response
+    {
+        $redirect = $this->requireAuth();
+        if ($redirect) return $redirect;
+
+        $secretsFile = $this->kernel->getBasePath() . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'secrets' . DIRECTORY_SEPARATOR . 'google_fonts_api_key';
+        $key = is_file($secretsFile) ? trim((string) @file_get_contents($secretsFile)) : '';
+
+        if ($key === '') {
+            return Response::apiSuccess(['ok' => false, 'message' => 'No API key configured']);
+        }
+
+        $url = 'https://www.googleapis.com/webfonts/v1/webfonts?key=' . urlencode($key);
+        try {
+            $opts = stream_context_create(['http' => ['timeout' => 4]]);
+            $res = @file_get_contents($url, false, $opts);
+            if ($res === false) {
+                // Try cURL as a fallback (honors proxies and gives better errors)
+                if (function_exists('curl_init')) {
+                    $ch = curl_init($url);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+                    $cres = curl_exec($ch);
+                    if ($cres === false) {
+                        $cerr = curl_error($ch);
+                        curl_close($ch);
+                        return Response::apiSuccess(['ok' => false, 'message' => 'Could not reach Google Fonts API: ' . $cerr]);
+                    }
+                    $res = $cres;
+                    curl_close($ch);
+                } else {
+                    return Response::apiSuccess(['ok' => false, 'message' => 'Could not reach Google Fonts API']);
+                }
+            }
+            $json = json_decode($res, true);
+            if (is_array($json) && isset($json['kind'])) {
+                // Google Webfonts API typically returns an 'items' array. Older variants may include 'totalItems'.
+                if (isset($json['totalItems'])) {
+                    $total = (int) $json['totalItems'];
+                } elseif (isset($json['items']) && is_array($json['items'])) {
+                    $total = count($json['items']);
+                } else {
+                    $total = 0;
+                }
+                return Response::apiSuccess(['ok' => true, 'message' => 'API erreichbar', 'total' => $total]);
+            }
+            // Google may return an error payload
+            if (is_array($json) && isset($json['error'])) {
+                $raw = is_string($json['error']['message'] ?? '') ? $json['error']['message'] : 'API error';
+                // Map some common Google error messages to friendlier guidance
+                $lower = strtolower($raw);
+                if (strpos($lower, 'invalid') !== false || strpos($lower, 'invalid argument') !== false) {
+                    $msg = 'Ungültiger API‑Key oder Webfonts API nicht aktiviert. Prüfe Cloud Console (APIs & Dienste → Anmeldedaten) und entferne ggf. Key‑Einschränkungen.';
+                } else {
+                    $msg = $raw;
+                }
+                return Response::apiSuccess(['ok' => false, 'message' => $msg]);
+            }
+            return Response::apiSuccess(['ok' => false, 'message' => 'Unexpected API response']);
+        } catch (\Throwable $e) {
+            return Response::apiSuccess(['ok' => false, 'message' => 'Exception: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * POST endpoint to validate a provided Google Fonts API key without storing it.
+     */
+    public function googleFontsCheck(Request $request): Response
+    {
+        $redirect = $this->requireAuth();
+        if ($redirect) return $redirect;
+
+        $key = trim((string) $request->getPost('key', ''));
+        if ($key === '') {
+            return Response::apiSuccess(['ok' => false, 'message' => 'No key provided']);
+        }
+
+        $url = 'https://www.googleapis.com/webfonts/v1/webfonts?key=' . urlencode($key);
+        try {
+            $opts = stream_context_create(['http' => ['timeout' => 4]]);
+            $res = @file_get_contents($url, false, $opts);
+            if ($res === false) {
+                // Try cURL as a fallback (honors proxies and gives better errors)
+                if (function_exists('curl_init')) {
+                    $ch = curl_init($url);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+                    $cres = curl_exec($ch);
+                    if ($cres === false) {
+                        $cerr = curl_error($ch);
+                        curl_close($ch);
+                        return Response::apiSuccess(['ok' => false, 'message' => 'Could not reach Google Fonts API: ' . $cerr]);
+                    }
+                    $res = $cres;
+                    curl_close($ch);
+                } else {
+                    return Response::apiSuccess(['ok' => false, 'message' => 'Could not reach Google Fonts API']);
+                }
+            }
+            $json = json_decode($res, true);
+            if (is_array($json) && isset($json['kind'])) {
+                if (isset($json['totalItems'])) {
+                    $total = (int) $json['totalItems'];
+                } elseif (isset($json['items']) && is_array($json['items'])) {
+                    $total = count($json['items']);
+                } else {
+                    $total = 0;
+                }
+                return Response::apiSuccess(['ok' => true, 'message' => 'OK', 'total' => $total]);
+            }
+            if (is_array($json) && isset($json['error'])) {
+                $raw = is_string($json['error']['message'] ?? '') ? $json['error']['message'] : 'API error';
+                $lower = strtolower($raw);
+                if (strpos($lower, 'invalid') !== false || strpos($lower, 'invalid argument') !== false) {
+                    $msg = 'Ungültiger API‑Key oder Webfonts API nicht aktiviert. Prüfe Cloud Console (APIs & Dienste → Anmeldedaten) und entferne ggf. Key‑Einschränkungen.';
+                } else {
+                    $msg = $raw;
+                }
+                return Response::apiSuccess(['ok' => false, 'message' => $msg]);
+            }
+            return Response::apiSuccess(['ok' => false, 'message' => 'Unexpected API response']);
+        } catch (\Throwable $e) {
+            return Response::apiSuccess(['ok' => false, 'message' => 'Exception: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * GET endpoint for live Google Fonts search with server-side filtering.
+     */
+    public function googleFontsSearch(Request $request): Response
+    {
+        $redirect = $this->requireAuth();
+        if ($redirect) return $redirect;
+
+        $query = [
+            'q' => (string) $request->getQuery('q', ''),
+            'style' => (string) $request->getQuery('style', ''),
+            'category' => (string) $request->getQuery('category', ''),
+            'subcategory' => (string) $request->getQuery('subcategory', ''),
+            'page' => (int) $request->getQuery('page', 1),
+            'per_page' => (int) $request->getQuery('per_page', 10),
+        ];
+
+        try {
+            $result = $this->kernel->assetLibrary()->searchGoogleFonts($query);
+            return Response::apiSuccess($result);
+        } catch (\Throwable $e) {
+            return Response::apiError('google_fonts_search_failed', 'Google Fonts Suche fehlgeschlagen: ' . $e->getMessage(), 500);
+        }
+    }
+
     public function trashPage(Request $request): Response
     {
         $redirect = $this->requireAuth();
@@ -1904,12 +3104,34 @@ final class AdminController
             'sort' => (string) ($query['sort'] ?? 'deleted_desc'),
         ];
 
+        $items = $this->kernel->trash()->list($filters);
+
+        // Build a map of actor id -> display name for deleted_by resolution
+        $actorIds = [];
+        foreach ($items as $it) {
+            $did = $it['deleted_by'] ?? null;
+            if ($did !== null && $did !== '' ) {
+                $actorIds[(int)$did] = true;
+            }
+        }
+
+        $trashActors = [];
+        if (!empty($actorIds)) {
+            foreach (array_keys($actorIds) as $aid) {
+                $u = $this->kernel->data()->getUserById((int)$aid);
+                if ($u !== null) {
+                    $trashActors[$aid] = (string) ($u['display_name'] ?? $u['username'] ?? $u['email'] ?? '');
+                }
+            }
+        }
+
         return Response::html(
             $this->kernel->themes()->render('trash.twig', array_merge($this->baseData(), [
                 'current_route' => 'trash',
-                'trash_items' => $this->kernel->trash()->list($filters),
+                'trash_items' => $items,
                 'trash_stats' => $this->kernel->trash()->stats(),
                 'trash_filters' => $filters,
+                'trash_actors' => $trashActors,
                 'can_manage_trash' => $this->canManageTrash(),
             ]))
         );
@@ -2312,5 +3534,635 @@ final class AdminController
         }
 
         return Response::redirect('/admin/themes/marketplace/config');
+    }
+
+    /* ═══════════════════════════════════════════════
+     *  Modules – Helpers
+     * ═══════════════════════════════════════════════ */
+
+    private function canManageMods(): bool
+    {
+        $user = $this->currentUser();
+        return $user !== null && $this->kernel->permissions()->userCan($user, 'system.mods');
+    }
+
+    private function modMarketplaceCatalog(): array
+    {
+        return [
+            [
+                'id'           => 'seo-toolkit',
+                'name'         => 'SEO Toolkit',
+                'description'  => 'Umfassende SEO-Optimierung mit Meta-Tags, Sitemap-Generator und Open Graph Integration.',
+                'category'     => 'marketing',
+                'pricing'      => 'free',
+                'price'        => 0,
+                'currency'     => 'EUR',
+                'rating'       => 4.8,
+                'downloads'    => 12400,
+                'version'      => '2.3.1',
+                'author'       => 'Chamy Team',
+                'preview_color'=> '#39ff14',
+                'tags'         => ['seo', 'meta', 'sitemap', 'opengraph'],
+                'features'     => ['Meta-Tag Editor', 'XML Sitemap', 'OG Preview', 'Schema.org'],
+                'requires'     => ['chamy' => '^1.0'],
+                'updated_at'   => '2026-02-28',
+            ],
+            [
+                'id'           => 'media-manager-pro',
+                'name'         => 'Media Manager Pro',
+                'description'  => 'Erweiterte Medienverwaltung mit Bildbearbeitung, Lazy Loading und CDN-Support.',
+                'category'     => 'content',
+                'pricing'      => 'paid',
+                'price'        => 49,
+                'currency'     => 'EUR',
+                'rating'       => 4.9,
+                'downloads'    => 8750,
+                'version'      => '3.1.0',
+                'author'       => 'MediaWorks',
+                'preview_color'=> '#1f8ef1',
+                'tags'         => ['media', 'images', 'cdn', 'upload'],
+                'features'     => ['Drag & Drop Upload', 'Bildbearbeitung', 'CDN Integration', 'Lazy Loading'],
+                'requires'     => ['chamy' => '^1.0', 'php' => '^8.1'],
+                'updated_at'   => '2026-03-01',
+            ],
+            [
+                'id'           => 'analytics-dashboard',
+                'name'         => 'Analytics Dashboard',
+                'description'  => 'Echtzeitstatistiken mit Besucherzahlen, Heatmaps und Conversion-Tracking.',
+                'category'     => 'analytics',
+                'pricing'      => 'paid',
+                'price'        => 79,
+                'currency'     => 'EUR',
+                'rating'       => 4.7,
+                'downloads'    => 5320,
+                'version'      => '1.8.2',
+                'author'       => 'DataVision',
+                'preview_color'=> '#b44aff',
+                'tags'         => ['analytics', 'tracking', 'statistik', 'heatmap'],
+                'features'     => ['Live Dashboard', 'Heatmaps', 'Conversion Tracking', 'Export'],
+                'requires'     => ['chamy' => '^1.0'],
+                'updated_at'   => '2026-02-15',
+            ],
+            [
+                'id'           => 'form-builder',
+                'name'         => 'Form Builder',
+                'description'  => 'Drag-and-Drop Formular-Editor mit Validierung, CAPTCHA und E-Mail-Benachrichtigungen.',
+                'category'     => 'content',
+                'pricing'      => 'free',
+                'price'        => 0,
+                'currency'     => 'EUR',
+                'rating'       => 4.6,
+                'downloads'    => 15800,
+                'version'      => '2.0.4',
+                'author'       => 'Chamy Team',
+                'preview_color'=> '#ff6a00',
+                'tags'         => ['formular', 'kontakt', 'builder', 'captcha'],
+                'features'     => ['Drag & Drop', 'Validierung', 'CAPTCHA', 'E-Mail Versand'],
+                'requires'     => ['chamy' => '^1.0'],
+                'updated_at'   => '2026-03-05',
+            ],
+            [
+                'id'           => 'backup-guardian',
+                'name'         => 'Backup Guardian',
+                'description'  => 'Automatisierte Backups mit Zeitplanung, Cloud-Anbindung und One-Click-Restore.',
+                'category'     => 'system',
+                'pricing'      => 'paid',
+                'price'        => 39,
+                'currency'     => 'EUR',
+                'rating'       => 4.9,
+                'downloads'    => 9100,
+                'version'      => '1.5.0',
+                'author'       => 'SecureOps',
+                'preview_color'=> '#00f0ff',
+                'tags'         => ['backup', 'restore', 'cloud', 'scheduler'],
+                'features'     => ['Auto-Backup', 'Cloud Storage', 'Scheduler', 'One-Click Restore'],
+                'requires'     => ['chamy' => '^1.0'],
+                'updated_at'   => '2026-02-20',
+            ],
+            [
+                'id'           => 'multilang-pro',
+                'name'         => 'MultiLang Pro',
+                'description'  => 'Mehrsprachigkeits-Toolkit mit automatischer Übersetzung und Sprachumschalter.',
+                'category'     => 'localization',
+                'pricing'      => 'paid',
+                'price'        => 59,
+                'currency'     => 'EUR',
+                'rating'       => 4.5,
+                'downloads'    => 4200,
+                'version'      => '1.2.0',
+                'author'       => 'LinguaLab',
+                'preview_color'=> '#ff3c81',
+                'tags'         => ['i18n', 'sprachen', 'übersetzung', 'locale'],
+                'features'     => ['Auto-Übersetzung', 'Sprachumschalter', 'RTL Support', 'Import/Export'],
+                'requires'     => ['chamy' => '^1.0'],
+                'updated_at'   => '2026-01-30',
+            ],
+            [
+                'id'           => 'api-gateway',
+                'name'         => 'API Gateway',
+                'description'  => 'RESTful API mit Token-Auth, Rate Limiting, Swagger-Dokumentation und Webhooks.',
+                'category'     => 'developer',
+                'pricing'      => 'free',
+                'price'        => 0,
+                'currency'     => 'EUR',
+                'rating'       => 4.8,
+                'downloads'    => 11200,
+                'version'      => '2.1.0',
+                'author'       => 'Chamy Team',
+                'preview_color'=> '#ffd000',
+                'tags'         => ['api', 'rest', 'webhooks', 'swagger'],
+                'features'     => ['REST API', 'Token Auth', 'Rate Limiting', 'Swagger Docs'],
+                'requires'     => ['chamy' => '^1.0'],
+                'updated_at'   => '2026-03-08',
+            ],
+            [
+                'id'           => 'cache-turbo',
+                'name'         => 'Cache Turbo',
+                'description'  => 'Hochleistungs-Caching mit Redis/Memcached-Support und intelligenter Cache-Invalidierung.',
+                'category'     => 'performance',
+                'pricing'      => 'paid',
+                'price'        => 29,
+                'currency'     => 'EUR',
+                'rating'       => 4.7,
+                'downloads'    => 7600,
+                'version'      => '1.4.2',
+                'author'       => 'SpeedCore',
+                'preview_color'=> '#14c9a5',
+                'tags'         => ['cache', 'redis', 'performance', 'speed'],
+                'features'     => ['Redis/Memcached', 'Page Cache', 'Fragment Cache', 'Auto-Invalidierung'],
+                'requires'     => ['chamy' => '^1.0'],
+                'updated_at'   => '2026-02-25',
+            ],
+        ];
+    }
+
+    private function buildModMarketplace(array $query): array
+    {
+        $catalog = $this->modMarketplaceCatalog();
+
+        $category = strtolower(trim((string) ($query['category'] ?? 'all')));
+        $pricing  = strtolower(trim((string) ($query['pricing'] ?? 'all')));
+        $search   = mb_strtolower(trim((string) ($query['q'] ?? '')));
+        $sort     = strtolower(trim((string) ($query['sort'] ?? 'popular')));
+
+        $validSorts = ['popular', 'rating', 'price_asc', 'price_desc', 'name', 'newest'];
+        if (!in_array($sort, $validSorts, true)) {
+            $sort = 'popular';
+        }
+
+        $validPricing = ['all', 'free', 'paid'];
+        if (!in_array($pricing, $validPricing, true)) {
+            $pricing = 'all';
+        }
+
+        $categories = [];
+        foreach ($catalog as $item) {
+            $cat = (string) ($item['category'] ?? 'other');
+            $categories[$cat] = ($categories[$cat] ?? 0) + 1;
+        }
+        ksort($categories);
+
+        if ($category !== 'all' && !isset($categories[$category])) {
+            $category = 'all';
+        }
+
+        $filtered = array_values(array_filter($catalog, static function (array $item) use ($category, $pricing, $search): bool {
+            if ($category !== 'all' && ($item['category'] ?? '') !== $category) {
+                return false;
+            }
+            if ($pricing !== 'all' && ($item['pricing'] ?? '') !== $pricing) {
+                return false;
+            }
+            if ($search !== '') {
+                $haystack = mb_strtolower(implode(' ', [
+                    (string) ($item['name'] ?? ''),
+                    (string) ($item['description'] ?? ''),
+                    implode(' ', $item['tags'] ?? []),
+                    (string) ($item['author'] ?? ''),
+                    (string) ($item['category'] ?? ''),
+                ]));
+                if (!str_contains($haystack, $search)) {
+                    return false;
+                }
+            }
+            return true;
+        }));
+
+        usort($filtered, static function (array $a, array $b) use ($sort): int {
+            return match ($sort) {
+                'rating'     => (($b['rating'] ?? 0) <=> ($a['rating'] ?? 0)),
+                'price_asc'  => (($a['price'] ?? 0) <=> ($b['price'] ?? 0)),
+                'price_desc' => (($b['price'] ?? 0) <=> ($a['price'] ?? 0)),
+                'name'       => strcmp((string) ($a['name'] ?? ''), (string) ($b['name'] ?? '')),
+                'newest'     => strcmp((string) ($b['updated_at'] ?? ''), (string) ($a['updated_at'] ?? '')),
+                default      => (($b['downloads'] ?? 0) <=> ($a['downloads'] ?? 0)),
+            };
+        });
+
+        return [
+            'items'   => $filtered,
+            'filters' => [
+                'category' => $category,
+                'pricing'  => $pricing,
+                'q'        => (string) ($query['q'] ?? ''),
+                'sort'     => $sort,
+            ],
+            'counts' => [
+                'all'  => count($catalog),
+                'free' => count(array_filter($catalog, static fn(array $i): bool => ($i['pricing'] ?? '') === 'free')),
+                'paid' => count(array_filter($catalog, static fn(array $i): bool => ($i['pricing'] ?? '') === 'paid')),
+            ],
+            'categories' => $categories,
+        ];
+    }
+
+    private function getModuleStats(): array
+    {
+        $installed = $this->kernel->modules()->getInstalled();
+        $active    = $this->kernel->modules()->getActive();
+        $catalog   = $this->modMarketplaceCatalog();
+
+        return [
+            'installed'        => count($installed),
+            'active'           => count($active),
+            'inactive'         => count($installed) - count($active),
+            'marketplace_total'=> count($catalog),
+            'marketplace_free' => count(array_filter($catalog, static fn(array $i): bool => ($i['pricing'] ?? '') === 'free')),
+            'marketplace_paid' => count(array_filter($catalog, static fn(array $i): bool => ($i['pricing'] ?? '') === 'paid')),
+        ];
+    }
+
+    private function categoryLabels(): array
+    {
+        return [
+            'marketing'    => 'Marketing',
+            'content'      => 'Inhalte',
+            'analytics'    => 'Analytik',
+            'system'       => 'System',
+            'localization' => 'Lokalisierung',
+            'developer'    => 'Entwickler',
+            'performance'  => 'Performance',
+        ];
+    }
+
+    /* ═══════════════════════════════════════════════
+     *  Modules – Dashboard
+     * ═══════════════════════════════════════════════ */
+
+    public function modulesList(Request $request): Response
+    {
+        $redirect = $this->requireAuth();
+        if ($redirect) return $redirect;
+
+        $modules = $this->kernel->modules()->getInstalled();
+        $active  = $this->kernel->modules()->getActive();
+        $user    = $this->currentUser();
+        $canManage = $user !== null && $this->kernel->permissions()->userCan($user, 'system.mods');
+
+        $marketplace = $this->buildModMarketplace($request->getQuery());
+        $stats       = $this->getModuleStats();
+
+        return Response::html(
+            $this->kernel->themes()->render('modules.twig', array_merge($this->baseData(), [
+                'current_route'      => 'modules',
+                'modules'            => $modules,
+                'active'             => $active,
+                'can_manage_modules' => $canManage,
+                'marketplace'        => $marketplace,
+                'mod_stats'          => $stats,
+                'category_labels'    => $this->categoryLabels(),
+            ]))
+        );
+    }
+
+    /* ═══════════════════════════════════════════════
+     *  Modules – Marketplace
+     * ═══════════════════════════════════════════════ */
+
+    public function modulesMarketplace(Request $request): Response
+    {
+        $redirect = $this->requireAuth();
+        if ($redirect) return $redirect;
+
+        return Response::html(
+            $this->kernel->themes()->render('modules_marketplace.twig', array_merge($this->baseData(), [
+                'current_route'      => 'modules',
+                'marketplace'        => $this->buildModMarketplace($request->getQuery()),
+                'can_manage_modules' => $this->canManageMods(),
+                'category_labels'    => $this->categoryLabels(),
+            ]))
+        );
+    }
+
+    public function modulesMarketplaceDetail(Request $request): Response
+    {
+        $redirect = $this->requireAuth();
+        if ($redirect) return $redirect;
+
+        $modId = (string) $request->getRouteParam('id', '');
+        $mod = null;
+        foreach ($this->modMarketplaceCatalog() as $entry) {
+            if (($entry['id'] ?? '') === $modId) {
+                $mod = $entry;
+                break;
+            }
+        }
+
+        if ($mod === null) {
+            return Response::notFound('Marketplace-Modul nicht gefunden.');
+        }
+
+        $isInstalled = $this->kernel->modules()->isInstalled($modId);
+
+        return Response::html(
+            $this->kernel->themes()->render('modules_marketplace_detail.twig', array_merge($this->baseData(), [
+                'current_route'      => 'modules',
+                'mod'                => $mod,
+                'is_installed'       => $isInstalled,
+                'can_manage_modules' => $this->canManageMods(),
+                'category_labels'    => $this->categoryLabels(),
+            ]))
+        );
+    }
+
+    /* ═══════════════════════════════════════════════
+     *  Modules – Manager
+     * ═══════════════════════════════════════════════ */
+
+    public function modulesManager(Request $request): Response
+    {
+        $redirect = $this->requireAuth();
+        if ($redirect) return $redirect;
+
+        $modules   = $this->kernel->modules()->getInstalled();
+        $active    = $this->kernel->modules()->getActive();
+        $canManage = $this->canManageMods();
+
+        // Enrich with file-based config info
+        $enriched = [];
+        foreach ($modules as $id => $manifest) {
+            $manifest['_is_active']  = isset($active[$id]);
+            $manifest['_has_config'] = file_exists(($manifest['_path'] ?? '') . DIRECTORY_SEPARATOR . 'config.json');
+            $enriched[$id] = $manifest;
+        }
+
+        return Response::html(
+            $this->kernel->themes()->render('modules_manager.twig', array_merge($this->baseData(), [
+                'current_route'      => 'modules',
+                'modules'            => $enriched,
+                'can_manage_modules' => $canManage,
+            ]))
+        );
+    }
+
+    public function modulesManagerDetail(Request $request): Response
+    {
+        $redirect = $this->requireAuth();
+        if ($redirect) return $redirect;
+
+        $modId   = (string) $request->getRouteParam('id', '');
+        $manifest = $this->kernel->modules()->getManifest($modId);
+
+        if ($manifest === null) {
+            return Response::notFound('Modul nicht gefunden.');
+        }
+
+        $manifest['_is_active']  = $this->kernel->modules()->isActive($modId);
+        $manifest['_has_config'] = file_exists(($manifest['_path'] ?? '') . DIRECTORY_SEPARATOR . 'config.json');
+
+        // Read readme if exists
+        $readme = '';
+        $readmePath = ($manifest['_path'] ?? '') . DIRECTORY_SEPARATOR . 'README.md';
+        if (file_exists($readmePath)) {
+            $readme = (string) file_get_contents($readmePath);
+        }
+
+        return Response::html(
+            $this->kernel->themes()->render('modules_manager_detail.twig', array_merge($this->baseData(), [
+                'current_route'      => 'modules',
+                'mod'                => $manifest,
+                'readme'             => $readme,
+                'can_manage_modules' => $this->canManageMods(),
+            ]))
+        );
+    }
+
+    public function modulesToggle(Request $request): Response
+    {
+        $redirect = $this->requirePermission('system.mods');
+        if ($redirect) return $redirect;
+
+        if (!$this->kernel->session()->verifyCsrfToken($request->getPost('csrf_token', ''))) {
+            $this->kernel->session()->flash('danger', 'Ungültige Anfrage.');
+            return Response::redirect('/admin/modules/manager');
+        }
+
+        $modId = (string) $request->getRouteParam('id', '');
+
+        if ($this->kernel->modules()->isActive($modId)) {
+            $this->kernel->modules()->deactivate($modId);
+            $this->kernel->session()->flash('success', 'Modul wurde deaktiviert.');
+        } elseif ($this->kernel->modules()->isInstalled($modId)) {
+            $this->kernel->modules()->activate($modId);
+            $this->kernel->session()->flash('success', 'Modul wurde aktiviert.');
+        } else {
+            $this->kernel->session()->flash('danger', 'Modul nicht gefunden.');
+        }
+
+        return Response::redirect('/admin/modules/manager');
+    }
+
+    public function modulesUninstall(Request $request): Response
+    {
+        $redirect = $this->requirePermission('system.mods');
+        if ($redirect) return $redirect;
+
+        if (!$this->kernel->session()->verifyCsrfToken($request->getPost('csrf_token', ''))) {
+            $this->kernel->session()->flash('danger', 'Ungültige Anfrage.');
+            return Response::redirect('/admin/modules/manager');
+        }
+
+        $modId    = (string) $request->getRouteParam('id', '');
+        $manifest = $this->kernel->modules()->getManifest($modId);
+
+        if ($manifest === null) {
+            $this->kernel->session()->flash('danger', 'Modul nicht gefunden.');
+            return Response::redirect('/admin/modules/manager');
+        }
+
+        // Deactivate first
+        if ($this->kernel->modules()->isActive($modId)) {
+            $this->kernel->modules()->deactivate($modId);
+        }
+
+        // Backup to trash
+        $modPath = $manifest['_path'] ?? '';
+        $backupDir = $this->kernel->getBasePath() . '/storage/trash/modules';
+        if (!is_dir($backupDir)) {
+            @mkdir($backupDir, 0755, true);
+        }
+        $backupPath = $backupDir . '/' . $modId . '_' . date('Ymd_His');
+        if (is_dir($modPath)) {
+            @rename($modPath, $backupPath);
+        }
+
+        $this->kernel->trash()->add(
+            'modules',
+            'module',
+            $modId,
+            [
+                'name'        => (string) ($manifest['name'] ?? $modId),
+                'manifest'    => $manifest,
+                'backup_path' => $backupPath,
+            ],
+            (int) $this->kernel->session()->get('user_id')
+        );
+
+        $this->audit('warning', 'module.uninstall', ['user_id' => $this->kernel->session()->get('user_id'), 'module_id' => $modId]);
+        $this->kernel->session()->flash('success', 'Modul wurde deinstalliert.');
+        return Response::redirect('/admin/modules/manager');
+    }
+
+    /* ═══════════════════════════════════════════════
+     *  Modules – SDK
+     * ═══════════════════════════════════════════════ */
+
+    public function modulesSdk(Request $request): Response
+    {
+        $redirect = $this->requireAuth();
+        if ($redirect) return $redirect;
+
+        return Response::html(
+            $this->kernel->themes()->render('modules_sdk.twig', array_merge($this->baseData(), [
+                'current_route'      => 'modules',
+                'can_manage_modules' => $this->canManageMods(),
+            ]))
+        );
+    }
+
+    /* ═══════════════════════════════════════════════
+     *  Modules – Config
+     * ═══════════════════════════════════════════════ */
+
+    public function modulesConfig(Request $request): Response
+    {
+        $redirect = $this->requireAuth();
+        if ($redirect) return $redirect;
+
+        $modSettings = $this->getSettingsByGroup('modules');
+        $settingsByKey = [];
+        foreach ($modSettings as $setting) {
+            $settingsByKey[(string) ($setting['key'] ?? '')] = (string) ($setting['value'] ?? '');
+        }
+
+        $config = [
+            'auto_update'        => ($settingsByKey['modules.auto_update'] ?? '0') === '1',
+            'marketplace_enabled'=> ($settingsByKey['modules.marketplace_enabled'] ?? '1') === '1',
+            'allow_paid'         => ($settingsByKey['modules.allow_paid'] ?? '1') === '1',
+            'sandbox_mode'       => ($settingsByKey['modules.sandbox_mode'] ?? '0') === '1',
+        ];
+
+        return Response::html(
+            $this->kernel->themes()->render('modules_config.twig', array_merge($this->baseData(), [
+                'current_route'      => 'modules',
+                'can_manage_modules' => $this->canManageMods(),
+                'mod_settings'       => $modSettings,
+                'mod_config'         => $config,
+            ]))
+        );
+    }
+
+    public function modulesConfigUpdate(Request $request): Response
+    {
+        $redirect = $this->requirePermission('system.mods');
+        if ($redirect) return $redirect;
+
+        if (!$this->kernel->session()->verifyCsrfToken($request->getPost('csrf_token', ''))) {
+            $this->kernel->session()->flash('danger', 'Ungültige Anfrage.');
+            return Response::redirect('/admin/modules/config');
+        }
+
+        $modSettings = $this->getSettingsByGroup('modules');
+        $input = $request->getPost('modules', []);
+        $values = [
+            'modules.auto_update'         => isset($input['auto_update']) ? '1' : '0',
+            'modules.marketplace_enabled' => isset($input['marketplace_enabled']) ? '1' : '0',
+            'modules.allow_paid'          => isset($input['allow_paid']) ? '1' : '0',
+            'modules.sandbox_mode'        => isset($input['sandbox_mode']) ? '1' : '0',
+        ];
+
+        $updated = $this->updateSettingsByKey($modSettings, $values);
+        if ($updated > 0) {
+            $this->kernel->session()->flash('success', 'Modul-Konfiguration wurde gespeichert.');
+        } else {
+            $this->kernel->session()->flash('info', 'Keine passenden Modul-Einstellungen gefunden oder geändert.');
+        }
+
+        return Response::redirect('/admin/modules/config');
+    }
+
+    public function modulesModConfig(Request $request): Response
+    {
+        $redirect = $this->requireAuth();
+        if ($redirect) return $redirect;
+
+        $modId    = (string) $request->getRouteParam('id', '');
+        $manifest = $this->kernel->modules()->getManifest($modId);
+
+        if ($manifest === null) {
+            return Response::notFound('Modul nicht gefunden.');
+        }
+
+        $configFile = ($manifest['_path'] ?? '') . DIRECTORY_SEPARATOR . 'config.json';
+        $config     = [];
+        if (file_exists($configFile)) {
+            $raw = (string) file_get_contents($configFile);
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $config = $decoded;
+            }
+        }
+
+        return Response::html(
+            $this->kernel->themes()->render('modules_mod_config.twig', array_merge($this->baseData(), [
+                'current_route'      => 'modules',
+                'mod'                => $manifest,
+                'mod_config'         => $config,
+                'can_manage_modules' => $this->canManageMods(),
+            ]))
+        );
+    }
+
+    public function modulesModConfigUpdate(Request $request): Response
+    {
+        $redirect = $this->requirePermission('system.mods');
+        if ($redirect) return $redirect;
+
+        if (!$this->kernel->session()->verifyCsrfToken($request->getPost('csrf_token', ''))) {
+            $this->kernel->session()->flash('danger', 'Ungültige Anfrage.');
+            return Response::redirect('/admin/modules/config');
+        }
+
+        $modId    = (string) $request->getRouteParam('id', '');
+        $manifest = $this->kernel->modules()->getManifest($modId);
+
+        if ($manifest === null) {
+            $this->kernel->session()->flash('danger', 'Modul nicht gefunden.');
+            return Response::redirect('/admin/modules/config');
+        }
+
+        $configFile = ($manifest['_path'] ?? '') . DIRECTORY_SEPARATOR . 'config.json';
+        $input      = $request->getPost('config', []);
+
+        if (is_array($input)) {
+            @file_put_contents(
+                $configFile,
+                json_encode($input, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+                LOCK_EX
+            );
+            $this->kernel->session()->flash('success', 'Modul-Konfiguration wurde gespeichert.');
+        }
+
+        return Response::redirect('/admin/modules/config/' . $modId);
     }
 }

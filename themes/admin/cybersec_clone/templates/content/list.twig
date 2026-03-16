@@ -1,0 +1,98 @@
+{% extends "base.twig" %}
+
+{% block title %}{{ content_labels[type_key]|default(type.label_plural|default(type_key)) }} – Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+<a href="/admin">Dashboard</a>
+<span>›</span>
+<span class="current">{{ content_labels[type_key]|default(type.label_plural|default(type_key)) }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">{{ content_labels[type_key]|default(type.label_plural|default(type_key)) }}</h1>
+        <p class="page-subtitle">{{ entries_total|default(0) }} {{ t('admin.entries')|default('Einträge') }}</p>
+    </div>
+    <a href="/admin/content/{{ type_key }}/create" class="btn btn-primary">
+        ＋ {{ type.label|default(type_key) }} {{ t('admin.create')|default('erstellen') }}
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body" style="padding:0;">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>{{ t('admin.title')|default('Titel') }}</th>
+                        <th>{{ t('admin.slug')|default('Slug') }}</th>
+                        <th>{{ t('admin.state')|default('Status') }}</th>
+                        <th>{{ t('admin.created')|default('Erstellt') }}</th>
+                        <th>{{ t('admin.updated')|default('Aktualisiert') }}</th>
+                        <th style="width:100px;">{{ t('admin.actions')|default('Aktionen') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries|default([]) %}
+                    <tr>
+                        <td>
+                            <a href="/admin/content/{{ type_key }}/{{ entry.id }}/edit">
+                                <strong>{{ entry.title|default(t('admin.no_title')|default('Ohne Titel')) }}</strong>
+                            </a>
+                        </td>
+                        <td class="text-muted">{{ entry.slug|default('–') }}</td>
+                        <td>
+                            <span class="badge badge-{{ entry.state|default('draft') }}">
+                                {{ entry.state|default('draft') }}
+                            </span>
+                        </td>
+                        <td class="text-muted">{{ entry.created_at|default('–') }}</td>
+                        <td class="text-muted">{{ entry.updated_at|default('–') }}</td>
+                        <td>
+                            <div class="flex gap-2">
+                                <a href="/admin/content/{{ type_key }}/{{ entry.id }}/edit" class="btn btn-ghost btn-sm" title="{{ t('admin.edit')|default('Bearbeiten') }}">✎</a>
+                                <form method="POST" action="/admin/content/{{ type_key }}/{{ entry.id }}/delete" style="display:inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-ghost btn-sm" data-confirm="{{ t('admin.confirm_delete')|default('Wirklich löschen?') }}" title="{{ t('admin.delete')|default('Löschen') }}">✕</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">◇</div>
+                                <div class="empty-state-title">{{ t('admin.no_entries')|default('Keine Einträge') }}</div>
+                                <div class="empty-state-text">
+                                    <a href="/admin/content/{{ type_key }}/create" class="btn btn-primary btn-sm mt-3">
+                                        ＋ {{ t('admin.create_first')|default('Ersten Eintrag erstellen') }}
+                                    </a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if pages|default(0) > 1 %}
+    <div class="card-footer flex-between">
+        <span class="text-muted" style="font-size:12px;">
+            {{ t('admin.page')|default('Seite') }} {{ current_page|default(1) }} / {{ pages }}
+        </span>
+        <div class="flex gap-2">
+            {% if current_page > 1 %}
+            <a href="/admin/content/{{ type_key }}?page={{ current_page - 1 }}" class="btn btn-ghost btn-sm">← {{ t('admin.prev')|default('Zurück') }}</a>
+            {% endif %}
+            {% if current_page < pages %}
+            <a href="/admin/content/{{ type_key }}?page={{ current_page + 1 }}" class="btn btn-ghost btn-sm">{{ t('admin.next')|default('Weiter') }} →</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

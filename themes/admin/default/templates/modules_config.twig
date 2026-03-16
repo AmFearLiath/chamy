@@ -1,0 +1,119 @@
+{% extends 'base.twig' %}
+
+{% block title %}{{ t('modules.config_title')|default('Modul-Konfiguration') }} – Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">{{ t('admin.dashboard')|default('Dashboard') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/admin/modules">{{ t('admin.modules')|default('Module') }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ t('modules.config_tab')|default('Konfiguration') }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ t('modules.config_title')|default('Modul-Konfiguration') }}</h1>
+    </div>
+    <div class="page-header-right">
+        <a href="/admin/modules" class="btn btn-ghost">{{ t('modules.back_to_overview')|default('Zurück') }}</a>
+    </div>
+</div>
+
+{# ── Global Module Settings ── #}
+<section class="card" style="margin-bottom:1.5rem;">
+    <div class="card-header">
+        <h3 class="card-title">{{ t('modules.config_global')|default('Globale Einstellungen') }}</h3>
+    </div>
+    <div class="card-body">
+        <form action="{{ route('admin.modules.config.update') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="form-grid-2col">
+                {# Auto-Update #}
+                <div class="form-group">
+                    <label class="form-label">{{ t('modules.config_auto_update')|default('Auto-Update') }}</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="auto_update" value="1" {{ mod_settings.auto_update|default(false) ? 'checked' : '' }}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <p class="form-hint">{{ t('modules.config_auto_update_hint')|default('Module automatisch auf die neueste Version aktualisieren.') }}</p>
+                </div>
+
+                {# Marketplace Enabled #}
+                <div class="form-group">
+                    <label class="form-label">{{ t('modules.config_marketplace_enabled')|default('Marketplace aktiviert') }}</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="marketplace_enabled" value="1" {{ mod_settings.marketplace_enabled|default(true) ? 'checked' : '' }}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <p class="form-hint">{{ t('modules.config_marketplace_hint')|default('Ermöglicht die Suche und Installation von Modulen über den Marketplace.') }}</p>
+                </div>
+
+                {# Allow Paid Modules #}
+                <div class="form-group">
+                    <label class="form-label">{{ t('modules.config_allow_paid')|default('Kostenpflichtige Module') }}</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="allow_paid" value="1" {{ mod_settings.allow_paid|default(false) ? 'checked' : '' }}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <p class="form-hint">{{ t('modules.config_allow_paid_hint')|default('Erlaubt die Installation kostenpflichtiger Module aus dem Marketplace.') }}</p>
+                </div>
+
+                {# Sandbox Mode #}
+                <div class="form-group">
+                    <label class="form-label">{{ t('modules.config_sandbox')|default('Sandbox-Modus') }}</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="sandbox_mode" value="1" {{ mod_settings.sandbox_mode|default(false) ? 'checked' : '' }}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <p class="form-hint">{{ t('modules.config_sandbox_hint')|default('Module in einer isolierten Umgebung ausführen (experimentell).') }}</p>
+                </div>
+            </div>
+
+            <div style="margin-top:1.25rem;">
+                <button type="submit" class="btn btn-primary">{{ t('modules.config_save')|default('Einstellungen speichern') }}</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+{# ── Per-Module Config Links ── #}
+<section class="card">
+    <div class="card-header">
+        <h3 class="card-title">{{ t('modules.config_per_module')|default('Modul-Konfigurationen') }}</h3>
+    </div>
+    <div class="card-body">
+        {% set configurable_modules = [] %}
+        {% for mod in modules|default([]) %}
+            {% if mod._has_config is defined and mod._has_config %}
+                {% set configurable_modules = configurable_modules|merge([mod]) %}
+            {% endif %}
+        {% endfor %}
+
+        {% if configurable_modules|length > 0 %}
+        <p class="text-muted" style="margin-bottom:1rem;">{{ t('modules.config_per_module_desc')|default('Folgende installierte Module bieten eine eigene Konfiguration:') }}</p>
+
+        <div class="mod-config-list">
+            {% for mod in configurable_modules %}
+            <a href="/admin/modules/config/{{ mod.id }}" class="mod-config-list-item">
+                <div class="mod-icon-block mod-icon-sm">
+                    {{ mod.name|default(mod.id)|first|upper }}
+                </div>
+                <div class="mod-config-list-info">
+                    <strong>{{ mod.name|default(mod.id) }}</strong>
+                    <span class="text-muted">v{{ mod.version|default('?') }}</span>
+                </div>
+                <span class="mod-config-arrow">→</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">⚙️</div>
+            <p>{{ t('modules.config_no_configurable')|default('Keine Module mit eigener Konfiguration installiert.') }}</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

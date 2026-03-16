@@ -150,6 +150,9 @@ final class ThemeManager implements ManagerInterface
         if (!isset($this->themes[$key])) {
             return false;
         }
+        if (!empty($this->themes[$key]['disabled'])) {
+            return false;
+        }
         $this->adminThemeId = $id;
         // Re-init admin twig to pick up templates from new theme
         $this->initAdminTwig();
@@ -160,6 +163,9 @@ final class ThemeManager implements ManagerInterface
     {
         $key = 'frontend/' . $id;
         if (!isset($this->themes[$key])) {
+            return false;
+        }
+        if (!empty($this->themes[$key]['disabled'])) {
             return false;
         }
         $this->frontendThemeId = $id;
@@ -370,6 +376,8 @@ final class ThemeManager implements ManagerInterface
 
     private function discoverThemes(): void
     {
+        $this->themes = [];
+
         $areas = [
             'admin'    => $this->kernel->path('themes', 'admin'),
             'frontend' => $this->kernel->path('themes', 'frontend'),
@@ -451,7 +459,7 @@ final class ThemeManager implements ManagerInterface
             'autoescape' => 'html',
         ]);
 
-        $this->registerTwigFunctions($this->adminTwig);
+        $this->registerTwigFunctions($this->adminTwig, 'admin');
     }
 
     private function initFrontendTwig(): void
@@ -480,12 +488,13 @@ final class ThemeManager implements ManagerInterface
             'autoescape' => 'html',
         ]);
 
-        $this->registerTwigFunctions($this->frontendTwig);
+        $this->registerTwigFunctions($this->frontendTwig, 'frontend');
     }
 
-    private function registerTwigFunctions(Environment $twig): void
+    private function registerTwigFunctions(Environment $twig, string $area): void
     {
         $kernel = $this->kernel;
+        $activeThemeId = $area === 'admin' ? $this->adminThemeId : $this->frontendThemeId;
 
         // Translation function
         $twig->addFunction(new TwigFunction('t', function (string $key, array $params = []) use ($kernel): string {
@@ -501,6 +510,16 @@ final class ThemeManager implements ManagerInterface
         // Asset URL
         $twig->addFunction(new TwigFunction('asset', function (string $path) use ($kernel): string {
             return '/assets/' . ltrim($path, '/');
+        }));
+
+        // Asset URL for the active theme in the current render area.
+        $twig->addFunction(new TwigFunction('theme_asset', function (string $path) use ($area, $activeThemeId): string {
+            return '/themes/' . $area . '/' . $activeThemeId . '/assets/' . ltrim($path, '/');
+        }));
+
+        // Active theme id in the current render area.
+        $twig->addFunction(new TwigFunction('active_theme_id', function () use ($activeThemeId): string {
+            return $activeThemeId;
         }));
 
         // Route URL
