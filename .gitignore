@@ -44,3 +44,7 @@ docs/
 tests/
 phpunit.xml
 .phpunit.cache/
+/!docs/
+!docs/wiki/
+!docs/wiki/**
+/docs/wiki/
