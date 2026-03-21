@@ -28,17 +28,17 @@
                     <div class="card-subtitle">Verwalte Komponenten, Blöcke und Snippets</div>
                 </div>
                 <div>
-                    <button class="btn" id="tab-new-element">Neu</button>
+                    <button type="button" class="btn" id="tab-new-element">Neu</button>
                     <div style="display:inline-block;width:8px"></div>
-                    <button class="btn btn-ghost" id="tab-export-package"><a href="/admin/editor/packages/export">Export</a></button>
+                    <a class="btn btn-ghost" id="tab-export-package" href="/admin/editor/packages/export">Export</a>
                 </div>
             </div>
             <div class="card-body">
                 <div class="tabs" id="editor-tabs" style="margin-bottom:12px;display:flex;gap:6px;">
-                    <button class="tab-btn" data-tab="layouts">Layouts</button>
-                    <button class="tab-btn active" data-tab="components">Komponenten</button>
-                    <button class="tab-btn" data-tab="blocks">Blöcke</button>
-                    <button class="tab-btn" data-tab="snippets">Snippets</button>
+                    <button type="button" class="tab-btn" data-tab="layouts">Layouts</button>
+                    <button type="button" class="tab-btn active" data-tab="components">Komponenten</button>
+                    <button type="button" class="tab-btn" data-tab="blocks">Blöcke</button>
+                    <button type="button" class="tab-btn" data-tab="snippets">Snippets</button>
                 </div>
 
                 {% set merged_layouts = definitions.layouts|merge(custom_definitions.layouts|default({})) %}
@@ -60,7 +60,7 @@
                                     <td>{{ def.category|default('-') }}</td>
                                     <td>{{ def.source|default('core') }}</td>
                                     <td>
-                                        <button class="btn btn-sm" data-action="edit" data-type="layout" data-id="{{ id }}">Bearbeiten</button>
+                                        <button type="button" class="btn btn-sm" data-action="edit" data-type="layout" data-id="{{ id }}">Bearbeiten</button>
                                         <form method="POST" action="/admin/editor/elements/delete" style="display:inline-block;margin-left:6px;">
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <input type="hidden" name="element_type" value="layout">
@@ -89,7 +89,7 @@
                                     <td>{{ def.category|default('-') }}</td>
                                     <td>{{ def.source|default('core') }}</td>
                                     <td>
-                                        <button class="btn btn-sm" data-action="edit" data-type="component" data-id="{{ id }}">Bearbeiten</button>
+                                        <button type="button" class="btn btn-sm" data-action="edit" data-type="component" data-id="{{ id }}">Bearbeiten</button>
                                         <form method="POST" action="/admin/editor/elements/delete" style="display:inline-block;margin-left:6px;">
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <input type="hidden" name="element_type" value="component">
@@ -118,7 +118,7 @@
                                     <td>{{ def.category|default('-') }}</td>
                                     <td>{{ def.source|default('core') }}</td>
                                     <td>
-                                        <button class="btn btn-sm" data-action="edit" data-type="block" data-id="{{ id }}">Bearbeiten</button>
+                                        <button type="button" class="btn btn-sm" data-action="edit" data-type="block" data-id="{{ id }}">Bearbeiten</button>
                                         <form method="POST" action="/admin/editor/elements/delete" style="display:inline-block;margin-left:6px;">
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <input type="hidden" name="element_type" value="block">
@@ -147,7 +147,7 @@
                                     <td>{{ def.category|default('-') }}</td>
                                     <td>{{ def.source|default('core') }}</td>
                                     <td>
-                                        <button class="btn btn-sm" data-action="edit" data-type="snippet" data-id="{{ id }}">Bearbeiten</button>
+                                        <button type="button" class="btn btn-sm" data-action="edit" data-type="snippet" data-id="{{ id }}">Bearbeiten</button>
                                         <form method="POST" action="/admin/editor/elements/delete" style="display:inline-block;margin-left:6px;">
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <input type="hidden" name="element_type" value="snippet">
@@ -224,9 +224,9 @@
 <div id="editor-modal" class="modal" style="display:none;">
     <div class="modal-backdrop"></div>
     <div class="modal-content" role="dialog" aria-modal="true">
-        <div class="modal-header">
+            <div class="modal-header">
             <h3 id="modal-title">Element bearbeiten</h3>
-            <button id="modal-close" class="btn">&times;</button>
+            <button type="button" id="modal-close" class="btn">&times;</button>
         </div>
         <div class="modal-body">
             <form id="modal-form" method="POST" action="/admin/editor/elements/create">

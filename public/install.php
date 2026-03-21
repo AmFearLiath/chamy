@@ -444,7 +444,7 @@ function envQuote(string $value): string
 
     // logo candidates in public/assets
     $logoCandidates = [
-        $basePath . '/public/assets/admin-logo.png',
+        $basePath . '/public/assets/logo-collapsed.png',
         $basePath . '/public/assets/logo_quadrat.png',
         $basePath . '/public/assets/logo.png',
     ];

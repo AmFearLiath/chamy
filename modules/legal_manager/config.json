@@ -1,0 +1,11 @@
+{
+    "privacy_slug": "datenschutz",
+    "imprint_slug": "impressum",
+    "auto_create_default_blocks": true,
+    "stats_enabled": true,
+    "stats_anonymize_ip": true,
+    "consent_management_enabled": false,
+    "audit_on_publish": false,
+    "default_locale": "de",
+    "frontend_page_enabled": true
+}

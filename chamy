@@ -25,16 +25,35 @@ $command = $argv[1] ?? 'migrate';
 
 switch ($command) {
     case 'migrate':
-        echo "Running migrations...\n";
+        echo "Running system migrations...\n";
         $ran = $runner->run($migrationsPath);
         if (empty($ran)) {
-            echo "Nothing to migrate.\n";
+            echo "Nothing to migrate (system).\n";
         } else {
             foreach ($ran as $name) {
                 echo "  ✓ {$name}\n";
             }
-            echo count($ran) . " migration(s) executed.\n";
+            echo count($ran) . " system migration(s) executed.\n";
         }
+
+        // Run active module migrations
+        $modules = $kernel->modules()->getActive();
+        foreach ($modules as $moduleId => $manifest) {
+            $modMigrations = ($manifest['_path'] ?? '') . DIRECTORY_SEPARATOR . 'migrations';
+            if (!is_dir($modMigrations)) {
+                continue;
+            }
+
+            $modRan = $runner->run($modMigrations);
+            if (!empty($modRan)) {
+                echo "\nModule [{$moduleId}]:\n";
+                foreach ($modRan as $name) {
+                    echo "  ✓ {$name}\n";
+                }
+                echo count($modRan) . " module migration(s) executed.\n";
+            }
+        }
+
         break;
 
     case 'migrate:down':

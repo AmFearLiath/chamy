@@ -1,0 +1,115 @@
+{% extends "base.twig" %}
+
+{% block head %}
+{{ parent() }}
+<link rel="stylesheet" href="/modules/legal_manager/assets/css/legal-manager-admin.css">
+<link rel="stylesheet" href="/modules/legal_manager/assets/css/admin.css">
+<script src="/modules/legal_manager/assets/js/admin.js" defer></script>
+{% endblock %}
+
+{% block title %}{{ t('legal.audit_title') }} – Chamy{% endblock %}
+
+{% block content %}
+<div class="legal-page legal-audit">
+    <div class="page-header">
+        <div class="page-header-left">
+            <h1 class="page-title">{{ t('legal.audit_title') }}</h1>
+            <p class="page-desc">{{ t('legal.audit_desc') }}</p>
+        </div>
+        <div class="page-header-actions">
+            <a href="/admin/legal" class="btn btn-secondary">{{ t('legal.back') }}</a>
+            <form method="post" action="/admin/legal/audit/run" style="display:inline">
+                {{ csrf_field() }}
+                <button type="submit" class="btn btn-primary">{{ t('legal.run_audit_btn') }}</button>
+            </form>
+        </div>
+    </div>
+
+    {% if audit.scan_id %}
+    {# ─── Zusammenfassung ─── #}
+    <div class="legal-section">
+        <h3>{{ t('legal.audit_summary') }}</h3>
+        <p><strong>{{ t('legal.last_scan') }}:</strong> {{ audit.date }}</p>
+
+        {% set total = audit.results|length %}
+        {% set external = audit.results|filter(r => r.is_external)|length %}
+        {% set undeclared = audit.results|filter(r => r.is_external and not r.is_declared)|length %}
+        {% set critical = audit.results|filter(r => r.severity == 'critical')|length %}
+        {% set warnings = audit.results|filter(r => r.severity == 'warning')|length %}
+
+        <div class="legal-grid legal-grid-4">
+            <div class="legal-card legal-card--cyan">
+                <div class="legal-card-body">
+                    <span class="legal-stat-label">{{ t('legal.found_resources') }}</span>
+                    <span class="legal-stat-number">{{ total }}</span>
+                </div>
+            </div>
+            <div class="legal-card legal-card--info">
+                <div class="legal-card-body">
+                    <span class="legal-stat-label">{{ t('legal.external_resources') }}</span>
+                    <span class="legal-stat-number">{{ external }}</span>
+                </div>
+            </div>
+            <div class="legal-card {{ critical > 0 ? 'legal-card--error' : 'legal-card--ok' }}">
+                <div class="legal-card-body">
+                    <span class="legal-stat-label">{{ t('legal.undeclared') }}</span>
+                    <span class="legal-stat-number">{{ undeclared }}</span>
+                </div>
+            </div>
+            <div class="legal-card {{ warnings > 0 ? 'legal-card--warn' : 'legal-card--ok' }}">
+                <div class="legal-card-body">
+                    <span class="legal-stat-label">{{ t('legal.warnings') }}</span>
+                    <span class="legal-stat-number">{{ warnings }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ─── Ergebnistabelle ─── #}
+    <div class="legal-section">
+        <h3>{{ t('legal.scan_results') }}</h3>
+        {% if audit.results|length > 0 %}
+        <div class="legal-table-wrap">
+        <table class="legal-table legal-table--compact">
+            <thead>
+                <tr>
+                    <th>{{ t('legal.severity') }}</th>
+                    <th>{{ t('legal.resource_type') }}</th>
+                    <th>{{ t('legal.resource_url') }}</th>
+                    <th>{{ t('legal.is_declared') }}</th>
+                    <th>{{ t('legal.source_file') }}</th>
+                    <th>{{ t('legal.source_area') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for r in audit.results %}
+                <tr class="legal-audit-row--{{ r.severity }}">
+                    <td>
+                        <span class="legal-badge legal-badge--small legal-badge--{{ r.severity == 'critical' ? 'danger' : (r.severity == 'warning' ? 'warning' : 'info') }}">
+                            {{ t('legal.severity_' ~ r.severity) }}
+                        </span>
+                    </td>
+                    <td>{{ r.resource_type }}</td>
+                    <td class="legal-url-cell" title="{{ r.resource_url }}">{{ r.resource_url|length > 60 ? r.resource_url[:60] ~ '…' : r.resource_url }}</td>
+                    <td>{{ r.is_declared ? t('legal.declared') : t('legal.undeclared') }}</td>
+                    <td><code>{{ r.source_file }}</code></td>
+                    <td>{{ r.source_area }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+            <p class="legal-empty">{{ t('legal.no_audit_results') }}</p>
+        {% endif %}
+    </div>
+
+    {% else %}
+        <div class="legal-section">
+            <p class="legal-empty">{{ t('legal.no_audit_results') }}</p>
+            <p>{{ t('legal.audit_desc') }}</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+

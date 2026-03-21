@@ -1,0 +1,140 @@
+{% extends "base.twig" %}
+
+{% block head %}
+{{ parent() }}
+<link rel="stylesheet" href="/modules/legal_manager/assets/css/legal-manager-admin.css">
+<link rel="stylesheet" href="/modules/legal_manager/assets/css/admin.css">
+<script src="/modules/legal_manager/assets/js/admin.js" defer></script>
+{% endblock %}
+
+{% block title %}{{ t('legal.stats_title') }} – Chamy{% endblock %}
+
+{% block content %}
+<div class="legal-page legal-stats">
+    <div class="page-header">
+        <div class="page-header-left">
+            <h1 class="page-title">{{ t('legal.stats_title') }}</h1>
+            <p class="page-desc">{{ t('legal.stats_desc') }}</p>
+        </div>
+        <div class="page-header-actions">
+            <form method="get" action="/admin/legal/stats" class="legal-period-form">
+                <label for="days">{{ t('legal.period') }}:</label>
+                <select id="days" name="days" class="form-control form-control--inline" onchange="this.form.submit()">
+                    <option value="7"  {{ days == 7  ? 'selected' : '' }}>{{ t('legal.last_7_days') }}</option>
+                    <option value="30" {{ days == 30 ? 'selected' : '' }}>{{ t('legal.last_30_days') }}</option>
+                    <option value="90" {{ days == 90 ? 'selected' : '' }}>{{ t('legal.last_90_days') }}</option>
+                </select>
+            </form>
+            <a href="/admin/legal" class="btn btn-secondary">{{ t('legal.back') }}</a>
+        </div>
+    </div>
+
+    {# ─── Gesamt-Kacheln ─── #}
+    {% set privacy_views = 0 %}
+    {% set imprint_views = 0 %}
+    {% set consent_accept = 0 %}
+    {% set consent_reject = 0 %}
+    {% set consent_custom = 0 %}
+    {% for t_row in stats.totals|default([]) %}
+        {% if t_row.event_type == 'view' and t_row.page_type == 'privacy' %}
+            {% set privacy_views = t_row.cnt %}
+        {% endif %}
+        {% if t_row.event_type == 'view' and t_row.page_type == 'imprint' %}
+            {% set imprint_views = t_row.cnt %}
+        {% endif %}
+        {% if t_row.event_type == 'consent_accept' %}
+            {% set consent_accept = consent_accept + t_row.cnt %}
+        {% endif %}
+        {% if t_row.event_type == 'consent_reject' %}
+            {% set consent_reject = consent_reject + t_row.cnt %}
+        {% endif %}
+        {% if t_row.event_type == 'consent_customize' %}
+            {% set consent_custom = consent_custom + t_row.cnt %}
+        {% endif %}
+    {% endfor %}
+
+    <div class="legal-grid legal-grid-4">
+        <div class="legal-card legal-card--cyan">
+            <div class="legal-card-body">
+                <span class="legal-stat-label">{{ t('legal.total_views') }}</span>
+                <span class="legal-stat-number">{{ privacy_views + imprint_views }}</span>
+            </div>
+        </div>
+        <div class="legal-card legal-card--magenta">
+            <div class="legal-card-body">
+                <span class="legal-stat-label">{{ t('legal.privacy_views') }}</span>
+                <span class="legal-stat-number">{{ privacy_views }}</span>
+            </div>
+        </div>
+        <div class="legal-card legal-card--violet">
+            <div class="legal-card-body">
+                <span class="legal-stat-label">{{ t('legal.imprint_views') }}</span>
+                <span class="legal-stat-number">{{ imprint_views }}</span>
+            </div>
+        </div>
+        <div class="legal-card legal-card--info">
+            <div class="legal-card-body">
+                <span class="legal-stat-label">{{ t('legal.consent_interactions') }}</span>
+                <span class="legal-stat-number">{{ consent_accept + consent_reject + consent_custom }}</span>
+            </div>
+        </div>
+    </div>
+
+    {# ─── Consent-Aufschlüsselung ─── #}
+    {% if consent_accept + consent_reject + consent_custom > 0 %}
+    <div class="legal-section">
+        <h3>{{ t('legal.consent_interactions') }}</h3>
+        <div class="legal-grid legal-grid-3">
+            <div class="legal-card legal-card--ok">
+                <div class="legal-card-body">
+                    <span class="legal-stat-label">{{ t('legal.consent_accepted') }}</span>
+                    <span class="legal-stat-number">{{ consent_accept }}</span>
+                </div>
+            </div>
+            <div class="legal-card legal-card--warn">
+                <div class="legal-card-body">
+                    <span class="legal-stat-label">{{ t('legal.consent_rejected') }}</span>
+                    <span class="legal-stat-number">{{ consent_reject }}</span>
+                </div>
+            </div>
+            <div class="legal-card legal-card--cyan">
+                <div class="legal-card-body">
+                    <span class="legal-stat-label">{{ t('legal.consent_customized') }}</span>
+                    <span class="legal-stat-number">{{ consent_custom }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ─── Tägliche Aufrufe ─── #}
+    <div class="legal-section">
+        <h3>{{ t('legal.daily_views') }}</h3>
+        {% if stats.daily|default([])|length > 0 %}
+        <div class="legal-table-wrap">
+        <table class="legal-table">
+            <thead>
+                <tr>
+                    <th>{{ t('legal.date')|default('Datum') }}</th>
+                    <th>{{ t('legal.type') }}</th>
+                    <th>{{ t('legal.page_views') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in stats.daily %}
+                <tr>
+                    <td>{{ row.day }}</td>
+                    <td>{{ row.page_type }}</td>
+                    <td>{{ row.cnt }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+            <p class="legal-empty">{{ t('legal.no_stats') }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

@@ -23,6 +23,7 @@ use Chamy\Core\Managers\CacheManager;
 use Chamy\Core\Managers\MarketplaceManager;
 use Chamy\Core\Managers\TrashManager;
 use Chamy\Core\Managers\AssetLibraryManager;
+use Chamy\Core\Managers\MenuManager;
 use Chamy\Core\Data\DataProviderInterface;
 use Chamy\Core\Data\DataProviderFactory;
 use Chamy\Core\Database\Connection;
@@ -106,6 +107,7 @@ final class Kernel
         $this->initMarketplace();
         $this->initTrash();
         $this->initAssetLibrary();
+        $this->initMenu();
 
         $this->registry->bootAll();
         $this->registerRoutes();
@@ -279,6 +281,13 @@ final class Kernel
     {
         /** @var AssetLibraryManager $manager */
         $manager = $this->registry->get('asset_library');
+        return $manager;
+    }
+
+    public function menus(): MenuManager
+    {
+        /** @var MenuManager $manager */
+        $manager = $this->registry->get('menu');
         return $manager;
     }
 
@@ -479,6 +488,13 @@ final class Kernel
     {
         $manager = new AssetLibraryManager($this->basePath);
         $this->registry->register('asset_library', $manager);
+    }
+
+    private function initMenu(): void
+    {
+        $locale = $this->config()->get('APP_LOCALE', 'de');
+        $manager = new MenuManager($this->database, $locale);
+        $this->registry->register('menu', $manager);
     }
 
     private function registerRoutes(): void

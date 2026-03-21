@@ -1,0 +1,139 @@
+{% extends "base.twig" %}
+
+{% block title %}{{ t('menu.title')|default('Menüverwaltung') }} – Chamy CMS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">{{ t('admin.dashboard')|default('Dashboard') }}</a>
+    <span class="breadcrumb-sep">/</span>
+    <span>{{ t('menu.title')|default('Menüverwaltung') }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ t('menu.title')|default('Menüverwaltung') }}</h1>
+        <p class="page-desc">{{ t('menu.description')|default('Zentrale Verwaltung aller Menüs, Kategorien und Einträge') }}</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="/admin/menus/locations/create" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            {{ t('menu.location_create')|default('Position erstellen') }}
+        </a>
+        <a href="/admin/menus/audit" class="btn btn-outline">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+            {{ t('menu.audit_log')|default('Änderungsprotokoll') }}
+        </a>
+    </div>
+</div>
+
+{% for msg in flash_messages.success|default([]) %}
+<div class="alert alert-success">{{ msg }}</div>
+{% endfor %}
+{% for msg in flash_messages.error|default([]) %}
+<div class="alert alert-error">{{ msg }}</div>
+{% endfor %}
+
+<div class="menu-locations-grid">
+    {% for loc in locations %}
+    <div class="card menu-location-card">
+        <div class="card-header">
+            <div class="card-header-left">
+                <h3 class="card-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    {{ loc.label }}
+                </h3>
+                <span class="badge badge-muted">{{ loc.key }}</span>
+            </div>
+            <div class="card-header-actions">
+                {% if not loc.is_active %}
+                <span class="badge badge-warn">{{ t('menu.inactive')|default('Inaktiv') }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">{{ loc.description|default('—') }}</p>
+            <div class="menu-location-stats">
+                <div class="stat-mini">
+                    <span class="stat-mini-value">{{ loc.category_count }}</span>
+                    <span class="stat-mini-label">{{ t('menu.categories')|default('Kategorien') }}</span>
+                </div>
+                <div class="stat-mini">
+                    <span class="stat-mini-value">{{ loc.item_count }}</span>
+                    <span class="stat-mini-label">{{ t('menu.items')|default('Einträge') }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <a href="/admin/menus/locations/{{ loc.id }}" class="btn btn-sm btn-primary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l4-4 4 4"/><path d="M7 5v14"/><path d="M21 15l-4 4-4-4"/><path d="M17 19V5"/></svg>
+                {{ t('menu.manage')|default('Verwalten') }}
+            </a>
+            <a href="/admin/menus/locations/{{ loc.id }}/edit" class="btn btn-sm btn-outline">
+                {{ t('admin.edit')|default('Bearbeiten') }}
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body">
+            <p class="text-muted text-center">{{ t('menu.no_locations')|default('Noch keine Menüpositionen angelegt.') }}</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block head %}
+<style>
+.menu-locations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 20px;
+    margin-top: 16px;
+}
+.menu-location-card .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.menu-location-card .card-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.menu-location-card .card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 16px;
+}
+.menu-location-stats {
+    display: flex;
+    gap: 24px;
+    margin-top: 12px;
+}
+.stat-mini {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.stat-mini-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--neon-cyan, #00f0ff);
+}
+.stat-mini-label {
+    font-size: 12px;
+    color: var(--text-muted, #7a8a9e);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.card-footer {
+    display: flex;
+    gap: 8px;
+    padding: 12px var(--card-padding, 20px);
+    border-top: 1px solid var(--card-border, rgba(255,255,255,0.06));
+}
+</style>
+{% endblock %}

@@ -80,6 +80,9 @@
     };
 
     /* ---------- Multi-select popup for comma-separated inputs ---------- */
+        
+        /* Delegated fallback removed — use per-element handlers registered by initParentToggles
+           to avoid double-toggling caused by multiple listeners. */
     (function(){
         var activePopup = null;
 
@@ -408,6 +411,35 @@
             if (overlay) overlay.remove();
         }
     };
+
+    /* ---------- Sidebar parent toggles (ensure module parents can be toggled) ---------- */
+    (function () {
+        function initParentToggles() {
+            document.querySelectorAll('.nav-item-parent[data-nav-toggle]').forEach(function (parentItem) {
+                var key = 'nav_section_' + parentItem.getAttribute('data-nav-toggle');
+
+                // Restore open state from localStorage (unless server already set it open)
+                try {
+                    if (!parentItem.classList.contains('open') && localStorage.getItem(key) === '1') {
+                        parentItem.classList.add('open');
+                    }
+                } catch (e) { /* ignore localStorage errors */ }
+
+                // Attach click handler
+                parentItem.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    parentItem.classList.toggle('open');
+                    try { localStorage.setItem(key, parentItem.classList.contains('open') ? '1' : '0'); } catch (err) { /* ignore */ }
+                });
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initParentToggles);
+        } else {
+            initParentToggles();
+        }
+    })();
 
     /* ---------- Smart back-button & navigation history ---------- */
     // Helpers: key for a location (relative path+search+hash)

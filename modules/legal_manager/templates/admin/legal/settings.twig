@@ -1,0 +1,129 @@
+{% extends "base.twig" %}
+
+{% block head %}
+{{ parent() }}
+<link rel="stylesheet" href="/modules/legal_manager/assets/css/legal-manager-admin.css">
+<link rel="stylesheet" href="/modules/legal_manager/assets/css/admin.css">
+<script src="/modules/legal_manager/assets/js/admin.js" defer></script>
+{% endblock %}
+
+{% block title %}{{ t('legal.settings_title') }} – Chamy{% endblock %}
+
+{% block content %}
+<div class="legal-page legal-settings">
+    <div class="page-header">
+        <div class="page-header-left">
+            <h1 class="page-title">{{ t('legal.settings_title') }}</h1>
+            <p class="page-desc">{{ t('legal.settings_desc') }}</p>
+        </div>
+        <div class="page-header-actions">
+            <a href="/admin/legal" class="btn btn-secondary">{{ t('legal.back') }}</a>
+        </div>
+    </div>
+
+    <form method="post" action="/admin/legal/settings" class="legal-form">
+        {{ csrf_field() }}
+
+        {# ─── URL-Slugs ─── #}
+        <fieldset class="legal-fieldset">
+            <legend>URLs</legend>
+            <div class="legal-grid legal-grid-2">
+                <div class="form-group">
+                    <label for="privacy_slug">{{ t('legal.setting_privacy_slug') }}</label>
+                    <div class="input-prefix-group">
+                        <span class="input-prefix">/</span>
+                        <input type="text" id="privacy_slug" name="privacy_slug" class="form-control"
+                               value="{{ config.privacy_slug|default('datenschutz') }}"
+                               pattern="[a-z0-9\-]+" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="imprint_slug">{{ t('legal.setting_imprint_slug') }}</label>
+                    <div class="input-prefix-group">
+                        <span class="input-prefix">/</span>
+                        <input type="text" id="imprint_slug" name="imprint_slug" class="form-control"
+                               value="{{ config.imprint_slug|default('impressum') }}"
+                               pattern="[a-z0-9\-]+" required>
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+
+        {# ─── Sprache ─── #}
+        <fieldset class="legal-fieldset">
+            <legend>{{ t('legal.locale')|default('Sprache') }}</legend>
+            <div class="form-group">
+                <label for="default_locale">{{ t('legal.setting_default_locale') }}</label>
+                <select id="default_locale" name="default_locale" class="form-control" style="max-width:200px">
+                    <option value="de" {{ config.default_locale|default('de') == 'de' ? 'selected' : '' }}>Deutsch</option>
+                    <option value="en" {{ config.default_locale|default('de') == 'en' ? 'selected' : '' }}>English</option>
+                </select>
+            </div>
+        </fieldset>
+
+        {# ─── Funktionen ─── #}
+        <fieldset class="legal-fieldset">
+            <legend>{{ t('legal.settings_title') }}</legend>
+
+            <div class="form-group">
+                <label class="legal-checkbox">
+                    <input type="hidden" name="frontend_page_enabled" value="0">
+                    <input type="checkbox" name="frontend_page_enabled" value="1"
+                           {{ config.frontend_page_enabled|default(true) ? 'checked' : '' }}>
+                    {{ t('legal.setting_frontend_pages')|default('Frontend-Seiten aktivieren') }}
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label class="legal-checkbox">
+                    <input type="hidden" name="auto_create_default_blocks" value="0">
+                    <input type="checkbox" name="auto_create_default_blocks" value="1"
+                           {{ config.auto_create_default_blocks|default(true) ? 'checked' : '' }}>
+                    {{ t('legal.setting_auto_blocks') }}
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label class="legal-checkbox">
+                    <input type="hidden" name="stats_enabled" value="0">
+                    <input type="checkbox" name="stats_enabled" value="1"
+                           {{ config.stats_enabled|default(true) ? 'checked' : '' }}>
+                    {{ t('legal.setting_stats_enabled') }}
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label class="legal-checkbox">
+                    <input type="hidden" name="stats_anonymize_ip" value="0">
+                    <input type="checkbox" name="stats_anonymize_ip" value="1"
+                           {{ config.stats_anonymize_ip|default(true) ? 'checked' : '' }}>
+                    {{ t('legal.setting_stats_anonymize') }}
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label class="legal-checkbox">
+                    <input type="hidden" name="consent_management_enabled" value="0">
+                    <input type="checkbox" name="consent_management_enabled" value="1"
+                           {{ config.consent_management_enabled|default(false) ? 'checked' : '' }}>
+                    {{ t('legal.setting_consent_enabled') }}
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label class="legal-checkbox">
+                    <input type="hidden" name="audit_on_publish" value="0">
+                    <input type="checkbox" name="audit_on_publish" value="1"
+                           {{ config.audit_on_publish|default(false) ? 'checked' : '' }}>
+                    {{ t('legal.setting_audit_on_publish') }}
+                </label>
+            </div>
+        </fieldset>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{{ t('legal.save_settings') }}</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

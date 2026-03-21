@@ -40,11 +40,10 @@ yarn-debug.log*
 yarn-error.log*
 
 # Repository slimming for public upload
-docs/
+# keep docs/wiki tracked
+!docs/
+!docs/wiki/
+!docs/wiki/**
 tests/
 phpunit.xml
 .phpunit.cache/
-/!docs/
-!docs/wiki/
-!docs/wiki/**
-/docs/wiki/

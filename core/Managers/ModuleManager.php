@@ -11,6 +11,7 @@ use RuntimeException;
 final class ModuleManager implements ManagerInterface
 {
     private Kernel $kernel;
+    private string $stateFile;
 
     /** @var array<string, array> */
     private array $installed = [];
@@ -21,6 +22,7 @@ final class ModuleManager implements ManagerInterface
     public function __construct(Kernel $kernel)
     {
         $this->kernel = $kernel;
+        $this->stateFile = $this->kernel->path('storage', 'cache', 'modules-active.json');
     }
 
     public function getName(): string
@@ -66,6 +68,7 @@ final class ModuleManager implements ManagerInterface
         }
 
         $this->active[$moduleId] = $this->installed[$moduleId];
+        $this->persistActiveState();
         $this->kernel->events()->dispatch('module.activated', ['module_id' => $moduleId]);
     }
 
@@ -76,6 +79,7 @@ final class ModuleManager implements ManagerInterface
         }
 
         unset($this->active[$moduleId]);
+        $this->persistActiveState();
         $this->kernel->events()->dispatch('module.deactivated', ['module_id' => $moduleId]);
     }
 
@@ -124,12 +128,70 @@ final class ModuleManager implements ManagerInterface
 
     private function bootActiveModules(): void
     {
-        // For MVP: all installed modules are active
-        $this->active = $this->installed;
+        $state = $this->loadActiveState();
+
+        $this->active = [];
+        foreach ($this->installed as $moduleId => $manifest) {
+            $isActive = $state[$moduleId] ?? true;
+            if ($isActive) {
+                $this->active[$moduleId] = $manifest;
+            }
+        }
+
+        // Keep state file in sync and include newly discovered modules.
+        $this->persistActiveState();
 
         foreach ($this->active as $moduleId => $manifest) {
             $this->bootModule($moduleId, $manifest);
         }
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    private function loadActiveState(): array
+    {
+        if (!is_file($this->stateFile)) {
+            return [];
+        }
+
+        $raw = @file_get_contents($this->stateFile);
+        if ($raw === false || trim($raw) === '') {
+            return [];
+        }
+
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $state = [];
+        foreach ($decoded as $moduleId => $isActive) {
+            if (!is_string($moduleId) || $moduleId === '') {
+                continue;
+            }
+            $state[$moduleId] = (bool) $isActive;
+        }
+
+        return $state;
+    }
+
+    private function persistActiveState(): void
+    {
+        $state = [];
+        foreach ($this->installed as $moduleId => $_manifest) {
+            $state[$moduleId] = isset($this->active[$moduleId]);
+        }
+
+        $dir = dirname($this->stateFile);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0777, true);
+        }
+
+        @file_put_contents(
+            $this->stateFile,
+            json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+        );
     }
 
     private function bootModule(string $moduleId, array $manifest): void

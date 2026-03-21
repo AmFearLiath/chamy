@@ -1,0 +1,43 @@
+/* Legal Manager — Sidebar navigation styles (scoped to module nav section)
+   This avoids leaking styles into the global admin menu. */
+.nav-section[data-module="legal_manager"] .nav-item-parent {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+.nav-section[data-module="legal_manager"] .nav-item-caret {
+    margin-left: auto;
+    opacity: 0.5;
+    transition: transform var(--transition-fast, 150ms ease), opacity var(--transition-fast, 150ms ease);
+    display: flex;
+    align-items: center;
+}
+.nav-section[data-module="legal_manager"] .nav-item-parent.open .nav-item-caret {
+    transform: rotate(180deg);
+    opacity: 0.8;
+}
+.nav-section[data-module="legal_manager"] .nav-item-parent.active {
+    color: var(--accent, #00f0ff);
+}
+
+/* Sub-group (collapsed by default) — only for the module section */
+.nav-section[data-module="legal_manager"] .nav-subgroup {
+    display: none;
+    padding-left: 12px;
+    overflow: hidden;
+}
+.nav-section[data-module="legal_manager"] .nav-item-parent.open + .nav-subgroup {
+    display: block;
+}
+.nav-section[data-module="legal_manager"] .nav-subitem {
+    font-size: 12px;
+    padding: 7px 22px 7px 34px;
+}
+.nav-section[data-module="legal_manager"] .nav-subitem .nav-item-icon {
+    width: 16px;
+    height: 16px;
+}
+.nav-section[data-module="legal_manager"] .nav-subitem .nav-item-icon svg {
+    width: 16px;
+    height: 16px;
+}

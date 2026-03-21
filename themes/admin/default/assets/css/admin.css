@@ -246,6 +246,49 @@ body::before {
 
 .collapsed .sidebar-header { margin: 15px 0px 0px 22px; padding-bottom: 33px; }
 
+/* ─── Collapsible parent nav-item (module-compatible defaults) ─── */
+.nav-item-parent {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+.nav-item-caret {
+    margin-left: auto;
+    opacity: 0.5;
+    transition: transform var(--transition-fast, 150ms ease), opacity var(--transition-fast, 150ms ease);
+    display: flex;
+    align-items: center;
+}
+.nav-item-parent.open .nav-item-caret {
+    transform: rotate(180deg);
+    opacity: 0.8;
+}
+.nav-item-parent.active {
+    color: var(--accent, #00f0ff);
+}
+
+/* Sub-group (collapsed by default) — shown when the adjacent parent has .open */
+.nav-subgroup {
+    display: none;
+    padding-left: 12px;
+    overflow: hidden;
+}
+.nav-item-parent.open + .nav-subgroup {
+    display: block;
+}
+.sidebar-nav .nav-subitem {
+    font-size: 13px;
+    padding: 7px 22px 7px 34px;
+}
+.nav-subitem .nav-item-icon {
+    width: 16px;
+    height: 16px;
+}
+.nav-subitem .nav-item-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
 /* ---------- Modal styles (managed modals used for create forms) ---------- */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; z-index:140; }
 .modal { width: min(1100px, 96%); background: var(--surface-200); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-lg); overflow: hidden; }

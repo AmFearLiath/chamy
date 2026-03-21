@@ -1,0 +1,143 @@
+{% extends "base.twig" %}
+
+{% block head %}
+{{ parent() }}
+<link rel="stylesheet" href="/modules/legal_manager/assets/css/legal-manager-admin.css">
+<link rel="stylesheet" href="/modules/legal_manager/assets/css/admin.css">
+<script src="/modules/legal_manager/assets/js/admin.js" defer></script>
+{% endblock %}
+
+{% block title %}{{ t('legal.consent_title') }} – Chamy{% endblock %}
+
+{% block content %}
+<div class="legal-page legal-consent">
+    <div class="page-header">
+        <div class="page-header-left">
+            <h1 class="page-title">{{ t('legal.consent_title') }}</h1>
+            <p class="page-desc">{{ t('legal.consent_desc') }}</p>
+        </div>
+        <div class="page-header-actions">
+            <a href="/admin/legal" class="btn btn-secondary">{{ t('legal.back') }}</a>
+        </div>
+    </div>
+
+    {# ─── Kategorie erstellen / bearbeiten ─── #}
+    <div class="legal-section">
+        <h3 id="category-form-title">{{ t('legal.add_category') }}</h3>
+        <form method="post" action="/admin/legal/consent" class="legal-form" id="consent-form">
+            {{ csrf_field() }}
+            <input type="hidden" name="id" value="" id="cat-id">
+
+            <div class="legal-grid legal-grid-2">
+                <div class="form-group">
+                    <label for="category_key">{{ t('legal.category_key') }}</label>
+                    <input type="text" id="category_key" name="category_key" class="form-control"
+                           pattern="[a-z0-9_]+" required>
+                </div>
+                <div class="form-group">
+                    <label for="cat_label">{{ t('legal.category_label') }}</label>
+                    <input type="text" id="cat_label" name="label" class="form-control" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="cat_description">{{ t('legal.category_description') }}</label>
+                <textarea id="cat_description" name="description" class="form-control" rows="3"></textarea>
+            </div>
+
+            <div class="legal-grid legal-grid-3">
+                <div class="form-group">
+                    <label class="legal-checkbox">
+                        <input type="hidden" name="is_required" value="0">
+                        <input type="checkbox" name="is_required" value="1">
+                        {{ t('legal.category_required') }}
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label for="cat_sort_order">{{ t('legal.sort_order')|default('Sortierung') }}</label>
+                    <input type="number" id="cat_sort_order" name="sort_order" class="form-control" value="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label class="legal-checkbox">
+                        <input type="hidden" name="is_active" value="0">
+                        <input type="checkbox" name="is_active" value="1" checked>
+                        {{ t('legal.block_active') }}
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">{{ t('legal.save_category') }}</button>
+                <button type="button" class="btn btn-secondary" onclick="resetForm()">{{ t('legal.cancel') }}</button>
+            </div>
+        </form>
+    </div>
+
+    {# ─── Bestehende Kategorien ─── #}
+    <div class="legal-section">
+        <h3>{{ t('legal.consent_categories') }}</h3>
+        {% if categories|length > 0 %}
+        <div class="legal-table-wrap">
+        <table class="legal-table">
+            <thead>
+                <tr>
+                    <th>{{ t('legal.category_key') }}</th>
+                    <th>{{ t('legal.category_label') }}</th>
+                    <th>{{ t('legal.category_required') }}</th>
+                    <th>{{ t('legal.status') }}</th>
+                    <th>{{ t('legal.actions') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for cat in categories %}
+                <tr>
+                    <td><code>{{ cat.category_key }}</code></td>
+                    <td>{{ cat.label }}</td>
+                    <td>{{ cat.is_required ? t('legal.yes') : t('legal.no') }}</td>
+                    <td>
+                        <span class="legal-badge legal-badge--small {{ cat.is_active ? 'legal-badge--success' : 'legal-badge--muted' }}">
+                            {{ cat.is_active ? t('legal.block_active') : t('legal.block_inactive') }}
+                        </span>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-secondary"
+                                onclick='editCategory({{ cat|json_encode|raw }})'>{{ t('legal.edit') }}</button>
+                        <form method="post" action="/admin/legal/consent/{{ cat.id }}/delete"
+                              onsubmit="return confirm({{ t('legal.confirm_delete')|json_encode|raw }});" style="display:inline">
+                            {{ csrf_field() }}
+                            <button type="submit" class="btn btn-sm btn-danger">{{ t('legal.delete') }}</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+            <p class="legal-empty">{{ t('legal.no_categories') }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function editCategory(cat) {
+    document.getElementById('cat-id').value = cat.id;
+    document.getElementById('category_key').value = cat.category_key;
+    document.getElementById('cat_label').value = cat.label;
+    document.getElementById('cat_description').value = cat.description || '';
+    document.querySelector('[name="is_required"][type="checkbox"]').checked = !!parseInt(cat.is_required);
+    document.getElementById('cat_sort_order').value = cat.sort_order || 0;
+    document.querySelector('[name="is_active"][type="checkbox"]').checked = !!parseInt(cat.is_active);
+    document.getElementById('category-form-title').textContent = {{ t('legal.edit_category')|json_encode|raw }};
+    document.getElementById('consent-form').scrollIntoView({ behavior: 'smooth' });
+}
+function resetForm() {
+    document.getElementById('cat-id').value = '';
+    document.getElementById('consent-form').reset();
+    document.getElementById('category-form-title').textContent = {{ t('legal.add_category')|json_encode|raw }};
+}
+</script>
+{% endblock %}
+

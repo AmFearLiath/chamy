@@ -1,0 +1,106 @@
+{% extends "base.twig" %}
+
+{% block title %}{{ category is defined ? t('menu.category_edit')|default('Kategorie bearbeiten') : t('menu.category_create')|default('Kategorie erstellen') }}{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">{{ t('admin.dashboard')|default('Dashboard') }}</a>
+    <span class="breadcrumb-sep">/</span>
+    <a href="/admin/menus">{{ t('menu.title')|default('Menüs') }}</a>
+    <span class="breadcrumb-sep">/</span>
+    <a href="/admin/menus/locations/{{ location.id }}">{{ location.label }}</a>
+    <span class="breadcrumb-sep">/</span>
+    <span>{{ category is defined ? category.display_label|default(category.key) : t('menu.category_create')|default('Neue Kategorie') }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ category is defined ? t('menu.category_edit')|default('Kategorie bearbeiten') : t('menu.category_create')|default('Neue Kategorie') }}</h1>
+    </div>
+    <div class="page-header-actions">
+        <a href="/admin/menus/locations/{{ location.id }}" class="btn btn-outline btn-sm">{{ t('admin.back')|default('Zurück') }}</a>
+    </div>
+</div>
+
+{% for msg in flash_messages.error|default([]) %}
+<div class="alert alert-error">{{ msg }}</div>
+{% endfor %}
+
+<form method="post" action="{{ category is defined ? '/admin/menus/categories/' ~ category.id ~ '/update' : '/admin/menus/locations/' ~ location.id ~ '/categories/store' }}">
+    {{ csrf_field() }}
+
+    <div class="form-layout-2col" style="margin-top:16px;">
+        <div class="form-col-main">
+            <div class="card">
+                <div class="card-header">{{ t('menu.section_general')|default('Allgemein') }}</div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="key" class="form-label">{{ t('menu.field_key')|default('Schlüssel') }} <span class="text-danger">*</span></label>
+                        <input type="text" id="key" name="key" class="form-control" required pattern="[a-z0-9\-_]+"
+                               value="{{ category.key|default('') }}"
+                               placeholder="z.B. content"
+                               {{ category is defined ? 'readonly' : '' }}>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group" style="flex:1">
+                            <label for="label_de" class="form-label">{{ t('menu.field_label_de')|default('Bezeichnung (Deutsch)') }} <span class="text-danger">*</span></label>
+                            <input type="text" id="label_de" name="label_de" class="form-control" required
+                                   value="{{ category.translations.de.label|default(category.display_label|default('')) }}"
+                                   placeholder="z.B. Inhalte">
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label for="label_en" class="form-label">{{ t('menu.field_label_en')|default('Bezeichnung (Englisch)') }}</label>
+                            <input type="text" id="label_en" name="label_en" class="form-control"
+                                   value="{{ category.translations.en.label|default('') }}"
+                                   placeholder="z.B. Content">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-col-aside">
+            <div class="card">
+                <div class="card-header">{{ t('menu.section_appearance')|default('Darstellung') }}</div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="icon" class="form-label">{{ t('menu.field_icon')|default('Icon') }}</label>
+                        <input type="text" id="icon" name="icon" class="form-control"
+                               value="{{ category.icon|default('') }}"
+                               placeholder="z.B. folder">
+                        <small class="form-hint">{{ t('menu.icon_hint')|default('Tabler Icon Name ohne Präfix') }}</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sort_order" class="form-label">{{ t('menu.field_sort_order')|default('Reihenfolge') }}</label>
+                        <input type="number" id="sort_order" name="sort_order" class="form-control"
+                               value="{{ category.sort_order|default(0) }}" min="0">
+                    </div>
+
+                    <div class="form-check-group">
+                        <label class="form-check">
+                            <input type="checkbox" name="is_active" value="1" {{ (category.is_active|default(1)) ? 'checked' : '' }}>
+                            <span>{{ t('menu.field_active')|default('Aktiv') }}</span>
+                        </label>
+                        <label class="form-check">
+                            <input type="checkbox" name="is_collapsible" value="1" {{ (category.is_collapsible|default(0)) ? 'checked' : '' }}>
+                            <span>{{ t('menu.field_collapsible')|default('Einklappbar') }}</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">{{ t('menu.section_options')|default('Optionen') }}</div>
+                <div class="card-body">
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-block">{{ t('admin.save')|default('Speichern') }}</button>
+                        <a href="/admin/menus/locations/{{ location.id }}" class="btn btn-outline btn-block" style="margin-top:8px;">{{ t('admin.cancel')|default('Abbrechen') }}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,169 @@
+{% extends "base.twig" %}
+
+{% block head %}
+{{ parent() }}
+<link rel="stylesheet" href="/modules/legal_manager/assets/css/legal-manager-admin.css">
+<link rel="stylesheet" href="/modules/legal_manager/assets/css/admin.css">
+<script src="/modules/legal_manager/assets/js/admin.js" defer></script>
+{% endblock %}
+
+{% block title %}{{ t('legal.base_data_title') }} – Chamy{% endblock %}
+
+{% block content %}
+<div class="legal-page legal-base-data">
+    <div class="page-header">
+        <div class="page-header-left">
+            <h1 class="page-title">{{ t('legal.base_data_title') }}</h1>
+            <p class="page-desc">{{ t('legal.base_data_desc') }}</p>
+        </div>
+        <div class="page-header-actions">
+            <a href="/admin/legal" class="btn btn-secondary">{{ t('legal.back') }}</a>
+        </div>
+    </div>
+
+    <form method="post" action="/admin/legal/base-data" class="legal-form">
+        {{ csrf_field() }}
+
+        {# ─── Unternehmensdaten ─── #}
+        <fieldset class="legal-fieldset">
+            <legend>{{ t('legal.section_company') }}</legend>
+            <div class="legal-grid legal-grid-2">
+                <div class="form-group">
+                    <label for="company_name">{{ t('legal.company_name') }}</label>
+                    <input type="text" id="company_name" name="fields[company_name]"
+                           value="{{ base_data.company_name|default('') }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="legal_form">{{ t('legal.legal_form') }}</label>
+                    <input type="text" id="legal_form" name="fields[legal_form]"
+                           value="{{ base_data.legal_form|default('') }}" class="form-control"
+                           placeholder="z.B. GmbH, UG, e.K.">
+                </div>
+                <div class="form-group">
+                    <label for="operator_name">{{ t('legal.operator_name') }}</label>
+                    <input type="text" id="operator_name" name="fields[operator_name]"
+                           value="{{ base_data.operator_name|default('') }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="representative">{{ t('legal.representative') }}</label>
+                    <input type="text" id="representative" name="fields[representative]"
+                           value="{{ base_data.representative|default('') }}" class="form-control">
+                </div>
+            </div>
+        </fieldset>
+
+        {# ─── Kontaktdaten ─── #}
+        <fieldset class="legal-fieldset">
+            <legend>{{ t('legal.section_contact') }}</legend>
+            <div class="legal-grid legal-grid-2">
+                <div class="form-group">
+                    <label for="address_street">{{ t('legal.address_street') }}</label>
+                    <input type="text" id="address_street" name="fields[address_street]"
+                           value="{{ base_data.address_street|default('') }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="address_zip">{{ t('legal.address_zip') }}</label>
+                    <input type="text" id="address_zip" name="fields[address_zip]"
+                           value="{{ base_data.address_zip|default('') }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="address_city">{{ t('legal.address_city') }}</label>
+                    <input type="text" id="address_city" name="fields[address_city]"
+                           value="{{ base_data.address_city|default('') }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="address_country">{{ t('legal.address_country') }}</label>
+                    <input type="text" id="address_country" name="fields[address_country]"
+                           value="{{ base_data.address_country|default('') }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="contact_email">{{ t('legal.contact_email') }}</label>
+                    <input type="email" id="contact_email" name="fields[contact_email]"
+                           value="{{ base_data.contact_email|default('') }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="contact_phone">{{ t('legal.contact_phone') }}</label>
+                    <input type="tel" id="contact_phone" name="fields[contact_phone]"
+                           value="{{ base_data.contact_phone|default('') }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="website_url">{{ t('legal.website_url') }}</label>
+                    <input type="url" id="website_url" name="fields[website_url]"
+                           value="{{ base_data.website_url|default('') }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="contact_person">{{ t('legal.contact_person') }}</label>
+                    <input type="text" id="contact_person" name="fields[contact_person]"
+                           value="{{ base_data.contact_person|default('') }}" class="form-control">
+                </div>
+            </div>
+        </fieldset>
+
+        {# ─── Registerangaben ─── #}
+        <fieldset class="legal-fieldset">
+            <legend>{{ t('legal.section_register') }}</legend>
+            <div class="legal-grid legal-grid-2">
+                <div class="form-group">
+                    <label for="register_court">{{ t('legal.register_court') }}</label>
+                    <input type="text" id="register_court" name="fields[register_court]"
+                           value="{{ base_data.register_court|default('') }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="register_number">{{ t('legal.register_number') }}</label>
+                    <input type="text" id="register_number" name="fields[register_number]"
+                           value="{{ base_data.register_number|default('') }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="vat_id">{{ t('legal.vat_id') }}</label>
+                    <input type="text" id="vat_id" name="fields[vat_id]"
+                           value="{{ base_data.vat_id|default('') }}" class="form-control">
+                </div>
+            </div>
+        </fieldset>
+
+        {# ─── Datenschutzbeauftragter ─── #}
+        <fieldset class="legal-fieldset">
+            <legend>{{ t('legal.section_privacy_officer') }}</legend>
+            <div class="legal-grid legal-grid-2">
+                <div class="form-group">
+                    <label for="dpo_name">{{ t('legal.dpo_name') }}</label>
+                    <input type="text" id="dpo_name" name="fields[dpo_name]"
+                           value="{{ base_data.dpo_name|default('') }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="dpo_email">{{ t('legal.dpo_email') }}</label>
+                    <input type="email" id="dpo_email" name="fields[dpo_email]"
+                           value="{{ base_data.dpo_email|default('') }}" class="form-control">
+                </div>
+            </div>
+        </fieldset>
+
+        {# ─── Hosting / Technik ─── #}
+        <fieldset class="legal-fieldset">
+            <legend>{{ t('legal.section_hosting') }}</legend>
+            <div class="legal-grid legal-grid-2">
+                <div class="form-group">
+                    <label for="hosting_provider">{{ t('legal.hosting_provider') }}</label>
+                    <input type="text" id="hosting_provider" name="fields[hosting_provider]"
+                           value="{{ base_data.hosting_provider|default('') }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="hosting_location">{{ t('legal.hosting_location') }}</label>
+                    <input type="text" id="hosting_location" name="fields[hosting_location]"
+                           value="{{ base_data.hosting_location|default('') }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="technical_contact">{{ t('legal.technical_contact') }}</label>
+                    <input type="text" id="technical_contact" name="fields[technical_contact]"
+                           value="{{ base_data.technical_contact|default('') }}" class="form-control">
+                </div>
+            </div>
+        </fieldset>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{{ t('legal.save_base_data') }}</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

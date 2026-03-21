@@ -35,29 +35,40 @@ if ($installerRoute) {
 
 // Serve static theme/module assets for PHP built-in server
 if (PHP_SAPI === 'cli-server') {
-    $staticFile = dirname(__DIR__) . $uri;
-    if ($uri !== '/' && is_file($staticFile)) {
-        $ext = strtolower(pathinfo($staticFile, PATHINFO_EXTENSION));
-        $mimeTypes = [
-            'css'  => 'text/css',
-            'js'   => 'application/javascript',
-            'png'  => 'image/png',
-            'jpg'  => 'image/jpeg',
-            'jpeg' => 'image/jpeg',
-            'gif'  => 'image/gif',
-            'svg'  => 'image/svg+xml',
-            'webp' => 'image/webp',
-            'ico'  => 'image/x-icon',
-            'woff' => 'font/woff',
-            'woff2'=> 'font/woff2',
-            'ttf'  => 'font/ttf',
-            'eot'  => 'application/vnd.ms-fontobject',
-            'json' => 'application/json',
-        ];
-        if (isset($mimeTypes[$ext])) {
-            header('Content-Type: ' . $mimeTypes[$ext]);
-            readfile($staticFile);
-            return;
+    // Try serving from `public` first (normal case), then from project root
+    // to support assets that live in /themes, /modules etc. during dev.
+    $candidates = [
+        __DIR__ . $uri,                 // public/URI
+        dirname(__DIR__) . $uri,        // project-root/URI (themes, modules)
+    ];
+
+    $mimeTypes = [
+        'css'  => 'text/css',
+        'js'   => 'application/javascript',
+        'png'  => 'image/png',
+        'jpg'  => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'gif'  => 'image/gif',
+        'svg'  => 'image/svg+xml',
+        'webp' => 'image/webp',
+        'ico'  => 'image/x-icon',
+        'woff' => 'font/woff',
+        'woff2'=> 'font/woff2',
+        'ttf'  => 'font/ttf',
+        'eot'  => 'application/vnd.ms-fontobject',
+        'json' => 'application/json',
+    ];
+
+    if ($uri !== '/') {
+        foreach ($candidates as $staticFile) {
+            if (is_file($staticFile)) {
+                $ext = strtolower(pathinfo($staticFile, PATHINFO_EXTENSION));
+                if (isset($mimeTypes[$ext])) {
+                    header('Content-Type: ' . $mimeTypes[$ext]);
+                }
+                readfile($staticFile);
+                return;
+            }
         }
     }
 }

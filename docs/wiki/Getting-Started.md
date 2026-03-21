@@ -1,22 +1,52 @@
-# Getting Started
+# Getting Started — Schnellstart
 
-Kurzanleitung zum lokalen Starten von Chamy.
+Diese Seite beschreibt die schnellsten Schritte, um Chamy lokal zum Laufen zu bringen.
 
-1. Systemanforderungen
-- PHP 8.x
+Voraussetzungen
+- PHP 8.0 oder neuer
 - Composer
-- Node / pnpm
-- A running database (MySQL/Postgres supported)
+- Node.js + pnpm
+- MySQL / MariaDB oder PostgreSQL
+- Git
 
-2. Installation
+1) Repository klonen
 
+```bash
+git clone https://github.com/AmFearLiath/chamy.git
+cd chamy
 ```
-composer install
+
+2) Abhängigkeiten installieren
+
+```bash
+composer install --no-interaction --optimize-autoloader
+pnpm install
+```
+
+3) Umgebungsdatei anlegen
+
+```bash
 cp .env.example .env
+# Passe DB‑Zugang, APP_URL, etc. in .env an
+```
+
+4) Datenbankmigrationen
+
+```bash
 php chamy migrate
-pnpm run dev
+```
+
+5) Assets & Dev Server
+
+```bash
+pnpm run dev   # startet JS/CSS Watch
 php -S localhost:8080 -t public public/index.php
 ```
 
-3. Admin Login
-- Default admin wird während Installation erstellt oder per `scripts/import_roles_permissions.php` vorbereitet.
+6) Erstzugriff (Admin)
+- Während der Installation wird in der Regel ein Admin‑Benutzer angelegt oder siehe `scripts/import_roles_permissions.php` zur Vorbereitung.
+
+Tipps
+- Nutze `docker-compose.dev.yml` (siehe Deployment) für eine reproduzierbare Dev‑Umgebung mit DB und PHP‑FPM.
+- Nutze `php -S` nur für Entwicklung, nicht für Produktion.
+

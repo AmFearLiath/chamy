@@ -106,3 +106,36 @@ $router->get('/admin/themes/marketplace', [AdminController::class, 'themesMarket
 $router->get('/admin/themes/marketplace/config', [AdminController::class, 'themesMarketplaceConfigPage'], 'admin.themes.marketplace.config');
 $router->post('/admin/themes/marketplace/config', [AdminController::class, 'themesMarketplaceConfigUpdate'], 'admin.themes.marketplace.config.update');
 $router->get('/admin/themes/marketplace/{id}', [AdminController::class, 'themesMarketplaceDetail'], 'admin.themes.marketplace.detail');
+
+// ── Menu Manager ─────────────────────────────────────────────────────
+use Chamy\Core\Controllers\MenuController;
+
+$router->get('/admin/menus',                                     [MenuController::class, 'index'],              'admin.menus');
+$router->get('/admin/menus/audit',                               [MenuController::class, 'auditLog'],           'admin.menus.audit');
+
+// Locations
+$router->get('/admin/menus/locations/create',                    [MenuController::class, 'locationCreate'],     'admin.menus.locations.create');
+$router->post('/admin/menus/locations/store',                    [MenuController::class, 'locationStore'],      'admin.menus.locations.store');
+$router->get('/admin/menus/locations/{id}',                      [MenuController::class, 'locationDetail'],     'admin.menus.locations.detail');
+$router->get('/admin/menus/locations/{id}/edit',                 [MenuController::class, 'locationEdit'],       'admin.menus.locations.edit');
+$router->post('/admin/menus/locations/{id}/update',              [MenuController::class, 'locationUpdate'],     'admin.menus.locations.update');
+$router->post('/admin/menus/locations/{id}/delete',              [MenuController::class, 'locationDelete'],     'admin.menus.locations.delete');
+
+// Categories
+$router->get('/admin/menus/locations/{location_id}/categories/create',  [MenuController::class, 'categoryCreate'],  'admin.menus.categories.create');
+$router->post('/admin/menus/locations/{location_id}/categories/store',  [MenuController::class, 'categoryStore'],   'admin.menus.categories.store');
+$router->get('/admin/menus/categories/{id}/edit',                       [MenuController::class, 'categoryEdit'],    'admin.menus.categories.edit');
+$router->post('/admin/menus/categories/{id}/update',                    [MenuController::class, 'categoryUpdate'],  'admin.menus.categories.update');
+$router->post('/admin/menus/categories/{id}/delete',                    [MenuController::class, 'categoryDelete'],  'admin.menus.categories.delete');
+
+// Items
+$router->get('/admin/menus/locations/{location_id}/items/create',  [MenuController::class, 'itemCreate'],            'admin.menus.items.create');
+$router->post('/admin/menus/locations/{location_id}/items/store',  [MenuController::class, 'itemStore'],             'admin.menus.items.store');
+$router->get('/admin/menus/items/{id}/edit',                       [MenuController::class, 'itemEdit'],              'admin.menus.items.edit');
+$router->post('/admin/menus/items/{id}/update',                    [MenuController::class, 'itemUpdate'],            'admin.menus.items.update');
+$router->post('/admin/menus/items/{id}/delete',                    [MenuController::class, 'itemDelete'],            'admin.menus.items.delete');
+$router->post('/admin/menus/items/{id}/toggle',                    [MenuController::class, 'itemToggleVisibility'],  'admin.menus.items.toggle');
+
+// JSON APIs (for drag & drop)
+$router->post('/admin/menus/api/reorder',                         [MenuController::class, 'apiReorder'],            'admin.menus.api.reorder');
+$router->get('/admin/menus/api/tree/{id}',                        [MenuController::class, 'apiTree'],               'admin.menus.api.tree');

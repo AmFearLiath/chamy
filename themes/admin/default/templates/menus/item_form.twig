@@ -1,0 +1,310 @@
+{% extends "base.twig" %}
+
+{% block title %}{{ item is defined ? t('menu.item_edit')|default('Eintrag bearbeiten') : t('menu.item_create')|default('Eintrag erstellen') }}{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">{{ t('admin.dashboard')|default('Dashboard') }}</a>
+    <span class="breadcrumb-sep">/</span>
+    <a href="/admin/menus">{{ t('menu.title')|default('Menüs') }}</a>
+    <span class="breadcrumb-sep">/</span>
+    <a href="/admin/menus/locations/{{ location.id }}">{{ location.label }}</a>
+    <span class="breadcrumb-sep">/</span>
+    <span>{{ item is defined ? item.translated_label|default(item.key) : t('menu.item_create')|default('Neuer Eintrag') }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ item is defined ? t('menu.item_edit')|default('Eintrag bearbeiten') : t('menu.item_create')|default('Neuer Eintrag') }}</h1>
+    </div>
+    <div class="page-header-actions">
+        <a href="/admin/menus/locations/{{ location.id }}" class="btn btn-outline btn-sm">{{ t('admin.back')|default('Zurück') }}</a>
+    </div>
+</div>
+
+{% for msg in flash_messages.error|default([]) %}
+<div class="alert alert-error">{{ msg }}</div>
+{% endfor %}
+
+<form method="post" action="{{ item is defined ? '/admin/menus/items/' ~ item.id ~ '/update' : '/admin/menus/locations/' ~ location.id ~ '/items/store' }}">
+    {{ csrf_field() }}
+
+    <div class="form-layout-2col">
+        {# ── Left Column: Core Fields ── #}
+        <div class="form-col-main">
+            <div class="card">
+                <div class="card-header">{{ t('menu.section_general')|default('Allgemein') }}</div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="key" class="form-label">{{ t('menu.field_key')|default('Schlüssel') }} <span class="text-danger">*</span></label>
+                        <input type="text" id="key" name="key" class="form-control" required pattern="[a-z0-9\-_\.]+"
+                               value="{{ item.key|default('') }}"
+                               placeholder="z.B. admin.content.pages"
+                               {{ item is defined ? 'readonly' : '' }}>
+                        <small class="form-hint">{{ t('menu.key_hint_item')|default('Eindeutiger Schlüssel, z.B. admin.content.artikel') }}</small>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group" style="flex:1">
+                            <label for="label_de" class="form-label">{{ t('menu.field_label_de')|default('Label (Deutsch)') }} <span class="text-danger">*</span></label>
+                            <input type="text" id="label_de" name="label_de" class="form-control" required
+                                   value="{{ item.translations.de.label|default('') }}" placeholder="z.B. Seiten">
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label for="label_en" class="form-label">{{ t('menu.field_label_en')|default('Label (Englisch)') }}</label>
+                            <input type="text" id="label_en" name="label_en" class="form-control"
+                                   value="{{ item.translations.en.label|default('') }}" placeholder="z.B. Pages">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group" style="flex:1">
+                            <label for="tooltip_de" class="form-label">{{ t('menu.field_tooltip_de')|default('Tooltip (Deutsch)') }}</label>
+                            <input type="text" id="tooltip_de" name="tooltip_de" class="form-control"
+                                   value="{{ item.translations.de.tooltip|default('') }}">
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label for="tooltip_en" class="form-label">{{ t('menu.field_tooltip_en')|default('Tooltip (Englisch)') }}</label>
+                            <input type="text" id="tooltip_en" name="tooltip_en" class="form-control"
+                                   value="{{ item.translations.en.tooltip|default('') }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">{{ t('menu.section_target')|default('Ziel') }}</div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group" style="flex:1">
+                            <label for="target_type" class="form-label">{{ t('menu.field_target_type')|default('Typ') }} <span class="text-danger">*</span></label>
+                            <select id="target_type" name="target_type" class="form-control" required>
+                                <option value="route" {{ (item.target_type|default('route')) == 'route' ? 'selected' : '' }}>Route</option>
+                                <option value="url" {{ (item.target_type|default('')) == 'url' ? 'selected' : '' }}>Externe URL</option>
+                                <option value="content" {{ (item.target_type|default('')) == 'content' ? 'selected' : '' }}>Inhalt</option>
+                                <option value="separator" {{ (item.target_type|default('')) == 'separator' ? 'selected' : '' }}>Trennlinie</option>
+                                <option value="heading" {{ (item.target_type|default('')) == 'heading' ? 'selected' : '' }}>Überschrift</option>
+                                <option value="container" {{ (item.target_type|default('')) == 'container' ? 'selected' : '' }}>Container</option>
+                                <option value="action" {{ (item.target_type|default('')) == 'action' ? 'selected' : '' }}>Aktion</option>
+                            </select>
+                        </div>
+                        <div class="form-group target-value-group" style="flex:2">
+                            <label for="target_value" class="form-label">{{ t('menu.field_target_value')|default('Zielwert') }}</label>
+                            <input type="text" id="target_value" name="target_value" class="form-control"
+                                   value="{{ item.target_value|default('') }}"
+                                   placeholder="/admin/menus oder https://...">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="target_params" class="form-label">{{ t('menu.field_target_params')|default('Parameter (JSON)') }}</label>
+                        <textarea id="target_params" name="target_params" class="form-control form-control-mono" rows="2"
+                                  placeholder='{"id": "123"}'>{{ item.target_params|default('') }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">{{ t('menu.section_visibility')|default('Sichtbarkeit') }}</div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group" style="flex:1">
+                            <label for="visibility_rule" class="form-label">{{ t('menu.field_visibility_rule')|default('Sichtbarkeitsregel') }}</label>
+                            <select id="visibility_rule" name="visibility_rule" class="form-control">
+                                <option value="all" {{ (item.visibility_rule|default('all')) == 'all' ? 'selected' : '' }}>{{ t('menu.visibility_all')|default('Alle') }}</option>
+                                <option value="authenticated" {{ (item.visibility_rule|default('')) == 'authenticated' ? 'selected' : '' }}>{{ t('menu.visibility_auth')|default('Eingeloggt') }}</option>
+                                <option value="guest" {{ (item.visibility_rule|default('')) == 'guest' ? 'selected' : '' }}>{{ t('menu.visibility_guest')|default('Gäste') }}</option>
+                                <option value="permission" {{ (item.visibility_rule|default('')) == 'permission' ? 'selected' : '' }}>{{ t('menu.visibility_permission')|default('Berechtigung') }}</option>
+                                <option value="role" {{ (item.visibility_rule|default('')) == 'role' ? 'selected' : '' }}>{{ t('menu.visibility_role')|default('Rolle') }}</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label for="visibility_value" class="form-label">{{ t('menu.field_visibility_value')|default('Regelwert') }}</label>
+                            <input type="text" id="visibility_value" name="visibility_value" class="form-control"
+                                   value="{{ item.visibility_value|default('') }}" placeholder="z.B. admin oder system.manage">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="permission" class="form-label">{{ t('menu.field_permission')|default('Benötigte Berechtigung') }}</label>
+                        <input type="text" id="permission" name="permission" class="form-control"
+                               value="{{ item.permission|default('') }}" placeholder="z.B. content.manage">
+                        <small class="form-hint">{{ t('menu.permission_hint')|default('Eintrag nur sichtbar wenn Benutzer diese Berechtigung hat') }}</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="requires_module" class="form-label">{{ t('menu.field_requires_module')|default('Benötigtes Modul') }}</label>
+                        <input type="text" id="requires_module" name="requires_module" class="form-control"
+                               value="{{ item.requires_module|default('') }}" placeholder="z.B. legal_manager">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# ── Right Column: Meta & Options ── #}
+        <div class="form-col-aside">
+            <div class="card">
+                <div class="card-header">{{ t('menu.section_placement')|default('Platzierung') }}</div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="category_id" class="form-label">{{ t('menu.field_category')|default('Kategorie') }} <span class="text-danger">*</span></label>
+                        <select id="category_id" name="category_id" class="form-control" required>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}" {{ (item.category_id|default('')) == cat.id ? 'selected' : '' }}>{{ cat.display_label|default(cat.key) }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="parent_id" class="form-label">{{ t('menu.field_parent')|default('Übergeordnet') }}</label>
+                        <select id="parent_id" name="parent_id" class="form-control">
+                            <option value="">— {{ t('menu.no_parent')|default('Kein übergeordneter Eintrag') }} —</option>
+                            {% for pi in parent_items %}
+                            <option value="{{ pi.id }}" {{ (item.parent_id|default('')) == pi.id ? 'selected' : '' }}>
+                                {{ pi.translated_label|default(pi.key) }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sort_order" class="form-label">{{ t('menu.field_sort_order')|default('Reihenfolge') }}</label>
+                        <input type="number" id="sort_order" name="sort_order" class="form-control"
+                               value="{{ item.sort_order|default(0) }}" min="0">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">{{ t('menu.section_appearance')|default('Darstellung') }}</div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="icon" class="form-label">{{ t('menu.field_icon')|default('Icon') }}</label>
+                        <input type="text" id="icon" name="icon" class="form-control"
+                               value="{{ item.icon|default('') }}" placeholder="z.B. file-text">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="icon_set" class="form-label">{{ t('menu.field_icon_set')|default('Icon-Paket') }}</label>
+                        <select id="icon_set" name="icon_set" class="form-control">
+                            <option value="">— {{ t('menu.icon_set_auto')|default('Automatisch') }} —</option>
+                            {% for set in icon_sets|default([]) %}
+                                {% set id = set.id|default(set['id'] ?? '') %}
+                                {% set name = set.name|default(set['name'] ?? id) %}
+                                <option value="{{ id }}" {{ (item.meta.icon_set|default(item.meta.icon_set|default('')) == id) ? 'selected' : '' }}>{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-hint">{{ t('menu.icon_set_hint')|default('Wähle ein installiertes Icon-Paket, damit Icons korrekt gerendert werden.') }}</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="css_class" class="form-label">{{ t('menu.field_css_class')|default('CSS-Klasse') }}</label>
+                        <input type="text" id="css_class" name="css_class" class="form-control"
+                               value="{{ item.css_class|default('') }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="badge" class="form-label">{{ t('menu.field_badge')|default('Badge') }}</label>
+                        <input type="text" id="badge" name="badge" class="form-control"
+                               value="{{ item.badge|default('') }}" placeholder="z.B. Neu">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">{{ t('menu.section_options')|default('Optionen') }}</div>
+                <div class="card-body">
+                    <div class="form-check-group">
+                        <label class="form-check">
+                            <input type="checkbox" name="is_active" value="1" {{ (item.is_active|default(1)) ? 'checked' : '' }}>
+                            <span>{{ t('menu.field_active')|default('Aktiv') }}</span>
+                        </label>
+                        <label class="form-check">
+                            <input type="checkbox" name="is_visible" value="1" {{ (item.is_visible|default(1)) ? 'checked' : '' }}>
+                            <span>{{ t('menu.field_visible')|default('Sichtbar') }}</span>
+                        </label>
+                        <label class="form-check">
+                            <input type="checkbox" name="is_collapsible" value="1" {{ (item.is_collapsible|default(0)) ? 'checked' : '' }}>
+                            <span>{{ t('menu.field_collapsible')|default('Einklappbar') }}</span>
+                        </label>
+                        <label class="form-check">
+                            <input type="checkbox" name="open_in_new_tab" value="1" {{ (item.open_in_new_tab|default(0)) ? 'checked' : '' }}>
+                            <span>{{ t('menu.field_new_tab')|default('In neuem Tab öffnen') }}</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            {% if item is defined %}
+            <div class="card">
+                <div class="card-header">{{ t('menu.section_info')|default('Info') }}</div>
+                <div class="card-body menu-item-info">
+                    <div><strong>Quelle:</strong> <span class="badge badge-source badge-{{ item.source }}">{{ item.source }}</span></div>
+                    {% if item.source_ref %}<div><strong>Ref:</strong> {{ item.source_ref }}</div>{% endif %}
+                    <div><strong>UUID:</strong> <code>{{ item.uuid }}</code></div>
+                    <div><strong>Manuell:</strong> {{ item.is_manual ? 'Ja' : 'Nein' }}</div>
+                    {% if item.is_manual and item.override_fields %}
+                    <div><strong>Überschriebene Felder:</strong> {{ item.override_fields }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-block">{{ t('admin.save')|default('Speichern') }}</button>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block head %}
+<style>
+.form-layout-2col {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+    margin-top: 16px;
+}
+@media (max-width: 900px) { .form-layout-2col { grid-template-columns: 1fr; } }
+.form-col-main, .form-col-aside { display: flex; flex-direction: column; gap: 16px; }
+.card-header {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--card-border, rgba(255,255,255,0.06));
+    color: var(--text-muted, #7a8a9e);
+}
+.card-body { padding: 16px; }
+.form-row { display: flex; gap: 12px; }
+.form-check-group { display: flex; flex-direction: column; gap: 8px; }
+.form-control-mono { font-family: 'Fira Code', 'JetBrains Mono', monospace; font-size: 13px; }
+.menu-item-info { font-size: 13px; display: flex; flex-direction: column; gap: 6px; }
+.menu-item-info code { font-size: 11px; color: var(--neon-cyan, #00f0ff); }
+.btn-block { width: 100%; }
+
+.badge-core   { background: var(--neon-cyan, #00f0ff); color: #000; }
+.badge-module { background: var(--neon-violet, #8b5cf6); color: #fff; }
+.badge-theme  { background: var(--neon-green, #10b981); color: #000; }
+.badge-manual { background: var(--neon-magenta, #ff2d95); color: #fff; }
+.badge-import { background: var(--neon-orange, #f59e0b); color: #000; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const typeSelect = document.getElementById('target_type');
+    const valueGroup = document.querySelector('.target-value-group');
+
+    function toggleTargetValue() {
+        const type = typeSelect.value;
+        const hide = type === 'separator' || type === 'heading' || type === 'container';
+        if (valueGroup) valueGroup.style.display = hide ? 'none' : '';
+    }
+
+    typeSelect?.addEventListener('change', toggleTargetValue);
+    toggleTargetValue();
+});
+</script>
+{% endblock %}

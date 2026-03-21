@@ -1,0 +1,74 @@
+{% extends "base.twig" %}
+
+{% block title %}{{ location is defined ? t('menu.location_edit')|default('Standort bearbeiten') : t('menu.location_create')|default('Standort erstellen') }}{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">{{ t('admin.dashboard')|default('Dashboard') }}</a>
+    <span class="breadcrumb-sep">/</span>
+    <a href="/admin/menus">{{ t('menu.title')|default('Menüs') }}</a>
+    <span class="breadcrumb-sep">/</span>
+    <span>{{ location is defined ? location.label : t('menu.location_create')|default('Neuer Standort') }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ location is defined ? t('menu.location_edit')|default('Standort bearbeiten') : t('menu.location_create')|default('Neuer Standort') }}</h1>
+    </div>
+    <div class="page-header-actions">
+        <a href="/admin/menus" class="btn btn-outline btn-sm">{{ t('admin.back')|default('Zurück') }}</a>
+    </div>
+</div>
+
+{% for msg in flash_messages.error|default([]) %}
+<div class="alert alert-error">{{ msg }}</div>
+{% endfor %}
+
+<div class="card" style="max-width:640px">
+    <form method="post" action="{{ location is defined ? '/admin/menus/locations/' ~ location.id ~ '/update' : '/admin/menus/locations/store' }}">
+        {{ csrf_field() }}
+
+        <div class="form-group">
+            <label for="key" class="form-label">{{ t('menu.field_key')|default('Schlüssel') }} <span class="text-danger">*</span></label>
+            <input type="text" id="key" name="key" class="form-control" required pattern="[a-z0-9\-]+"
+                   value="{{ location.key|default('') }}"
+                   placeholder="z.B. frontend-footer"
+                   {{ location is defined ? 'readonly' : '' }}>
+            <small class="form-hint">{{ t('menu.key_hint')|default('Nur Kleinbuchstaben, Zahlen und Bindestriche') }}</small>
+        </div>
+
+        <div class="form-group">
+            <label for="label" class="form-label">{{ t('menu.field_label')|default('Bezeichnung') }} <span class="text-danger">*</span></label>
+            <input type="text" id="label" name="label" class="form-control" required
+                   value="{{ location.label|default('') }}"
+                   placeholder="z.B. Footer Navigation">
+        </div>
+
+        <div class="form-group">
+            <label for="description" class="form-label">{{ t('menu.field_description')|default('Beschreibung') }}</label>
+            <textarea id="description" name="description" class="form-control" rows="3"
+                      placeholder="Optionale Beschreibung...">{{ location.description|default('') }}</textarea>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group" style="flex:1">
+                <label for="sort_order" class="form-label">{{ t('menu.field_sort_order')|default('Reihenfolge') }}</label>
+                <input type="number" id="sort_order" name="sort_order" class="form-control"
+                       value="{{ location.sort_order|default(0) }}" min="0">
+            </div>
+            <div class="form-group" style="flex:1">
+                <label class="form-label">&nbsp;</label>
+                <label class="form-check">
+                    <input type="checkbox" name="is_active" value="1" {{ (location.is_active|default(1)) ? 'checked' : '' }}>
+                    <span>{{ t('menu.field_active')|default('Aktiv') }}</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{{ t('admin.save')|default('Speichern') }}</button>
+            <a href="/admin/menus" class="btn btn-outline">{{ t('admin.cancel')|default('Abbrechen') }}</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -19,7 +19,7 @@
     {% for css in head_styles|default([]) %}
     <link rel="stylesheet" href="{{ css }}">
     {% endfor %}
-    <link rel="icon" href="/docs/logo.png" type="image/png">
+    <link rel="icon" href="/logo.png" type="image/png">
     {% block head %}{% endblock %}
 </head>
 <body class="cybersec-admin {% block body_class %}{% endblock %}" data-theme="dark">
@@ -34,7 +34,7 @@
     <aside class="sidebar">
         <div class="sidebar-header">
             <a href="/admin" class="sidebar-logo">
-                <img src="/docs/logo.png" alt="Chamy" class="sidebar-logo-img">
+                <img src="/logo.png" alt="Chamy" class="sidebar-logo-img">
             </a>
             {# Collapsed-state logo that slides in when sidebar is collapsed #}
             <a href="/admin" class="sidebar-logo-collapsed" aria-hidden="true">

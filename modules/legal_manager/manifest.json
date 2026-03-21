@@ -1,0 +1,35 @@
+{
+    "id": "legal_manager",
+    "name": "Legal Manager",
+    "description": "Modulares Rechts- und Compliance-Management für Chamy CMS. Verwaltet Datenschutz, Impressum, Consent, externe Dienste, Audits und Statistiken.",
+    "version": "1.0.0",
+    "author": "Chamy Team",
+    "license": "MIT",
+    "requires": [
+        "chamy@^1.0.0"
+    ],
+    "entry": "module.php",
+    "languages": "languages/",
+    "content_types": "",
+    "hooks": [
+        "admin.sidebar.extend",
+        "admin.sidebar.modules",
+        "admin.head",
+        "legal.register_blocks",
+        "legal.register_services"
+    ],
+    "permissions": [
+        "legal.view",
+        "legal.manage",
+        "legal.audit.view",
+        "legal.audit.run",
+        "legal.publish",
+        "legal.settings",
+        "legal.stats.view"
+    ],
+    "capabilities": [
+        "legal.block_registry",
+        "legal.service_registry",
+        "legal.audit_provider"
+    ]
+}

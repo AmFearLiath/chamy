@@ -1,0 +1,163 @@
+{% extends "base.twig" %}
+
+{% block head %}
+{{ parent() }}
+<link rel="stylesheet" href="/modules/legal_manager/assets/css/legal-manager-admin.css">
+<link rel="stylesheet" href="/modules/legal_manager/assets/css/admin.css">
+<script src="/modules/legal_manager/assets/js/admin.js" defer></script>
+{% endblock %}
+
+{% block title %}{{ t('legal.services_title') }} – Chamy{% endblock %}
+
+{% block content %}
+<div class="legal-page legal-services">
+    <div class="page-header">
+        <div class="page-header-left">
+            <h1 class="page-title">{{ t('legal.services_title') }}</h1>
+            <p class="page-desc">{{ t('legal.services_desc') }}</p>
+        </div>
+        <div class="page-header-actions">
+            <a href="/admin/legal" class="btn btn-secondary">{{ t('legal.back') }}</a>
+        </div>
+    </div>
+
+    {# ─── Dienst hinzufügen / bearbeiten ─── #}
+    <div class="legal-section">
+        <h3 id="service-form-title">{{ t('legal.add_service') }}</h3>
+        <form method="post" action="/admin/legal/services" class="legal-form" id="service-form">
+            {{ csrf_field() }}
+            <input type="hidden" name="id" value="" id="svc-id">
+
+            <div class="legal-grid legal-grid-2">
+                <div class="form-group">
+                    <label for="svc_name">{{ t('legal.service_name') }}</label>
+                    <input type="text" id="svc_name" name="name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="svc_provider">{{ t('legal.service_provider') }}</label>
+                    <input type="text" id="svc_provider" name="provider" class="form-control">
+                </div>
+            </div>
+
+            <div class="legal-grid legal-grid-2">
+                <div class="form-group">
+                    <label for="svc_category">{{ t('legal.service_category') }}</label>
+                    <select id="svc_category" name="category" class="form-control">
+                        <option value="necessary">{{ t('legal.service_cat_necessary') }}</option>
+                        <option value="functional">{{ t('legal.service_cat_functional') }}</option>
+                        <option value="analytics">{{ t('legal.service_cat_analytics') }}</option>
+                        <option value="marketing">{{ t('legal.service_cat_marketing') }}</option>
+                        <option value="media">{{ t('legal.service_cat_media') }}</option>
+                        <option value="social">{{ t('legal.service_cat_social') }}</option>
+                        <option value="payment">{{ t('legal.service_cat_payment') }}</option>
+                        <option value="other" selected>{{ t('legal.service_cat_other') }}</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="svc_privacy_url">{{ t('legal.service_privacy_url') }}</label>
+                    <input type="url" id="svc_privacy_url" name="privacy_url" class="form-control">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="svc_purpose">{{ t('legal.service_purpose') }}</label>
+                <textarea id="svc_purpose" name="purpose" class="form-control" rows="2"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="svc_data_collected">{{ t('legal.service_data_collected') }}</label>
+                <textarea id="svc_data_collected" name="data_collected" class="form-control" rows="2"></textarea>
+            </div>
+
+            <div class="legal-grid legal-grid-2">
+                <div class="form-group">
+                    <label class="legal-checkbox">
+                        <input type="hidden" name="consent_required" value="0">
+                        <input type="checkbox" name="consent_required" value="1" checked>
+                        {{ t('legal.service_consent_required') }}
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label class="legal-checkbox">
+                        <input type="hidden" name="is_active" value="0">
+                        <input type="checkbox" name="is_active" value="1" checked>
+                        {{ t('legal.service_active') }}
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">{{ t('legal.save_service') }}</button>
+                <button type="button" class="btn btn-secondary" onclick="resetServiceForm()">{{ t('legal.cancel') }}</button>
+            </div>
+        </form>
+    </div>
+
+    {# ─── Bestehende Dienste ─── #}
+    <div class="legal-section">
+        <h3>{{ t('legal.declared_services') }}</h3>
+        {% if services|length > 0 %}
+        <div class="legal-table-wrap">
+        <table class="legal-table">
+            <thead>
+                <tr>
+                    <th>{{ t('legal.service_name') }}</th>
+                    <th>{{ t('legal.service_provider') }}</th>
+                    <th>{{ t('legal.service_category') }}</th>
+                    <th>{{ t('legal.service_consent_required') }}</th>
+                    <th>{{ t('legal.service_source') }}</th>
+                    <th>{{ t('legal.actions') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for svc in services %}
+                <tr>
+                    <td>{{ svc.name }}</td>
+                    <td>{{ svc.provider|default('–') }}</td>
+                    <td>{{ t('legal.service_cat_' ~ svc.category)|default(svc.category) }}</td>
+                    <td>{{ svc.consent_required ? t('legal.yes') : t('legal.no') }}</td>
+                    <td>{{ svc.source_module|default(t('legal.service_manual')) }}</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-secondary"
+                            onclick='editService({{ svc|json_encode|raw }})'>{{ t('legal.edit') }}</button>
+                        <form method="post" action="/admin/legal/services/{{ svc.id }}/delete"
+                              onsubmit="return confirm({{ t('legal.confirm_delete')|json_encode|raw }});" style="display:inline">
+                            {{ csrf_field() }}
+                            <button type="submit" class="btn btn-sm btn-danger">{{ t('legal.delete') }}</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+            <p class="legal-empty">{{ t('legal.no_services') }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function editService(svc) {
+    document.getElementById('svc-id').value = svc.id;
+    document.getElementById('svc_name').value = svc.name;
+    document.getElementById('svc_provider').value = svc.provider || '';
+    document.getElementById('svc_category').value = svc.category || 'other';
+    document.getElementById('svc_purpose').value = svc.purpose || '';
+    document.getElementById('svc_data_collected').value = svc.data_collected || '';
+    document.getElementById('svc_privacy_url').value = svc.privacy_url || '';
+    document.querySelector('[name="consent_required"][type="checkbox"]').checked = !!parseInt(svc.consent_required);
+    document.querySelector('#service-form [name="is_active"][type="checkbox"]').checked = !!parseInt(svc.is_active);
+    document.getElementById('service-form-title').textContent = {{ t('legal.edit_service')|json_encode|raw }};
+    document.getElementById('service-form').scrollIntoView({ behavior: 'smooth' });
+}
+function resetServiceForm() {
+    document.getElementById('svc-id').value = '';
+    document.getElementById('service-form').reset();
+    document.getElementById('service-form-title').textContent = {{ t('legal.add_service')|json_encode|raw }};
+}
+</script>
+{% endblock %}
+

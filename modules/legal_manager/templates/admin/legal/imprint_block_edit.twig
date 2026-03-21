@@ -1,0 +1,72 @@
+{% extends "base.twig" %}
+
+{% block head %}
+{{ parent() }}
+<link rel="stylesheet" href="/modules/legal_manager/assets/css/legal-manager-admin.css">
+<link rel="stylesheet" href="/modules/legal_manager/assets/css/admin.css">
+<script src="/modules/legal_manager/assets/js/admin.js" defer></script>
+{% endblock %}
+
+{% block title %}{{ block ? t('legal.edit_block') : t('legal.add_block') }} – {{ t('legal.imprint') }} – Chamy{% endblock %}
+
+{% block content %}
+<div class="legal-page legal-block-edit">
+    <div class="page-header">
+        <div class="page-header-left">
+            <h1 class="page-title">{{ block ? t('legal.edit_block') : t('legal.add_block') }}</h1>
+            <p class="page-desc">{{ t('legal.imprint_title') }}</p>
+        </div>
+        <div class="page-header-actions">
+            <a href="/admin/legal/imprint" class="btn btn-secondary">{{ t('legal.cancel') }}</a>
+        </div>
+    </div>
+
+    <form method="post" action="/admin/legal/imprint/block" class="legal-form">
+        {{ csrf_field() }}
+        {% if block %}
+            <input type="hidden" name="id" value="{{ block.id }}">
+        {% endif %}
+
+        <div class="legal-grid legal-grid-2">
+            <div class="form-group">
+                <label for="block_key">{{ t('legal.block_key') }}</label>
+                <input type="text" id="block_key" name="block_key" class="form-control"
+                       value="{{ block ? block.block_key : '' }}"
+                       {% if block and block.is_system %}readonly{% endif %}
+                       pattern="[a-z0-9_]+" title="Nur Kleinbuchstaben, Zahlen und Unterstriche">
+            </div>
+            <div class="form-group">
+                <label for="sort_order">{{ t('legal.sort_order')|default('Sortierung') }}</label>
+                <input type="number" id="sort_order" name="sort_order" class="form-control"
+                       value="{{ block ? block.sort_order : 0 }}" min="0" step="10">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="title">{{ t('legal.block_title') }}</label>
+            <input type="text" id="title" name="title" class="form-control"
+                   value="{{ block ? block.title : '' }}">
+        </div>
+
+        <div class="form-group">
+            <label for="content">{{ t('legal.block_content') }}</label>
+            <textarea id="content" name="content" class="form-control legal-textarea" rows="14">{{ block ? block.content : '' }}</textarea>
+            <small class="form-hint">HTML {{ t('legal.allowed')|default('erlaubt') }}. {{ t('legal.placeholder_hint')|default('Platzhalter: {{company_name}}, {{contact_email}}, ...') }}</small>
+        </div>
+
+        <div class="form-group">
+            <label class="legal-checkbox">
+                <input type="hidden" name="is_active" value="0">
+                <input type="checkbox" name="is_active" value="1"
+                       {{ (block is null or block.is_active) ? 'checked' : '' }}>
+                {{ t('legal.block_active') }}
+            </label>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{{ t('legal.save_block') }}</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

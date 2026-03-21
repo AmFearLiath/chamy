@@ -1,17 +1,20 @@
-# Chamy — Wiki
+# Chamy — Projekt‑Wiki
 
-Willkommen zur Chamy Projekt‑Wiki. Diese Seiten sind als Ergänzung zur Repository‑Dokumentation gedacht und bieten strukturierte Handbücher, Architekturübersichten und Admin‑Guides.
+Willkommen zur offiziellen Chamy Projekt‑Wiki. Diese Sammlung richtet sich an Administratoren, Entwickler und Betreiber. Sie ergänzt die im Repository enthaltenen Dokumente mit praxisnahen Anleitungen, Architekturübersichten und Referenzen.
 
-Inhalt (Kurz):
-- Getting Started
-- Architektur & Komponenten
-- Module Übersicht
-- Entwickeln & Testen
-- Deployment & Docker
-- Security & Geheimnisse
-- FAQ
+Wichtige Bereiche:
+- Getting Started — schnelle Einrichtung und lokale Entwicklung
+- Architektur — Aufbau von Kernel, Managern, Modulen und Themes
+- Admin Guide — Einstellungen, Module, Rollen & Berechtigungen
+- Developer Guide — Coding‑Standards, Tests, Module anlegen
+- Module Reference — Detailseiten zu wichtigen Modulen
+- API Reference — zentrale API‑Endpunkte und Beispiele
+- Tutorials — konkrete Schritt‑für‑Schritt Anleitungen
+- Deployment & Ops — Docker, Healthchecks, Backups
+- Security & Ops — Geheimnisse, Updates, Härtung
+- Troubleshooting & FAQ
 
-Siehe die Sidebar für Navigation.
+Verwende die Sidebar zur Navigation. Wenn du eine Seite hier vermisst, melde dich bitte beim Projektinhaber.
 
 ---
 

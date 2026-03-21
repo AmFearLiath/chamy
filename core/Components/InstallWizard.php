@@ -35,7 +35,7 @@ class InstallWizard
             '/public/assets/admin-logo.png',
             '/public/assets/logo.png',
             '/public/assets/logo_quadrat.png',
-            '/public/assets/logo-small.png',
+            '/public/assets/logo-collapsed.png',
         ];
         foreach ($candidates as $c) {
             $p = $projectRoot . $c;

@@ -1,0 +1,65 @@
+name: Sync Wiki
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish-wiki:
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "chamy-wiki-bot"
+          git config --global user.email "noreply@chamy.local"
+
+      - name: Generate wiki pages
+        run: |
+          TMPDIR=$(mktemp -d)
+          cat > "$TMPDIR/Home.md" <<'EOF'
+# Chamy Wiki
+
+Welcome to the Chamy project wiki.
+
+See sidebar for navigation.
+EOF
+          cat > "$TMPDIR/_Sidebar.md" <<'EOF'
+- [Home](Home)
+- [Getting Started](Getting-Started)
+- [Architecture](Architecture)
+- [Admin Guide](Admin-Guide)
+- [Developer Guide](Developer-Guide)
+- [Module Reference](Module-Reference)
+- [API Reference](API-Reference)
+- [Tutorials](Tutorials)
+- [Deployment](Deployment)
+- [Security and Ops](Security-and-Ops)
+- [Troubleshooting](Troubleshooting)
+- [FAQ](FAQ)
+EOF
+          # add more pages as needed
+          echo "Pages generated in $TMPDIR"
+
+      - name: Clone wiki repo
+        env:
+          WIKI_TOKEN: ${{ secrets.WIKI_PUSH_TOKEN }}
+        run: |
+          if [ -z "$WIKI_TOKEN" ]; then echo "WIKI_PUSH_TOKEN secret not set"; exit 1; fi
+          WIKI_URL="https://x-access-token:${WIKI_TOKEN}@github.com/${{ github.repository }}.wiki.git"
+          git clone "$WIKI_URL" wiki
+
+      - name: Copy pages and push
+        run: |
+          cp -r $TMPDIR/* wiki/
+          cd wiki
+          git add --all
+          if git commit -m "Publish wiki: $GITHUB_SHA"; then
+            git push origin main
+          else
+            echo "No wiki changes to commit"
+          fi

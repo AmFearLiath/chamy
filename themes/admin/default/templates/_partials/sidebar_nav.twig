@@ -1,0 +1,121 @@
+{#
+    Sidebar Navigation – rendered from MenuManager tree data.
+    Usage: {% include '_partials/sidebar_nav.twig' with { sidebar_tree: menu_tree('admin-sidebar') } %}
+    Expects sidebar_tree = array of { category: {..., display_label}, items: [{..., translated_label, icon, target_value, children: [...]}] }
+#}
+{# Track whether any module-provided items were rendered so we can skip legacy hooks #}
+{% set moduleRendered = false %}
+{% for group in sidebar_tree %}
+{# If this category contains module-provided items, expose data-module for legacy module scripts #}
+{% set moduleRef = (group.items|filter(i => i.source is defined and i.source == 'module')|map(i => i.source_ref)|first) %}
+{% if moduleRef is defined and moduleRef %}{% set moduleRendered = true %}{% endif %}
+<div class="nav-section"{% if moduleRef is defined and moduleRef %} data-module="{{ moduleRef }}"{% endif %}>
+    {% if group.category.display_label|default('') %}
+    <div class="nav-section-label">{{ group.category.display_label }}</div>
+    {% endif %}
+
+    {% for item in group.items %}
+        {{ _self.render_nav_item(item, current_route|default('')) }}
+    {% endfor %}
+</div>
+{% endfor %}
+
+{# Hook-Slot for modules that still inject raw HTML (legacy support) — only when no module items rendered by MenuManager #}
+{% if not moduleRendered %}
+    {{ hook('admin.sidebar.modules') }}
+{% endif %}
+
+{% macro render_nav_item(item, current_route, depth=0) %}
+{% if item.target_type|default('') == 'separator' %}
+<div class="nav-separator"></div>
+{% elseif item.target_type|default('') == 'heading' %}
+<div class="nav-section-label">{{ item.translated_label|default(item.key) }}</div>
+{% else %}
+    {# Determine active/open state (support legacy _active/_open and new is_current/is_open) #}
+    {% set is_active = item._active|default(false) or item._open|default(false) or item.is_current|default(false) or item.is_open|default(false) %}
+    {% set href = item.target_value|default('#') %}
+    {% set has_children = item.children|default([])|length > 0 %}
+    {% set depthClass = depth > 0 ? ' nav-subitem' : '' %}
+    {% set toggleId = 'nav-' ~ (item.key is defined ? item.key : (item.id|default('')) ) %}
+
+    {# Render collapsible container parents differently (div with toggle) #}
+    {% if item.target_type == 'container' or item.is_collapsible|default(false) %}
+        <div class="nav-item nav-item-parent{{ is_active ? ' active' : '' }}{{ item.is_hidden|default(false) ? ' hidden' : '' }}" data-nav-toggle="{{ toggleId }}">
+            <span class="nav-item-icon">
+                {% if item.icon|default('') %}
+                    {% if item.icon matches '/<svg/i' %}
+                        {{ item.icon|raw }}
+                    {% else %}
+                        {% set rawIcon = item.meta.icon_class|default(item.icon) %}
+                        {% set effective_icon_mode = (item.meta.icon_mode is defined ? item.meta.icon_mode : (sidebar_icon_mode|default(''))) %}
+                        {% if effective_icon_mode == 'tabler' and rawIcon is defined and rawIcon is not empty %}
+                            {# Normalize Tabler webfont classes: ensure base `ti` class is present #}
+                            {% if rawIcon matches('/(^|\\s)ti(\\b|$)/') %}
+                                {% set iconClass = rawIcon %}
+                            {% elseif rawIcon matches('/\\bti-/') %}
+                                {% set iconClass = 'ti ' ~ rawIcon %}
+                            {% elseif rawIcon matches('/^[a-z0-9-]+$/i') %}
+                                {% set iconClass = 'ti ti-' ~ rawIcon %}
+                            {% else %}
+                                {% set iconClass = rawIcon %}
+                            {% endif %}
+                        {% else %}
+                            {% set iconClass = rawIcon %}
+                        {% endif %}
+                        <i class="{{ iconClass|e('html_attr') }}" aria-hidden="true"></i>
+                    {% endif %}
+                {% endif %}
+            </span>
+            <span>{{ item.translated_label|default(item.key) }}</span>
+            <span class="nav-item-caret">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+        </div>
+        <div class="nav-subgroup{{ is_active ? ' open' : '' }}" id="{{ toggleId }}">
+            {% for child in item.children %}
+                {{ _self.render_nav_item(child, current_route, depth + 1) }}
+            {% endfor %}
+        </div>
+    {% else %}
+        <a href="{{ href }}" class="nav-item{{ is_active ? ' active' : '' }}{{ item.is_hidden|default(false) ? ' hidden' : '' }}{{ depthClass }}"
+           {% if item.open_in_new_tab|default(false) %}target="_blank" rel="noopener"{% endif %}
+           {% if item.translated_tooltip|default('') %}title="{{ item.translated_tooltip }}"{% endif %}>
+            <span class="nav-item-icon">
+                {% if item.icon|default('') %}
+                    {% if item.icon matches '/<svg/i' %}
+                        {{ item.icon|raw }}
+                    {% else %}
+                        {% set rawIcon = item.meta.icon_class|default(item.icon) %}
+                        {% set effective_icon_mode = (item.meta.icon_mode is defined ? item.meta.icon_mode : (sidebar_icon_mode|default(''))) %}
+                        {% if effective_icon_mode == 'tabler' and rawIcon is defined and rawIcon is not empty %}
+                            {% if rawIcon matches('/(^|\\s)ti(\\b|$)/') %}
+                                {% set iconClass = rawIcon %}
+                            {% elseif rawIcon matches('/\\bti-/') %}
+                                {% set iconClass = 'ti ' ~ rawIcon %}
+                            {% elseif rawIcon matches('/^[a-z0-9-]+$/i') %}
+                                {% set iconClass = 'ti ti-' ~ rawIcon %}
+                            {% else %}
+                                {% set iconClass = rawIcon %}
+                            {% endif %}
+                        {% else %}
+                            {% set iconClass = rawIcon %}
+                        {% endif %}
+                        <i class="{{ iconClass|e('html_attr') }}" aria-hidden="true"></i>
+                    {% endif %}
+                {% endif %}
+            </span>
+            <span>{{ item.translated_label|default(item.key) }}</span>
+            {% if item.badge|default('') %}
+            <span class="nav-item-badge">{{ item.badge }}</span>
+            {% endif %}
+        </a>
+        {% if has_children %}
+        <div class="nav-sub{{ is_active ? ' open' : '' }}">
+            {% for child in item.children %}
+                {{ _self.render_nav_item(child, current_route, depth + 1) }}
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endif %}
+{% endif %}
+{% endmacro %}

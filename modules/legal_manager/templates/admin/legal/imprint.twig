@@ -1,0 +1,154 @@
+{% extends "base.twig" %}
+
+{% block head %}
+{{ parent() }}
+<link rel="stylesheet" href="/modules/legal_manager/assets/css/legal-manager-admin.css">
+<link rel="stylesheet" href="/modules/legal_manager/assets/css/admin.css">
+<script src="/modules/legal_manager/assets/js/admin.js" defer></script>
+{% endblock %}
+
+{% block title %}{{ t('legal.imprint_title') }} – Chamy{% endblock %}
+
+{% block content %}
+<div class="legal-page legal-imprint">
+    <div class="page-header">
+        <div class="page-header-left">
+            <h1 class="page-title">{{ t('legal.imprint_title') }}</h1>
+            <p class="page-desc">{{ t('legal.imprint_desc') }}</p>
+        </div>
+        <div class="page-header-actions">
+            <a href="/admin/legal" class="btn btn-secondary">{{ t('legal.back') }}</a>
+            <a href="/admin/legal/imprint/block/new" class="btn btn-primary">+ {{ t('legal.add_block') }}</a>
+        </div>
+    </div>
+
+    {# ─── Blockliste ─── #}
+    <div class="legal-block-list" id="imprint-block-list">
+        {% if blocks|length > 0 %}
+            {% for block in blocks %}
+            <div class="legal-block-item {{ block.is_active ? '' : 'legal-block-item--inactive' }}" data-id="{{ block.id }}">
+                <div class="legal-block-item-handle" title="{{ t('legal.block_sort_hint') }}">⠿</div>
+                <div class="legal-block-item-info">
+                    <strong>
+                        {% if block.title %}
+                            {{ block.title }}
+                        {% else %}
+                            {{ t('legal.block_' ~ block.block_key)|default(block.block_key) }}
+                        {% endif %}
+                    </strong>
+                    <span class="legal-badge legal-badge--small {{ block.is_active ? 'legal-badge--success' : 'legal-badge--muted' }}">
+                        {{ block.is_active ? t('legal.block_active') : t('legal.block_inactive') }}
+                    </span>
+                    {% if block.is_system %}
+                        <span class="legal-badge legal-badge--small legal-badge--info">{{ t('legal.block_system') }}</span>
+                    {% endif %}
+                </div>
+                <div class="legal-block-item-actions">
+                    <a href="/admin/legal/imprint/block/{{ block.id }}" class="btn btn-sm btn-secondary">{{ t('legal.edit') }}</a>
+                      <form method="post" action="/admin/legal/imprint/block/{{ block.id }}/delete"
+                          onsubmit="return confirm({{ t('legal.confirm_delete')|json_encode|raw }});" style="display:inline">
+                        {{ csrf_field() }}
+                        <button type="submit" class="btn btn-sm btn-danger">{{ t('legal.delete') }}</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="legal-empty">{{ t('legal.no_blocks') }}</p>
+        {% endif %}
+    </div>
+
+    {# ─── Veröffentlichung ─── #}
+    <div class="legal-section">
+        <h3>{{ t('legal.publish_imprint') }}</h3>
+        <form method="post" action="/admin/legal/imprint/publish" class="legal-publish-form">
+            {{ csrf_field() }}
+            <div class="form-group">
+                <label for="change_note">{{ t('legal.change_note') }}</label>
+                <input type="text" id="change_note" name="change_note" class="form-control"
+                       placeholder="{{ t('legal.change_note_placeholder') }}">
+            </div>
+            <button type="submit" class="btn btn-primary"
+                    onclick="return confirm({{ t('legal.publish_confirm')|json_encode|raw }});">
+                {{ t('legal.publish') }}
+            </button>
+        </form>
+    </div>
+
+    {# ─── Versionshistorie ─── #}
+    <div class="legal-section">
+        <h3>{{ t('legal.version_history') }}</h3>
+        {% if versions|length > 0 %}
+        <div class="legal-table-wrap">
+        <table class="legal-table">
+            <thead>
+                <tr>
+                    <th>{{ t('legal.version') }}</th>
+                    <th>{{ t('legal.status') }}</th>
+                    <th>{{ t('legal.change_note') }}</th>
+                    <th>{{ t('legal.published_at') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for v in versions %}
+                <tr>
+                    <td>v{{ v.version }}</td>
+                    <td><span class="legal-badge legal-badge--{{ v.status == 'published' ? 'success' : 'muted' }}">{{ v.status }}</span></td>
+                    <td>{{ v.change_note|default('–') }}</td>
+                    <td>{{ v.published_at|default(v.created_at) }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+            <p class="legal-empty">{{ t('legal.no_versions') }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+    const list = document.getElementById('imprint-block-list');
+    if (!list) return;
+    let dragged = null;
+    list.querySelectorAll('.legal-block-item-handle').forEach(function(handle) {
+        const item = handle.closest('.legal-block-item');
+        handle.addEventListener('mousedown', function() { item.setAttribute('draggable', 'true'); });
+        item.addEventListener('dragstart', function(e) { dragged = item; item.classList.add('dragging'); });
+        item.addEventListener('dragend', function() {
+            item.classList.remove('dragging');
+            item.removeAttribute('draggable');
+            dragged = null;
+            saveOrder();
+        });
+    });
+    list.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        const after = getDragAfterElement(list, e.clientY);
+        if (after == null) { list.appendChild(dragged); } else { list.insertBefore(dragged, after); }
+    });
+    function getDragAfterElement(container, y) {
+        const els = [...container.querySelectorAll('.legal-block-item:not(.dragging)')];
+        return els.reduce(function(closest, child) {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+            return closest;
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+    function saveOrder() {
+        const ids = [...list.querySelectorAll('.legal-block-item')].map(function(el) { return el.dataset.id; });
+        const token = document.querySelector('input[name="_csrf_token"]');
+        fetch('/admin/legal/imprint/reorder', {
+            method: 'POST',
+            headers: {'Content-Type':'application/x-www-form-urlencoded'},
+            body: 'order=' + ids.join(',') + '&_csrf_token=' + (token ? token.value : '')
+        });
+    }
+})();
+</script>
+{% endblock %}
+

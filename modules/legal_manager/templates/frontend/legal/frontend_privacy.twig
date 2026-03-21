@@ -1,0 +1,24 @@
+{% extends 'base.twig' %}
+
+{% block title %}{{ page_title|default(t('legal.frontend_privacy_title')) }} – {{ site_name|default('Chamy CMS') }}{% endblock %}
+{% block body_class %}page-legal page-privacy{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/modules/legal_manager/assets/css/legal-manager-frontend.css">
+{% endblock %}
+
+{% block body %}
+<section class="legal-frontend-page">
+    <div class="container">
+        <h1>{{ page_title|default(t('legal.frontend_privacy_title')) }}</h1>
+
+        {% if last_updated %}
+        <p class="legal-last-updated">{{ t('legal.last_updated') }}: {{ last_updated }}</p>
+        {% endif %}
+
+        <div class="legal-content">
+            {{ content|raw }}
+        </div>
+    </div>
+</section>
+{% endblock %}

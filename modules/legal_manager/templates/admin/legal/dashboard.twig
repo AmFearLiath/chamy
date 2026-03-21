@@ -1,0 +1,210 @@
+{% extends "base.twig" %}
+
+{% block head %}
+{{ parent() }}
+<link rel="stylesheet" href="/modules/legal_manager/assets/css/legal-manager-admin.css">
+<link rel="stylesheet" href="/modules/legal_manager/assets/css/admin.css">
+<script src="/modules/legal_manager/assets/js/admin.js" defer></script>
+{% endblock %}
+
+{% block title %}{{ t('legal.dashboard_title') }} – Chamy{% endblock %}
+
+{% block content %}
+<div class="legal-page legal-dashboard">
+    <div class="page-header">
+        <div class="page-header-left">
+            <h1 class="page-title">{{ t('legal.dashboard_title') }}</h1>
+            <p class="page-desc">{{ t('legal.status_overview') }}</p>
+        </div>
+        <div class="page-header-actions">
+            <form method="post" action="/admin/legal/audit/run" style="display:inline">
+                {{ csrf_field() }}
+                <button type="submit" class="btn btn-primary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    {{ t('legal.run_audit') }}
+                </button>
+            </form>
+        </div>
+    </div>
+
+    {# ─── Stat Tiles – big neon numbers ─── #}
+    <div class="stats-grid">
+        {# Stammdaten #}
+        <div class="legal-card {{ status.base_data.complete ? 'legal-card--cyan' : 'legal-card--warn' }}">
+            <div class="legal-card-header">
+                <span class="legal-card-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
+                <span class="legal-card-title">{{ t('legal.base_data') }}</span>
+            </div>
+            <div class="legal-card-body">
+                <span class="legal-stat-label">{{ t('legal.fields_filled')|default('Felder ausgefüllt') }}</span>
+                <span class="legal-stat-number">{{ status.base_data.filled }}/{{ status.base_data.total }}</span>
+                <div class="legal-card-meta">
+                    <span class="legal-badge {{ status.base_data.complete ? 'legal-badge--success' : 'legal-badge--warning' }}">
+                        {{ status.base_data.complete ? t('legal.complete') : t('legal.incomplete') }}
+                    </span>
+                </div>
+            </div>
+            <div class="legal-card-footer">
+                <a href="/admin/legal/base-data" class="legal-card-action">{{ t('legal.edit') }} →</a>
+            </div>
+        </div>
+
+        {# Datenschutz #}
+        <div class="legal-card {{ status.privacy_published ? 'legal-card--ok' : 'legal-card--magenta' }}">
+            <div class="legal-card-header">
+                <span class="legal-card-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                </span>
+                <span class="legal-card-title">{{ t('legal.privacy') }}</span>
+            </div>
+            <div class="legal-card-body">
+                <span class="legal-stat-label">{{ t('legal.active_blocks') }}</span>
+                <span class="legal-stat-number">{{ status.privacy_blocks }}</span>
+                <div class="legal-card-meta">
+                    {% if status.privacy_published %}
+                        <span class="legal-badge legal-badge--success">{{ t('legal.published') }} v{{ status.privacy_published.version }}</span>
+                    {% else %}
+                        <span class="legal-badge legal-badge--warning">{{ t('legal.draft') }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="legal-card-footer">
+                <a href="/admin/legal/privacy" class="legal-card-action">{{ t('legal.edit') }} →</a>
+            </div>
+        </div>
+
+        {# Impressum #}
+        <div class="legal-card {{ status.imprint_published ? 'legal-card--ok' : 'legal-card--violet' }}">
+            <div class="legal-card-header">
+                <span class="legal-card-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </span>
+                <span class="legal-card-title">{{ t('legal.imprint') }}</span>
+            </div>
+            <div class="legal-card-body">
+                <span class="legal-stat-label">{{ t('legal.active_blocks') }}</span>
+                <span class="legal-stat-number">{{ status.imprint_blocks }}</span>
+                <div class="legal-card-meta">
+                    {% if status.imprint_published %}
+                        <span class="legal-badge legal-badge--success">{{ t('legal.published') }} v{{ status.imprint_published.version }}</span>
+                    {% else %}
+                        <span class="legal-badge legal-badge--warning">{{ t('legal.draft') }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="legal-card-footer">
+                <a href="/admin/legal/imprint" class="legal-card-action">{{ t('legal.edit') }} →</a>
+            </div>
+        </div>
+
+        {# Seitenaufrufe #}
+        <div class="legal-card legal-card--info">
+            <div class="legal-card-header">
+                <span class="legal-card-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </span>
+                <span class="legal-card-title">{{ t('legal.page_views') }}</span>
+            </div>
+            <div class="legal-card-body">
+                <span class="legal-stat-label">{{ t('legal.last_30_days')|default('Letzte 30 Tage') }}</span>
+                <span class="legal-stat-number">{{ status.recent_views }}</span>
+            </div>
+            <div class="legal-card-footer">
+                <a href="/admin/legal/stats" class="legal-card-action">{{ t('legal.view_stats') }} →</a>
+            </div>
+        </div>
+    </div>
+
+    {# ─── Second row: Services, Consent, Audit ─── #}
+    <div class="legal-grid legal-grid-3">
+        <div class="legal-card legal-card--cyan">
+            <div class="legal-card-header">
+                <span class="legal-card-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                </span>
+                <span class="legal-card-title">{{ t('legal.services') }}</span>
+            </div>
+            <div class="legal-card-body">
+                <span class="legal-stat-label">{{ t('legal.declared_services') }}</span>
+                <span class="legal-stat-number">{{ status.services_count }}</span>
+            </div>
+            <div class="legal-card-footer">
+                <a href="/admin/legal/services" class="legal-card-action">{{ t('legal.edit') }} →</a>
+            </div>
+        </div>
+
+        <div class="legal-card legal-card--magenta">
+            <div class="legal-card-header">
+                <span class="legal-card-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </span>
+                <span class="legal-card-title">{{ t('legal.consent') }}</span>
+            </div>
+            <div class="legal-card-body">
+                <span class="legal-stat-label">{{ t('legal.consent_categories') }}</span>
+                <span class="legal-stat-number">{{ status.categories_count }}</span>
+            </div>
+            <div class="legal-card-footer">
+                <a href="/admin/legal/consent" class="legal-card-action">{{ t('legal.edit') }} →</a>
+            </div>
+        </div>
+
+        <div class="legal-card {{ status.audit_critical > 0 ? 'legal-card--error' : (status.audit_warnings > 0 ? 'legal-card--warn' : 'legal-card--ok') }}">
+            <div class="legal-card-header">
+                <span class="legal-card-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </span>
+                <span class="legal-card-title">{{ t('legal.audit') }}</span>
+            </div>
+            <div class="legal-card-body">
+                {% if status.last_audit %}
+                    <span class="legal-stat-label">{{ t('legal.last_scan')|default('Letzter Scan') }}</span>
+                    <span class="legal-card-label">{{ status.last_audit.created_at }}</span>
+                    <div class="legal-card-meta">
+                        {% if status.audit_critical > 0 %}
+                            <span class="legal-badge legal-badge--danger">{{ status.audit_critical }} {{ t('legal.critical_issues') }}</span>
+                        {% endif %}
+                        {% if status.audit_warnings > 0 %}
+                            <span class="legal-badge legal-badge--warning">{{ status.audit_warnings }} {{ t('legal.warnings') }}</span>
+                        {% endif %}
+                        {% if status.audit_critical == 0 and status.audit_warnings == 0 %}
+                            <span class="legal-badge legal-badge--success">{{ t('legal.all_ok')|default('Alles OK') }}</span>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <span class="legal-card-label">{{ t('legal.no_audit_yet') }}</span>
+                {% endif %}
+            </div>
+            <div class="legal-card-footer">
+                <a href="/admin/legal/audit" class="legal-card-action">{{ t('legal.audit') }} →</a>
+            </div>
+        </div>
+    </div>
+
+    {# ─── Quick Actions ─── #}
+    <div class="legal-section">
+        <h3>{{ t('legal.quick_actions') }}</h3>
+        <div class="legal-btn-group">
+            <a href="/admin/legal/base-data" class="btn btn-secondary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                {{ t('legal.base_data') }}
+            </a>
+            <a href="/admin/legal/privacy" class="btn btn-secondary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                {{ t('legal.privacy') }}
+            </a>
+            <a href="/admin/legal/imprint" class="btn btn-secondary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                {{ t('legal.imprint') }}
+            </a>
+            <a href="/admin/legal/settings" class="btn btn-secondary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                {{ t('legal.settings') }}
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

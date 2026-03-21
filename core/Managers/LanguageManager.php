@@ -128,6 +128,11 @@ final class LanguageManager implements ManagerInterface
     private function loadLocale(string $locale): void
     {
         $path = $this->languagePath . DIRECTORY_SEPARATOR . $locale;
+        // Load single-file locale (languages/de.php) if present
+        $single = $this->languagePath . DIRECTORY_SEPARATOR . $locale . '.php';
+        if (file_exists($single)) {
+            $this->loadFile($locale, $single);
+        }
 
         if (!is_dir($path)) {
             return;

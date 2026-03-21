@@ -1,0 +1,80 @@
+{% extends "base.twig" %}
+
+{% block title %}{{ t('menu.audit_log')|default('Audit-Log') }} – {{ t('menu.title')|default('Menüverwaltung') }}{% endblock %}
+
+{% block breadcrumb %}
+    <a href="/admin">{{ t('admin.dashboard')|default('Dashboard') }}</a>
+    <span class="breadcrumb-sep">/</span>
+    <a href="/admin/menus">{{ t('menu.title')|default('Menüs') }}</a>
+    <span class="breadcrumb-sep">/</span>
+    <span>{{ t('menu.audit_log')|default('Audit-Log') }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">{{ t('menu.audit_log')|default('Menü Audit-Log') }}</h1>
+        <p class="page-desc">{{ t('menu.audit_desc')|default('Letzte Änderungen an Menüeinträgen') }}</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="/admin/menus" class="btn btn-outline btn-sm">{{ t('admin.back')|default('Zurück') }}</a>
+    </div>
+</div>
+
+<div class="card">
+    {% if entries|length > 0 %}
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>{{ t('menu.audit_time')|default('Zeitpunkt') }}</th>
+                    <th>{{ t('menu.audit_action')|default('Aktion') }}</th>
+                    <th>{{ t('menu.audit_item')|default('Eintrag') }}</th>
+                    <th>{{ t('menu.audit_actor')|default('Benutzer') }}</th>
+                    <th>{{ t('menu.audit_details')|default('Details') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr>
+                    <td class="text-muted text-nowrap">{{ entry.created_at }}</td>
+                    <td>
+                        {% if entry.action == 'created' %}
+                            <span class="badge badge-success">{{ t('menu.action_created')|default('Erstellt') }}</span>
+                        {% elseif entry.action == 'updated' %}
+                            <span class="badge badge-info">{{ t('menu.action_updated')|default('Geändert') }}</span>
+                        {% elseif entry.action == 'deleted' %}
+                            <span class="badge badge-danger">{{ t('menu.action_deleted')|default('Gelöscht') }}</span>
+                        {% elseif entry.action == 'reordered' %}
+                            <span class="badge badge-muted">{{ t('menu.action_reordered')|default('Sortiert') }}</span>
+                        {% elseif entry.action == 'hidden' %}
+                            <span class="badge badge-warn">{{ t('menu.action_hidden')|default('Versteckt') }}</span>
+                        {% elseif entry.action == 'shown' %}
+                            <span class="badge badge-success">{{ t('menu.action_shown')|default('Eingeblendet') }}</span>
+                        {% else %}
+                            <span class="badge badge-muted">{{ entry.action }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if entry.item_id %}
+                            <a href="/admin/menus/items/{{ entry.item_id }}/edit">ID {{ entry.item_id }}</a>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>{{ entry.actor|default('System') }}</td>
+                    <td class="text-muted" style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        {{ entry.details|default('') }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>{{ t('menu.no_audit')|default('Noch keine Einträge im Audit-Log.') }}</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

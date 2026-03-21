@@ -450,6 +450,14 @@ final class ThemeManager implements ManagerInterface
             }
         }
 
+        // Add active module template paths as fallbacks (theme always takes priority)
+        foreach ($this->kernel->modules()->getActive() as $moduleId => $manifest) {
+            $modTplPath = ($manifest['_path'] ?? '') . DIRECTORY_SEPARATOR . 'templates' . DIRECTORY_SEPARATOR . 'admin';
+            if (is_dir($modTplPath)) {
+                $paths[] = $modTplPath;
+            }
+        }
+
         $loader = new FilesystemLoader($paths);
         $this->adminTwig = new Environment($loader, [
             'cache' => $this->kernel->path('storage', 'cache', 'twig'),
@@ -476,6 +484,14 @@ final class ThemeManager implements ManagerInterface
             $parentPath = $this->kernel->path('themes', 'frontend', $parentId, 'templates');
             if (is_dir($parentPath)) {
                 $paths[] = $parentPath;
+            }
+        }
+
+        // Add active module template paths as fallbacks (theme always takes priority)
+        foreach ($this->kernel->modules()->getActive() as $moduleId => $manifest) {
+            $modTplPath = ($manifest['_path'] ?? '') . DIRECTORY_SEPARATOR . 'templates' . DIRECTORY_SEPARATOR . 'frontend';
+            if (is_dir($modTplPath)) {
+                $paths[] = $modTplPath;
             }
         }
 
@@ -541,6 +557,32 @@ final class ThemeManager implements ManagerInterface
         // Config
         $twig->addFunction(new TwigFunction('config', function (string $key, mixed $default = null) use ($kernel): mixed {
             return $kernel->config()->get($key, $default);
+        }));
+
+        // Menu tree resolver — returns category groups for sidebar rendering
+        $twig->addFunction(new TwigFunction('menu_tree', function (string $locationKey) use ($kernel): array {
+            try {
+                $sessionUserId = $kernel->session()->get('user_id', null);
+                $user = $sessionUserId ? $kernel->data()->getUserById((int)$sessionUserId) : null;
+                $currentPath = $_SERVER['REQUEST_URI'] ?? '/';
+
+                $resolved = $kernel->menus()->resolveTree(
+                    $locationKey,
+                    $user,
+                    $currentPath,
+                    static function (?array $currentUser, string $permission) use ($kernel): bool {
+                        return $currentUser !== null && $kernel->permissions()->userCan($currentUser, $permission);
+                    },
+                    static function (string $moduleKey) use ($kernel): bool {
+                        return method_exists($kernel->modules(), 'isActive')
+                            && $kernel->modules()->isActive($moduleKey);
+                    }
+                );
+
+                return $resolved['categories'] ?? [];
+            } catch (\Throwable) {
+                return [];
+            }
         }));
     }
 }
