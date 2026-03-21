@@ -61,6 +61,9 @@ final class ThemeManager implements ManagerInterface
     public function render(string $template, array $context = [], string $area = 'admin'): string
     {
         $twig = $area === 'admin' ? $this->getAdminTwig() : $this->getFrontendTwig();
+        if ($area === 'admin') {
+            $context = $this->applyAdminRenderDefaults($context);
+        }
         try {
             return $twig->render($template, $context);
         } catch (\Throwable $e) {
@@ -115,6 +118,134 @@ final class ThemeManager implements ManagerInterface
 
             return $html;
         }
+    }
+
+    private function applyAdminRenderDefaults(array $context): array
+    {
+        $iconCss = $this->resolveAdminIconCss();
+        $fontCss = $this->resolveAdminFontCss();
+        $sidebarIconMode = $this->resolveSidebarIconMode();
+
+        if (!isset($context['admin_icon_css']) || !is_array($context['admin_icon_css']) || $context['admin_icon_css'] === []) {
+            $context['admin_icon_css'] = $iconCss;
+        }
+
+        if (!isset($context['admin_font_css']) || !is_array($context['admin_font_css']) || $context['admin_font_css'] === []) {
+            $context['admin_font_css'] = $fontCss;
+        }
+
+        if (!isset($context['sidebar_icon_mode']) || trim((string) $context['sidebar_icon_mode']) === '') {
+            $context['sidebar_icon_mode'] = $sidebarIconMode;
+        }
+
+        return $context;
+    }
+
+    private function resolveAdminIconCss(): array
+    {
+        $css = [];
+        foreach ($this->kernel->assetLibrary()->listIconSets() as $set) {
+            if (!is_array($set)) {
+                continue;
+            }
+            if ((string) ($set['status'] ?? 'active') !== 'active') {
+                continue;
+            }
+            $areas = $set['areas'] ?? [];
+            if (is_array($areas) && $areas !== [] && !in_array('admin', $areas, true)) {
+                continue;
+            }
+            $localCss = trim((string) ($set['local_css'] ?? ''));
+            if ($localCss !== '') {
+                $css[] = $localCss;
+            }
+        }
+
+        return array_values(array_unique($css));
+    }
+
+    private function resolveAdminFontCss(): array
+    {
+        $css = [];
+        foreach ($this->kernel->assetLibrary()->listFontSets() as $set) {
+            if (!is_array($set)) {
+                continue;
+            }
+            if ((string) ($set['status'] ?? 'active') !== 'active') {
+                continue;
+            }
+            $areas = $set['areas'] ?? [];
+            if (is_array($areas) && $areas !== [] && !in_array('admin', $areas, true)) {
+                continue;
+            }
+            $localCss = trim((string) ($set['local_css'] ?? ''));
+            if ($localCss !== '') {
+                $css[] = $localCss;
+            }
+        }
+
+        return array_values(array_unique($css));
+    }
+
+    private function resolveSidebarIconMode(): string
+    {
+        $settings = $this->kernel->data()->getSettings();
+        $groups = ['system', 'appearance', 'theme', 'general'];
+        $keys = [
+            'admin_sidebar_icons',
+            'sidebar_icons',
+            'sidebar_icon_set',
+            'admin_icon_set',
+            'admin_nav_icons',
+            'nav_icon_set',
+        ];
+
+        foreach ($groups as $group) {
+            $rows = $settings[$group] ?? null;
+            if (!is_array($rows)) {
+                continue;
+            }
+
+            foreach ($keys as $key) {
+                foreach ($rows as $row) {
+                    if (!is_array($row) || (string) ($row['key'] ?? '') !== $key) {
+                        continue;
+                    }
+
+                    $value = strtolower(trim((string) ($row['value'] ?? '')));
+                    if ($value === '') {
+                        continue;
+                    }
+
+                    if (in_array($value, ['tabler', 'ti', 'tabler-icons', 'tabler_icons'], true)) {
+                        return 'tabler';
+                    }
+
+                    if (in_array($value, ['unicode', 'classic', 'emoji', 'text'], true)) {
+                        return 'classic';
+                    }
+                }
+            }
+        }
+
+        foreach ($this->kernel->assetLibrary()->listIconSets() as $set) {
+            if (!is_array($set)) {
+                continue;
+            }
+
+            $areas = $set['areas'] ?? [];
+            $inAdmin = is_array($areas) ? in_array('admin', $areas, true) : true;
+            if (!$inAdmin) {
+                continue;
+            }
+
+            $needle = strtolower((string) (($set['id'] ?? '') . ' ' . ($set['name'] ?? '')));
+            if (str_contains($needle, 'tabler')) {
+                return 'tabler';
+            }
+        }
+
+        return 'classic';
     }
 
     public function getAdminThemeId(): string

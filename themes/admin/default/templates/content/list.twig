@@ -52,7 +52,7 @@
                         <td>
                             <div class="flex gap-2">
                                 <a href="/admin/content/{{ type_key }}/{{ entry.id }}/edit" class="btn btn-ghost btn-sm" title="{{ t('admin.edit')|default('Bearbeiten') }}">✎</a>
-                                {% if type_key in ['article', 'documentation'] %}
+                                {% if type_key in ['article', 'documentation', 'page'] %}
                                 <a href="/admin/content/{{ type_key }}/{{ entry.id }}/editor" class="btn btn-ghost btn-sm" title="{{ t('admin.visual_editor')|default('Visueller Editor') }}">✦</a>
                                 {% endif %}
                                 <form method="POST" action="/admin/content/{{ type_key }}/{{ entry.id }}/delete" style="display:inline;">

@@ -27,7 +27,8 @@
     <button type="button" class="tab-btn {{ asset_active_tab == 'icons' ? 'active' : (asset_active_tab == 'fonts' ? '' : (has_settings ? 'active' : '')) }}" data-tab="icons">{{ t('admin.settings_tab_icons')|default('Icons') }}</button>
     <button type="button" class="tab-btn {{ asset_active_tab == 'fonts' ? 'active' : '' }}" data-tab="fonts">{{ t('admin.settings_tab_fonts')|default('Schriftarten') }}</button>
     {% for group_name, group_settings in settings %}
-    <button type="button" class="tab-btn {{ asset_active_tab == '' and loop.first ? 'active' : '' }}" data-tab="settings-{{ group_name|lower|replace({' ':'-'}) }}">{{ group_name|capitalize }}</button>
+    {% set group_label = t('admin.settings_group_' ~ group_name)|default(group_name|capitalize) %}
+    <button type="button" class="tab-btn {{ asset_active_tab == '' and loop.first ? 'active' : '' }}" data-tab="settings-{{ group_name|lower|replace({' ':'-'}) }}">{{ group_label }}</button>
     {% endfor %}
 </div>
 

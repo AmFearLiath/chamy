@@ -3,13 +3,8 @@
     Usage: {% include '_partials/sidebar_nav.twig' with { sidebar_tree: menu_tree('admin-sidebar') } %}
     Expects sidebar_tree = array of { category: {..., display_label}, items: [{..., translated_label, icon, target_value, children: [...]}] }
 #}
-{# Track whether any module-provided items were rendered so we can skip legacy hooks #}
-{% set moduleRendered = false %}
 {% for group in sidebar_tree %}
-{# If this category contains module-provided items, expose data-module for legacy module scripts #}
-{% set moduleRef = (group.items|filter(i => i.source is defined and i.source == 'module')|map(i => i.source_ref)|first) %}
-{% if moduleRef is defined and moduleRef %}{% set moduleRendered = true %}{% endif %}
-<div class="nav-section"{% if moduleRef is defined and moduleRef %} data-module="{{ moduleRef }}"{% endif %}>
+<div class="nav-section">
     {% if group.category.display_label|default('') %}
     <div class="nav-section-label">{{ group.category.display_label }}</div>
     {% endif %}
@@ -19,11 +14,6 @@
     {% endfor %}
 </div>
 {% endfor %}
-
-{# Hook-Slot for modules that still inject raw HTML (legacy support) — only when no module items rendered by MenuManager #}
-{% if not moduleRendered %}
-    {{ hook('admin.sidebar.modules') }}
-{% endif %}
 
 {% macro render_nav_item(item, current_route, depth=0) %}
 {% if item.target_type|default('') == 'separator' %}
@@ -47,7 +37,12 @@
                         {{ item.icon|raw }}
                     {% else %}
                         {% set rawIcon = item.meta.icon_class|default(item.icon) %}
-                        {% set effective_icon_mode = (item.meta.icon_mode is defined ? item.meta.icon_mode : (sidebar_icon_mode|default(''))) %}
+                        {% set effective_icon_mode = 'classic' %}
+                        {% if item.meta.icon_mode is defined and item.meta.icon_mode is not empty %}
+                            {% set effective_icon_mode = item.meta.icon_mode %}
+                        {% elseif item.meta.icon_set is defined and item.meta.icon_set is not empty and item.meta.icon_set matches('/tabler/i') %}
+                            {% set effective_icon_mode = 'tabler' %}
+                        {% endif %}
                         {% if effective_icon_mode == 'tabler' and rawIcon is defined and rawIcon is not empty %}
                             {# Normalize Tabler webfont classes: ensure base `ti` class is present #}
                             {% if rawIcon matches('/(^|\\s)ti(\\b|$)/') %}
@@ -86,7 +81,12 @@
                         {{ item.icon|raw }}
                     {% else %}
                         {% set rawIcon = item.meta.icon_class|default(item.icon) %}
-                        {% set effective_icon_mode = (item.meta.icon_mode is defined ? item.meta.icon_mode : (sidebar_icon_mode|default(''))) %}
+                        {% set effective_icon_mode = 'classic' %}
+                        {% if item.meta.icon_mode is defined and item.meta.icon_mode is not empty %}
+                            {% set effective_icon_mode = item.meta.icon_mode %}
+                        {% elseif item.meta.icon_set is defined and item.meta.icon_set is not empty and item.meta.icon_set matches('/tabler/i') %}
+                            {% set effective_icon_mode = 'tabler' %}
+                        {% endif %}
                         {% if effective_icon_mode == 'tabler' and rawIcon is defined and rawIcon is not empty %}
                             {% if rawIcon matches('/(^|\\s)ti(\\b|$)/') %}
                                 {% set iconClass = rawIcon %}
