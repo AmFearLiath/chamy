@@ -1,0 +1,70 @@
+{#
+  Elektro Keilitz – Footer
+  Firmendaten, Kontaktinfo, Quick-Links und Copyright.
+#}
+<footer class="ek-footer" role="contentinfo">
+    <div class="ek-container">
+        <div class="ek-footer__grid">
+            {# Firmeninfo #}
+            <div class="ek-footer__col">
+                <div class="ek-footer__logo">
+                    <img src="{{ theme_asset('images/logo.svg') }}" alt="{{ site_name|default('Elektro Keilitz') }}" width="160" height="36">
+                </div>
+                <p class="ek-footer__tagline">
+                    {{ t('footer.tagline')|default('Meisterbetrieb für moderne Elektrotechnik') }}
+                </p>
+            </div>
+
+            {# Kontakt #}
+            <div class="ek-footer__col">
+                <h3 class="ek-footer__heading">{{ t('footer.contact')|default('Kontakt') }}</h3>
+                <address class="ek-footer__address">
+                    <p>Elektro Keilitz</p>
+                    <p>Industriestraße 7</p>
+                    <p>10407 Berlin</p>
+                </address>
+                <p class="ek-footer__contact-item">
+                    <a href="tel:+49301234567">+49 30 1234567</a>
+                </p>
+                <p class="ek-footer__contact-item">
+                    <a href="mailto:kontakt@elektro-keilitz.de">kontakt@elektro-keilitz.de</a>
+                </p>
+                <p class="ek-footer__hours">
+                    {{ t('footer.hours')|default('Mo – Fr: 06:00 – 17:00 Uhr') }}
+                </p>
+            </div>
+
+            {# Quick Links (from admin menu) #}
+            <div class="ek-footer__col">
+                <h3 class="ek-footer__heading">{{ t('footer.links')|default('Links') }}</h3>
+                {% set footer_menu = menu_tree('frontend-main') %}
+                <ul class="ek-footer__links">
+                    {% if footer_menu is defined and footer_menu|length > 0 %}
+                        {% for group in footer_menu %}
+                            {% for item in group.items %}
+                                <li><a href="{{ item.target_value|default('#') }}">{{ item.translated_label|default(item.key) }}</a></li>
+                            {% endfor %}
+                        {% endfor %}
+                    {% else %}
+                        <li><a href="/#leistungen">{{ t('nav.services')|default('Leistungen') }}</a></li>
+                        <li><a href="/referenzen">{{ t('nav.references')|default('Referenzen') }}</a></li>
+                        <li><a href="/kontakt">{{ t('nav.contact')|default('Kontakt') }}</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            {# Rechtliches #}
+            <div class="ek-footer__col">
+                <h3 class="ek-footer__heading">{{ t('footer.legal')|default('Rechtliches') }}</h3>
+                <ul class="ek-footer__links">
+                    <li><a href="/impressum">{{ t('nav.imprint')|default('Impressum') }}</a></li>
+                    <li><a href="/datenschutz">{{ t('nav.privacy')|default('Datenschutz') }}</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="ek-footer__bottom">
+            <p>&copy; {{ 'now'|date('Y') }} Elektro Keilitz – {{ t('footer.rights')|default('Alle Rechte vorbehalten') }}</p>
+        </div>
+    </div>
+</footer>

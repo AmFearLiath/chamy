@@ -1,0 +1,62 @@
+{# 
+  Elektro Keilitz – Base Layout
+  Haupt-Layout für alle Seiten. Stellt HTML-Grundstruktur, Meta-Tags,
+  CSS/JS-Einbindung, Header und Footer bereit.
+#}
+<!DOCTYPE html>
+<html lang="{{ app_locale|default('de') }}" data-theme="dark" data-resolved-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ site_name|default('Elektro Keilitz') }}{% endblock %}</title>
+    {% block seo_meta %}
+        {% if seo_description is defined and seo_description %}
+            <meta name="description" content="{{ seo_description }}">
+        {% endif %}
+        <meta property="og:type" content="website">
+        <meta property="og:locale" content="{{ app_locale == 'en' ? 'en_US' : 'de_DE' }}">
+        <meta property="og:site_name" content="{{ site_name|default('Elektro Keilitz') }}">
+        {% if seo_title is defined and seo_title %}
+            <meta property="og:title" content="{{ seo_title }}">
+        {% endif %}
+        {% if seo_description is defined and seo_description %}
+            <meta property="og:description" content="{{ seo_description }}">
+        {% endif %}
+    {% endblock %}
+    <link rel="icon" type="image/svg+xml" href="{{ theme_asset('images/favicon.svg') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ theme_asset('css/theme.css') }}">
+    {% block head %}{% endblock %}
+    {# Inline-Script: Theme-Erkennung (verhindert Flash) #}
+    <script>
+    (function(){
+        var t = localStorage.getItem('ek-theme') || 'dark';
+        if (t === 'auto') {
+            t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+        document.documentElement.setAttribute('data-resolved-theme', t);
+        if (t === 'dark') document.documentElement.classList.add('dark');
+    })();
+    </script>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    <a href="#main-content" class="skip-link">{{ t('ui.skip_to_content')|default('Zum Inhalt springen') }}</a>
+
+    {% block header %}
+        {% include '_partials/header.twig' %}
+    {% endblock %}
+
+    <main id="main-content">
+        {% block body %}{% endblock %}
+    </main>
+
+    {% block footer %}
+        {% include '_partials/footer.twig' %}
+    {% endblock %}
+
+    <script src="{{ theme_asset('js/theme.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

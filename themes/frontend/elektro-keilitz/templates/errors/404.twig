@@ -1,0 +1,19 @@
+{#
+  Elektro Keilitz – 404 Fehlerseite
+#}
+{% extends 'base.twig' %}
+
+{% block title %}{{ t('error.404_title')|default('Seite nicht gefunden') }} – {{ site_name|default('Elektro Keilitz') }}{% endblock %}
+
+{% block body_class %}ek-page--error{% endblock %}
+
+{% block body %}
+<section class="ek-section ek-error-page">
+    <div class="ek-container">
+        <h1 class="ek-error-page__code">404</h1>
+        <p class="ek-error-page__title">{{ t('error.404_heading')|default('Seite nicht gefunden') }}</p>
+        <p class="ek-error-page__text">{{ t('error.404_text')|default('Die angeforderte Seite existiert nicht oder wurde verschoben.') }}</p>
+        <a href="/" class="ek-btn ek-btn--primary">{{ t('error.back_home')|default('Zur Startseite') }}</a>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,562 @@
+Du arbeitest als **Lead-Software-Developer** im Projekt **Chamy**.
+Deine Aufgabe ist es, **den bestehenden Webseiteninhalt** der vorhandenen Seite aus `F:\elektro-keilitz` in das neue System **Chamy** zu übernehmen und dafür **ein eigenes Frontend-Theme für diese Webseite** zu erstellen.
+
+# Ziel
+
+Es geht darum, die bestehende Website:
+
+* **inhaltlich**
+* **strukturell**
+* **optisch als eigenes Frontend-Theme**
+* **technisch sauber in Chamy integriert**
+
+zu übernehmen.
+
+## Ganz wichtig
+
+* Es geht **nicht** darum, Chamy grundsätzlich neu zu bauen
+* Es geht **nicht** darum, unnötige neue Core-Systeme zu erfinden
+* Es geht **nicht** um ein beliebiges Redesign
+* Es geht **nicht** um eine vollständige Neuinterpretation der Webseite
+* Es geht darum, die bestehende Seite **sauber in Chamy zu überführen**
+* Für diese Webseite soll ein **eigenes, separates Frontend-Theme** in Chamy erstellt werden
+* Inhalte und Darstellung müssen **klar getrennt** bleiben
+* Das Theme soll die bestehende Webseite möglichst passend abbilden, aber technisch nach Chamy-Standards sauber umgesetzt sein
+
+---
+
+# Projektkontext Chamy
+
+Arbeite strikt auf Basis des aktuellen dokumentierten Ist-Stands von Chamy.
+
+Berücksichtige insbesondere:
+
+* Chamy ist ein **modulares PHP-System**
+* **Twig bleibt die Theme-Engine**
+* Module und Themes sind getrennt aufgebaut
+* Inhalte werden strukturiert über Content Types und Content Entries verwaltet
+* Inhalte dürfen nicht dauerhaft hart in Templates eingebaut werden
+* Themes sind für die Darstellung zuständig
+* Module liefern Funktionalität
+* Alles soll modular, wiederverwendbar und dokumentiert aufgebaut werden
+* Mehrsprachigkeit ist verpflichtend
+* Text darf nicht hardcoded in Dateien stehen
+* Vor jeder neuen Implementierung ist zu prüfen, ob bereits etwas Wiederverwendbares existiert
+* Nur wenn nichts Passendes existiert, darf etwas neu erstellt werden
+* Neue Bestandteile müssen sauber registriert, dokumentiert und kommentiert werden
+
+## Für diese Aufgabe besonders wichtig
+
+* Für die neue Webseite soll ein **eigenes Frontend-Theme** erstellt werden
+* Dieses Theme ist **projektbezogen für die Seite von Elektro Keilitz**
+* Das Theme soll **nicht** Chamy-Core-Logik enthalten
+* Das Theme soll die bestehende Website-Struktur und Darstellung in das Chamy-Themesystem überführen
+* Redaktionsinhalte müssen über Chamy-Inhalte gepflegt werden, nicht über statische Template-Texte
+
+---
+
+# Oberste Arbeitsregeln
+
+## 1. Erst vollständig analysieren, dann umsetzen
+
+Untersuche zuerst vollständig den Altbestand unter:
+
+`F:\elektro-keilitz`
+
+Analysiere dabei mindestens:
+
+* Seitenstruktur
+* Navigation
+* Unterseiten
+* Header
+* Footer
+* Startseite
+* wiederkehrende Inhaltsbereiche
+* Kontaktbereiche
+* CTA-Bereiche
+* Teaser
+* Bildbereiche
+* Formulare
+* Downloads
+* Logos
+* Assets
+* SEO-Daten
+* interne Links
+* externe Links
+* Überschriftenstruktur
+* Designsystem der alten Seite
+* Farben
+* Typografie
+* Abstände
+* Boxen
+* Grid-/Layoutlogik
+* responsive Verhalten
+
+## 2. Inhalt und Darstellung strikt trennen
+
+* Inhalte kommen in Chamy-Inhalte / Content Entries / passende Content Types
+* Darstellung kommt ins neue Frontend-Theme
+* Theme-Dateien dürfen keine redaktionellen Texte dauerhaft hardcoded enthalten
+* Konfigurierbare oder wiederkehrende Inhaltsbereiche sollen sauber ins Chamy-System überführt werden
+
+## 3. Chamy nicht unnötig verbiegen
+
+Nutze zuerst vorhandene Systeme.
+Nur wenn für die Migration wirklich nötig, ergänze fehlende Bausteine.
+
+## 4. Theme sauber und separat erstellen
+
+Für die übernommene Webseite muss ein **eigenes Frontend-Theme** erstellt werden.
+
+Dieses Theme soll:
+
+* einen klaren, eigenen Theme-Ordner erhalten
+* sauber in Chamy registriert werden
+* Twig-basiert aufgebaut sein
+* Layouts, Partials und Templates sinnvoll trennen
+* auf Wiederverwendbarkeit achten
+* mit Chamy kompatibel bleiben
+* die bestehende Optik und Struktur der bisherigen Webseite sinnvoll nachbilden
+
+## 5. Keine unnötige Core-Erweiterung
+
+Wenn eine Anforderung nur diese eine Webseite betrifft, gehört sie bevorzugt:
+
+* ins Theme
+* in migrationsbezogene Daten
+* oder in inhaltliche Strukturen
+
+Nicht automatisch in den Core.
+
+---
+
+# Konkrete Aufgabe
+
+Setze die Migration in klaren Phasen um.
+
+---
+
+# Phase 1 – Altseite analysieren
+
+Analysiere den Bestand in `F:\elektro-keilitz` vollständig.
+
+## Ermittle dabei
+
+### A. Seiten und Struktur
+
+* Welche Seiten existieren?
+* Welche URL-Struktur existiert?
+* Welche Seiten gehören zur Hauptnavigation?
+* Welche Unterseiten gibt es?
+* Welche Seiten sind rechtlich relevant?
+* Welche Seiten gehören funktional zusammen?
+
+### B. Inhaltstypen
+
+Ordne die Inhalte in sinnvolle Chamy-Strukturen ein, z. B.:
+
+* Seiten
+* Artikel / News
+* Snippets
+* Medien
+* Kontaktinhalte
+* rechtliche Seiten
+* wiederkehrende Bereiche
+
+Nutze vorhandene Content Types, wenn passend.
+Erstelle nur dann zusätzliche Typen oder Felder, wenn die vorhandenen Strukturen die Inhalte nicht sauber abbilden können.
+
+### C. Design und Frontend-Struktur
+
+Analysiere genau:
+
+* Header-Aufbau
+* Navigation
+* Footer
+* Startseitenaufbau
+* Abschnittslogik
+* Teaser-Elemente
+* Content-Bereiche
+* Bild-/Text-Kombinationen
+* Buttons
+* Karten
+* Listen
+* Formularblöcke
+* Farbwelt
+* Abstände
+* responsive Verhalten
+
+Ziel: Das neue Theme soll die bestehende Seite so nah wie sinnvoll möglich übertragen.
+
+---
+
+# Phase 2 – Migrationskonzept erstellen
+
+Erstelle auf Basis der Analyse ein konkretes Migrationskonzept.
+
+## Dieses Konzept muss mindestens enthalten
+
+### A. Inhaltsmapping
+
+Ordne jede Altseiten-Struktur einer Zielstruktur in Chamy zu:
+
+* alte Seite → neuer Content Entry
+* alter Abschnitt → Feldstruktur / Inhaltsbereich
+* alte Navigation → Menüstruktur / Theme-Ausgabe
+* alte Medien → neues Medienziel
+* alte SEO-Daten → neue SEO-Felder / Zielstruktur
+
+### B. Theme-Mapping
+
+Lege fest, wie das neue Frontend-Theme aufgebaut wird:
+
+* Theme-Name
+* Ordnerstruktur
+* Layout-Dateien
+* Partials
+* Seiten-Templates
+* Komponenten / wiederverwendbare Bereiche
+* Asset-Struktur
+* CSS-/JS-Struktur
+* Theme-Konfiguration, soweit im System vorgesehen
+
+### C. Abgrenzung
+
+Dokumentiere bei jedem Umsetzungspunkt sauber:
+
+* gehört ins Theme
+* gehört in Inhalte
+* gehört nur dann in den Core, wenn wirklich systemisch nötig
+
+---
+
+# Phase 3 – Eigenes Frontend-Theme für Elektro Keilitz erstellen
+
+Erstelle ein **eigenes Frontend-Theme** für die neue Webseite innerhalb von Chamy.
+
+## Anforderungen an das Theme
+
+### A. Eigenständige Theme-Struktur
+
+Erstelle eine saubere Theme-Struktur für diese Webseite.
+
+Beispielhafte Zielrichtung:
+
+* eigener Theme-Ordner
+* klare Trennung von:
+
+  * Layouts
+  * Seiten-Templates
+  * Partials
+  * Komponenten
+  * Assets
+  * Theme-Metadaten / Konfiguration
+
+### B. Twig-basierte Umsetzung
+
+Das Theme muss mit Twig umgesetzt werden und sich sauber in Chamy einfügen.
+
+### C. Wiederverwendbare Theme-Bausteine
+
+Extrahiere wiederkehrende Strukturen sinnvoll, z. B.:
+
+* Header
+* Footer
+* Navigation
+* Hero-Bereiche
+* Content-Section-Wrapper
+* Teaser-Boxen
+* Kontakt-Infoblöcke
+* Call-to-Action-Bereiche
+* Bild-/Text-Layouts
+* Listen- oder Karten-Elemente
+
+### D. Bestehende Optik angemessen übernehmen
+
+Die bisherige Website soll im neuen Theme visuell wiedererkennbar bleiben.
+
+Das bedeutet:
+
+* Grundlayout übernehmen
+* Designlogik übernehmen
+* Seitenstruktur übernehmen
+* responsive Logik berücksichtigen
+* Farben, Flächen, Abstände und visuelle Hierarchie passend nachbauen
+
+Dabei gilt:
+
+* keine 1:1 technische Altlasten-Kopie
+* aber möglichst nahe am bisherigen Auftritt
+* modernisiert nur dort, wo technisch nötig oder klar sinnvoll
+
+### E. Keine Inhalts-Hardcodes
+
+Texte, Seitentitel, Kontakttexte, Leistungsbeschreibungen, Öffnungszeiten, rechtliche Inhalte usw. gehören nicht dauerhaft ins Theme, sondern in Inhalte oder konfigurierbare Datenstrukturen.
+
+---
+
+# Phase 4 – Inhalte in Chamy übernehmen
+
+Überführe die Inhalte aus `F:\elektro-keilitz` in Chamy.
+
+## Dabei gilt
+
+* vollständige Übernahme der bestehenden Seiteninhalte
+* saubere Zuordnung auf Content Types
+* sinnvolle Feldbelegung
+* Slugs sauber anlegen
+* SEO-relevante Inhalte übernehmen
+* Bilder und Medien migrieren
+* interne Verlinkungen anpassen
+* Inhalte so einpflegen, dass sie im neuen Theme korrekt ausgegeben werden können
+
+## Besonderer Fokus
+
+Prüfe bei jeder Seite:
+
+* Titel
+* Seitenslug
+* Hauptinhalt
+* strukturierte Abschnitte
+* Medienreferenzen
+* Metadaten
+* optionale Seitenelemente
+* wiederkehrende Teilbereiche
+
+---
+
+# Phase 5 – Navigation und Theme-Ausgabe verbinden
+
+Sorge dafür, dass das neue Theme die migrierte Webseite korrekt ausgeben kann.
+
+## Dazu gehört
+
+* Header mit Hauptnavigation
+* aktive Zustände
+* Footer-Navigation / Zusatzlinks
+* Ausgabe der Startseite
+* Ausgabe der Standardseiten
+* Ausgabe optionaler Unterseiten
+* konsistente Darstellung aller migrierten Inhalte
+
+Falls bereits ein neues Menüsystem existiert oder vorbereitet ist, soll es genutzt werden.
+Falls nicht, soll die bestehende Chamy-Struktur so verwendet werden, dass die Navigation für diese Webseite korrekt funktioniert, ohne unnötige Seiteneffekte im Core zu erzeugen.
+
+---
+
+# Phase 6 – Assets und Medien migrieren
+
+Übernimm alle benötigten Assets der Altseite sauber in das neue System bzw. Theme.
+
+## Dazu gehören je nach Bestand
+
+* Logo
+* Bilder
+* Icons
+* Downloads
+* PDFs
+* Hintergrundgrafiken
+* sonstige Frontend-Assets
+
+## Dabei beachten
+
+* Theme-spezifische Darstellungsassets gehören ins Theme
+* redaktionelle Medien gehören in die Medien-/Inhaltsstruktur
+* Verweise müssen korrigiert werden
+* keine toten Verlinkungen
+* keine Altpfade im fertigen System belassen
+
+---
+
+# Phase 7 – Formulare und Sonderbereiche prüfen
+
+Analysiere, ob die alte Seite Formulare oder spezielle Interaktionen enthält.
+
+Falls vorhanden:
+
+* Kontaktformular
+* Rückrufanfrage
+* Bewerbungsformular
+* Downloadformulare
+* sonstige Eingabemasken
+
+## Vorgehen
+
+* Prüfen, was davon rein darstellerisch ist
+* Prüfen, was davon funktional wirklich übernommen werden muss
+* Funktionalität nur dann ergänzen, wenn sie für die Übernahme der Webseite nötig ist
+* Theme und Funktionalität sauber trennen
+
+Falls für Formulare bereits Chamy- oder Modulstrukturen existieren, diese bevorzugen.
+Falls nicht, migrationsbezogen und minimal sinnvoll ergänzen.
+
+---
+
+# Phase 8 – SEO und URL-Treue
+
+Die bestehende Webseite soll möglichst sauber in das neue System überführt werden.
+
+## Daher prüfen und übernehmen
+
+* Seitentitel
+* Meta-Descriptions
+* Slugs
+* sinnvolle URL-Struktur
+* Überschriftenhierarchie
+* interne Verlinkungen
+* Bildreferenzen
+* wichtige Seitennamen
+
+Wo möglich, soll die bestehende Struktur erhalten bleiben oder sinnvoll nachgebildet werden.
+
+---
+
+# Phase 9 – Technische Qualitätsanforderungen
+
+## Anforderungen an deine Umsetzung
+
+* sauber kommentierter Code
+* vollständige Dokumentation der neuen Dateien
+* keine Platzhalterlösungen
+* keine halbfertigen Templates
+* keine stillschweigend weggelassenen Bereiche
+* keine unnötigen Dummys
+* keine provisorischen Hardcodes für produktive Inhalte
+* saubere Benennung
+* klare Trennung von Theme, Inhalt und eventueller Funktionalität
+* bestehende Chamy-Strukturen bevorzugt wiederverwenden
+* neue Elemente dokumentieren und begründen
+
+---
+
+# Phase 10 – Ergebnisdokumentation
+
+Erstelle am Ende eine vollständige Dokumentation der Migration.
+
+## Diese muss mindestens enthalten
+
+### A. Analyseergebnis
+
+* Welche Seiten wurden gefunden?
+* Welche Inhalte wurden übernommen?
+* Welche Sonderfälle gab es?
+
+### B. Theme-Ergebnis
+
+* Name des neuen Themes
+* Theme-Ordner
+* Struktur des Themes
+* verwendete Templates
+* verwendete Partials
+* wiederverwendbare Komponenten
+* eingebundene Assets
+
+### C. Inhaltsmigration
+
+* welche Inhalte wurden wie übertragen
+* welche Content Types wurden verwendet
+* welche Felder wurden genutzt oder ergänzt
+
+### D. Änderungen am System
+
+* welche Änderungen nur im Theme erfolgten
+* welche Änderungen in Inhaltsstrukturen nötig waren
+* welche minimalen Systemanpassungen ggf. erforderlich waren
+
+### E. Offene Punkte
+
+* was vollständig migriert wurde
+* was manuell geprüft werden sollte
+* welche Bereiche potenziell noch Feinschliff benötigen
+
+---
+
+# Wichtige technische Leitplanken
+
+## Theme
+
+* Erstelle ein eigenes Frontend-Theme für Elektro Keilitz
+* Theme rein darstellerisch halten
+* Twig verwenden
+* Theme sauber in Chamy integrieren
+* Theme-Dateien logisch und wartbar strukturieren
+
+## Inhalte
+
+* Inhalte in Chamy speichern
+* keine redaktionellen Inhalte fest in Templates verankern
+* Seiten editierbar halten
+
+## Architektur
+
+* Core nicht unnötig aufblasen
+* nur migrationsrelevante Ergänzungen
+* Wiederverwendung vor Neuerstellung
+* neue Bestandteile sauber registrieren, kommentieren und dokumentieren
+
+---
+
+# Arbeitsweise
+
+## Du arbeitest in dieser Reihenfolge
+
+### 1. Vollständige Analyse
+
+Lies und analysiere `F:\elektro-keilitz` komplett.
+
+### 2. Bestehende Chamy-Struktur prüfen
+
+Prüfe, welche vorhandenen Chamy-Mechaniken direkt nutzbar sind.
+
+### 3. Migrationsplan erstellen
+
+Erstelle ein konkretes Mapping von Altbestand zu Chamy-Inhalt + neuem Frontend-Theme.
+
+### 4. Eigenes Theme bauen
+
+Erstelle das Frontend-Theme für die neue Webseite.
+
+### 5. Inhalte übertragen
+
+Überführe alle relevanten Inhalte in Chamy.
+
+### 6. Darstellung verbinden
+
+Sorge dafür, dass das neue Theme die migrierten Inhalte korrekt rendert.
+
+### 7. Dokumentieren
+
+Dokumentiere alles sauber und vollständig.
+
+---
+
+# Zusätzliche Pflicht
+
+Bevor du neue Strukturen baust, prüfe immer:
+
+* existiert bereits etwas Passendes in Chamy?
+* kann etwas wiederverwendet werden?
+* gehört das wirklich in den Core?
+* reicht eine Theme-Lösung?
+* gehört es in Inhalte statt in Templates?
+
+Nur wenn wirklich nötig, darfst du neue Strukturen ergänzen.
+
+---
+
+# Erwartetes Endergebnis
+
+Am Ende erwarte ich:
+
+* eine in Chamy übernommene Version der bestehenden Webseite aus `F:\elektro-keilitz`
+* ein **eigenes Frontend-Theme** für diese Webseite
+* migrierte Inhalte im Chamy-System
+* korrekte Darstellung über das neue Theme
+* saubere Trennung zwischen Inhalt und Darstellung
+* vollständige Dokumentation aller relevanten Änderungen
+* keine unnötige Chamy-Neuarchitektur
+* keine unfertigen Zwischenlösungen
+
+---
+
+> Wichtig: Fokus ist ausschließlich die Übernahme der bestehenden Webseite in Chamy inklusive eigenem Frontend-Theme. Keine unnötige Ausweitung des Projekts, keine generischen Großbaustellen, keine Core-Experimente ohne klare Notwendigkeit.

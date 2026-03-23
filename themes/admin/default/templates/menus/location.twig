@@ -372,17 +372,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 <tr><td>Ziel</td><td>${escHtml(targetValue || '—')}</td></tr>
             </table>
         `;
-        document.getElementById('inspectorActions').innerHTML = `
-            <a href="/admin/menus/items/${id}/edit" class="btn btn-sm btn-primary">Bearbeiten</a>
-            <form method="post" action="/admin/menus/items/${id}/toggle" style="display:inline">
-                <input type="hidden" name="_csrf_token" value="${document.querySelector('meta[name=csrf-token]')?.content || ''}">
-                <button type="submit" class="btn btn-sm btn-outline">${item.classList.contains('is-hidden') ? 'Einblenden' : 'Ausblenden'}</button>
-            </form>
-            <form method="post" action="/admin/menus/items/${id}/delete" style="display:inline" onsubmit="return confirm('Eintrag wirklich löschen?')">
-                <input type="hidden" name="_csrf_token" value="${document.querySelector('meta[name=csrf-token]')?.content || ''}">
-                <button type="submit" class="btn btn-sm btn-danger">Löschen</button>
-            </form>
-        `;
+        // Build inspector actions: if id is present use edit/toggle/delete, otherwise offer create link
+        let actionsHtml = '';
+        if (id && id !== '') {
+            actionsHtml += `<a href="/admin/menus/items/${id}/edit" class="btn btn-sm btn-primary">Bearbeiten</a>`;
+            actionsHtml += `<form method="post" action="/admin/menus/items/${id}/toggle" style="display:inline">`;
+            actionsHtml += `<input type="hidden" name="_csrf_token" value="${document.querySelector('meta[name=csrf-token]')?.content || ''}">`;
+            actionsHtml += `<button type="submit" class="btn btn-sm btn-outline">${item.classList.contains('is-hidden') ? 'Einblenden' : 'Ausblenden'}</button>`;
+            actionsHtml += `</form>`;
+            actionsHtml += `<form method="post" action="/admin/menus/items/${id}/delete" style="display:inline" onsubmit="return confirm('Eintrag wirklich löschen?')">`;
+            actionsHtml += `<input type="hidden" name="_csrf_token" value="${document.querySelector('meta[name=csrf-token]')?.content || ''}">`;
+            actionsHtml += `<button type="submit" class="btn btn-sm btn-danger">Löschen</button>`;
+            actionsHtml += `</form>`;
+        } else {
+            actionsHtml = `<a href="/admin/menus/locations/${locationId}/items/create" class="btn btn-sm btn-primary">Neuen Eintrag erstellen</a>`;
+        }
+        document.getElementById('inspectorActions').innerHTML = actionsHtml;
     });
 
     function escHtml(str) {

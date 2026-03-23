@@ -1,0 +1,64 @@
+{#
+  Elektro Keilitz – Referenzen-Seite
+#}
+{% extends 'base.twig' %}
+
+{% block title %}{{ entry_data.seo_title|default(t('references.title')|default('Referenzen')) }} – {{ site_name|default('Elektro Keilitz') }}{% endblock %}
+
+{% block seo_meta %}
+    {{ parent() }}
+    {% if entry_data.seo_description is defined and entry_data.seo_description %}
+        <meta name="description" content="{{ entry_data.seo_description }}">
+    {% endif %}
+{% endblock %}
+
+{% block body_class %}ek-page--references{% endblock %}
+
+{% block body %}
+{# Hero #}
+<section class="ek-page-hero">
+    <div class="ek-container">
+        <span class="ek-badge">{{ t('references.badge')|default('Unsere Projekte') }}</span>
+        <h1 class="ek-page-hero__title">{{ entry_data.title|default(t('references.heading')|default('Erfolgreiche Projekte sprechen für sich')) }}</h1>
+        <p class="ek-page-hero__subtitle">{{ entry_data.excerpt|default(t('references.subheading')|default('Ob Neubau, Sanierung oder Modernisierung – hier finden Sie Beispiele unserer fachgerechten Elektroarbeiten.')) }}</p>
+        <div class="ek-page-hero__actions">
+            <a href="/kontakt" class="ek-btn ek-btn--primary">{{ t('references.cta_quote')|default('Angebot anfragen') }}</a>
+            <a href="/#leistungen" class="ek-btn ek-btn--outline">{{ t('references.cta_services')|default('Leistungen ansehen') }}</a>
+        </div>
+    </div>
+</section>
+
+{# Inhalt #}
+<section class="ek-section">
+    <div class="ek-container ek-content">
+        {% if editor_content is defined and editor_content %}
+            {{ editor_content|raw }}
+        {% elseif entry_data.body is defined and entry_data.body %}
+            <div class="ek-prose">{{ entry_data.body|raw }}</div>
+        {% else %}
+            <div class="ek-placeholder">
+                <h2>{{ t('references.prep_heading')|default('Referenzen in Vorbereitung') }}</h2>
+                <p>{{ t('references.prep_text')|default('Diese Seite wird derzeit mit Referenzprojekten befüllt.') }}</p>
+                <ul>
+                    <li>{{ t('references.prep_item1')|default('Fotos und Beschreibungen abgeschlossener Projekte') }}</li>
+                    <li>{{ t('references.prep_item2')|default('Kundenstimmen und Bewertungen') }}</li>
+                    <li>{{ t('references.prep_item3')|default('Projekt-Details zu verschiedenen Leistungsbereichen') }}</li>
+                </ul>
+                <p>{{ t('references.prep_cta')|default('Haben Sie Interesse an einer Beratung?') }} <a href="/kontakt">{{ t('references.contact_link')|default('Kontaktieren Sie uns') }}</a></p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+{# CTA #}
+<section class="ek-section ek-section--cta">
+    <div class="ek-container ek-cta-section">
+        <h2 class="ek-cta-section__title">{{ t('references.cta_heading')|default('Ihr Projekt ist einzigartig') }}</h2>
+        <p class="ek-cta-section__text">{{ t('references.cta_text')|default('Lassen Sie uns gemeinsam Ihre individuellen Anforderungen besprechen und eine maßgeschneiderte Lösung entwickeln.') }}</p>
+        <div class="ek-cta-section__actions">
+            <a href="/kontakt" class="ek-btn ek-btn--primary ek-btn--lg">{{ t('references.cta_primary')|default('Beratung anfragen') }}</a>
+            <a href="tel:+49301234567" class="ek-btn ek-btn--outline ek-btn--lg">{{ t('references.cta_phone')|default('Anrufen') }}</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

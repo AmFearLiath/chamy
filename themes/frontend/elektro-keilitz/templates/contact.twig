@@ -1,0 +1,98 @@
+{#
+  Elektro Keilitz – Kontaktseite
+  Kontaktformular + Kontaktdaten + Öffnungszeiten.
+#}
+{% extends 'base.twig' %}
+
+{% block title %}{{ entry_data.seo_title|default(t('contact.title')|default('Kontakt')) }} – {{ site_name|default('Elektro Keilitz') }}{% endblock %}
+
+{% block seo_meta %}
+    {{ parent() }}
+    {% if entry_data.seo_description is defined and entry_data.seo_description %}
+        <meta name="description" content="{{ entry_data.seo_description }}">
+    {% endif %}
+{% endblock %}
+
+{% block body_class %}ek-page--contact{% endblock %}
+
+{% block body %}
+{# Hero #}
+<section class="ek-page-hero">
+    <div class="ek-container">
+        <span class="ek-badge">{{ t('contact.badge')|default('Kontakt') }}</span>
+        <h1 class="ek-page-hero__title">{{ entry_data.title|default(t('contact.heading')|default('Kontakt')) }}</h1>
+        <p class="ek-page-hero__subtitle">{{ entry_data.excerpt|default(t('contact.subheading')|default('Schreiben Sie uns kurz, was Sie vorhaben – wir antworten strukturiert und verbindlich.')) }}</p>
+        <div class="ek-page-hero__actions">
+            <a href="mailto:kontakt@elektro-keilitz.de" class="ek-btn ek-btn--primary">{{ t('contact.email_cta')|default('E-Mail schreiben') }}</a>
+            <a href="tel:+49301234567" class="ek-btn ek-btn--outline">{{ t('contact.call_cta')|default('Anrufen') }}</a>
+        </div>
+    </div>
+</section>
+
+{# Kontaktformular + Info #}
+<section class="ek-section">
+    <div class="ek-container">
+        <div class="ek-contact-grid">
+            {# Formular #}
+            <div class="ek-contact-form">
+                <h2 class="ek-contact-form__title">{{ t('contact.form_title') }}</h2>
+
+                {% if flash.success is defined and flash.success %}
+                    <div class="ek-alert ek-alert--success">{{ flash.success }}</div>
+                {% endif %}
+                {% if flash.errors is defined and flash.errors %}
+                    <div class="ek-alert ek-alert--error">
+                        <ul>
+                            {% for err in flash.errors %}<li>{{ err }}</li>{% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                {% if flash.error is defined and flash.error %}
+                    <div class="ek-alert ek-alert--error">{{ flash.error }}</div>
+                {% endif %}
+
+                <form method="post" action="/kontakt" class="ek-form" novalidate>
+                    {{ csrf_field()|raw }}
+                    <div class="ek-form__group">
+                        <label for="contact-name" class="ek-form__label">{{ t('contact.name') }}</label>
+                        <input type="text" id="contact-name" name="name" required class="ek-form__input" autocomplete="name" value="{{ old.name|default('') }}">
+                    </div>
+                    <div class="ek-form__group">
+                        <label for="contact-email" class="ek-form__label">{{ t('contact.email') }}</label>
+                        <input type="email" id="contact-email" name="email" required class="ek-form__input" autocomplete="email" value="{{ old.email|default('') }}">
+                    </div>
+                    <div class="ek-form__group">
+                        <label for="contact-message" class="ek-form__label">{{ t('contact.message') }}</label>
+                        <textarea id="contact-message" name="message" rows="6" required class="ek-form__textarea">{{ old.message|default('') }}</textarea>
+                    </div>
+                    <button type="submit" class="ek-btn ek-btn--primary ek-btn--full">{{ t('contact.submit') }}</button>
+                </form>
+            </div>
+
+            {# Kontaktdaten #}
+            <div class="ek-contact-info">
+                <h2 class="ek-contact-info__title">{{ t('contact.details_title')|default('Kontaktdaten') }}</h2>
+                <p class="ek-contact-info__intro">{{ t('contact.details_intro')|default('Hier erreichen Sie uns direkt – ohne Umwege.') }}</p>
+
+                <div class="ek-contact-info__card">
+                    <h3>Elektro Keilitz</h3>
+                    <address>
+                        <p>Industriestraße 7</p>
+                        <p>10407 Berlin</p>
+                    </address>
+                </div>
+
+                <div class="ek-contact-info__card">
+                    <p><strong>{{ t('contact.phone')|default('Telefon') }}:</strong> <a href="tel:+49301234567">+49 30 1234567</a></p>
+                    <p><strong>{{ t('contact.email_label')|default('E-Mail') }}:</strong> <a href="mailto:kontakt@elektro-keilitz.de">kontakt@elektro-keilitz.de</a></p>
+                </div>
+
+                <div class="ek-contact-info__card">
+                    <p><strong>{{ t('contact.hours_label')|default('Öffnungszeiten') }}:</strong></p>
+                    <p>{{ t('contact.hours')|default('Mo – Fr: 06:00 – 17:00 Uhr') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

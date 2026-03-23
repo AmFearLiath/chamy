@@ -1,0 +1,31 @@
+{# Elektro Keilitz – Impressum (via legal_manager module) #}
+{% extends 'base.twig' %}
+
+{% block title %}{{ page_title|default('Impressum') }} – Elektro Keilitz{% endblock %}
+
+{% block seo_meta %}
+    {{ parent() }}
+    <meta name="robots" content="noindex, follow">
+{% endblock %}
+
+{% block body_class %}ek-page--legal{% endblock %}
+
+{% block body %}
+<section class="ek-page-hero">
+    <div class="ek-container">
+        <span class="ek-badge">{{ t('footer.legal') }}</span>
+        <h1 class="ek-page-hero__title">{{ page_title|default('Impressum') }}</h1>
+        {% if last_updated %}
+            <p class="ek-page-hero__subtitle">Zuletzt aktualisiert: {{ last_updated }}</p>
+        {% endif %}
+    </div>
+</section>
+
+<section class="ek-section">
+    <div class="ek-container">
+        <div class="ek-prose">
+            {{ content|raw }}
+        </div>
+    </div>
+</section>
+{% endblock %}

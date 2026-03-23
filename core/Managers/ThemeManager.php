@@ -690,6 +690,14 @@ final class ThemeManager implements ManagerInterface
             return $kernel->config()->get($key, $default);
         }));
 
+        // Asset exists helper
+        $twig->addFunction(new TwigFunction('asset_exists', function (string $relPath) use ($kernel, $activeThemeId, $area): bool {
+            // relPath is relative to theme assets, e.g. 'images/icons/shield.png' or full theme_asset path
+            $base = $kernel->path('themes', $area, $activeThemeId, 'assets');
+            $full = rtrim($base, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, ltrim($relPath, '/'));
+            return file_exists($full);
+        }));
+
         // Menu tree resolver — returns category groups for sidebar rendering
         $twig->addFunction(new TwigFunction('menu_tree', function (string $locationKey) use ($kernel): array {
             try {

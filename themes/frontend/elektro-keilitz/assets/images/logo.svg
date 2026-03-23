@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 40" width="220" height="40">
+  <!-- Icon: Lightning bolt in bordered box -->
+  <rect x="0" y="0" width="40" height="40" rx="6" fill="#102742" stroke="#e5ba54" stroke-width="1.5"/>
+  <path d="M22 6L12 22h6l-2 12 12-15h-7l1-13z" fill="#e5ba54"/>
+  <!-- Company name -->
+  <text x="50" y="18" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700" fill="#edf3fc" letter-spacing="0.02em">Elektro Keilitz</text>
+  <!-- Subtitle -->
+  <text x="50" y="33" font-family="Inter, system-ui, sans-serif" font-size="8" font-weight="500" fill="#a9bad2" letter-spacing="0.14em" text-transform="uppercase">ELEKTRO MEISTERBETRIEB</text>
+</svg>

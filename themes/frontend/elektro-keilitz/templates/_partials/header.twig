@@ -1,0 +1,102 @@
+{#
+  Elektro Keilitz – Header
+  Responsive Navigation mit Logo, Hauptmenü, CTA-Button und Mobile-Toggle.
+#}
+<header class="ek-header" role="banner">
+    <div class="ek-container ek-header__inner">
+        {# Logo #}
+        <a href="/" class="ek-header__logo" aria-label="{{ site_name|default('Elektro Keilitz') }} – {{ t('nav.home')|default('Startseite') }}">
+            <img src="{{ theme_asset('images/logo.svg') }}" alt="{{ site_name|default('Elektro Keilitz') }}" width="180" height="40">
+        </a>
+
+        {# Desktop Navigation (admin-configurable via MenuManager) #}
+        <nav class="ek-header__nav" aria-label="{{ t('nav.main')|default('Hauptnavigation') }}">
+            {% set nav_tree = menu_tree('frontend-main') %}
+            {% if nav_tree is defined and nav_tree|length > 0 %}
+            <ul class="ek-header__menu">
+                {% for group in nav_tree %}
+                    {% for item in group.items %}
+                        {% if item.target_type == 'heading' %}
+                            <li class="ek-menu-heading">{{ item.translated_label|default(item.key) }}</li>
+                        {% elseif item.target_type == 'separator' %}
+                            <li class="ek-menu-separator"></li>
+                        {% else %}
+                            <li>
+                                <a href="{{ item.target_value|default('#') }}" class="{{ item.is_current|default(false) ? 'active' : '' }}" {% if item.open_in_new_tab|default(false) %}target="_blank" rel="noopener"{% endif %}>
+                                    {{ item.translated_label|default(item.key) }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+            {% else %}
+                <ul class="ek-header__menu">
+                    <li>
+                        <a href="/#leistungen" class="{{ current_route == 'services' ? 'active' : '' }}">
+                            {{ t('nav.services')|default('Leistungen') }}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/referenzen" class="{{ current_route == 'references' ? 'active' : '' }}">
+                            {{ t('nav.references')|default('Referenzen') }}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/kontakt" class="{{ current_route == 'contact' ? 'active' : '' }}">
+                            {{ t('nav.contact')|default('Kontakt') }}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/impressum" class="{{ current_route == 'imprint' ? 'active' : '' }}">
+                            {{ t('nav.imprint')|default('Impressum') }}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/datenschutz" class="{{ current_route == 'privacy' ? 'active' : '' }}">
+                            {{ t('nav.privacy')|default('Datenschutz') }}
+                        </a>
+                    </li>
+                </ul>
+            {% endif %}
+        </nav>
+
+        {# CTA Button #}
+        <a href="/kontakt" class="ek-btn ek-btn--primary ek-header__cta">
+            {{ t('nav.cta')|default('Angebot anfragen') }}
+        </a>
+
+        {# Mobile Toggle #}
+        <button class="ek-header__toggle" aria-label="{{ t('nav.toggle')|default('Menü öffnen') }}" aria-expanded="false" aria-controls="mobile-menu">
+            <span class="ek-header__toggle-bar"></span>
+            <span class="ek-header__toggle-bar"></span>
+            <span class="ek-header__toggle-bar"></span>
+        </button>
+    </div>
+
+    {# Mobile Menu Overlay #}
+    <div class="ek-mobile-menu" id="mobile-menu" aria-hidden="true">
+        <nav aria-label="{{ t('nav.mobile')|default('Mobilnavigation') }}">
+            {% set mobile_tree = menu_tree('frontend-main') %}
+            <ul class="ek-mobile-menu__list">
+                {% if mobile_tree is defined and mobile_tree|length > 0 %}
+                    {% for group in mobile_tree %}
+                        {% for item in group.items %}
+                            <li><a href="{{ item.target_value|default('#') }}">{{ item.translated_label|default(item.key) }}</a></li>
+                        {% endfor %}
+                    {% endfor %}
+                {% else %}
+                    <li><a href="/">{{ t('nav.home')|default('Start') }}</a></li>
+                    <li><a href="/#leistungen">{{ t('nav.services')|default('Leistungen') }}</a></li>
+                    <li><a href="/referenzen">{{ t('nav.references')|default('Referenzen') }}</a></li>
+                    <li><a href="/kontakt">{{ t('nav.contact')|default('Kontakt') }}</a></li>
+                    <li><a href="/impressum">{{ t('nav.imprint')|default('Impressum') }}</a></li>
+                    <li><a href="/datenschutz">{{ t('nav.privacy')|default('Datenschutz') }}</a></li>
+                {% endif %}
+            </ul>
+            <a href="/kontakt" class="ek-btn ek-btn--primary ek-mobile-menu__cta">
+                {{ t('nav.cta')|default('Angebot anfragen') }}
+            </a>
+        </nav>
+    </div>
+</header>

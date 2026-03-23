@@ -440,17 +440,36 @@ final class MenuController
         $locId = (int) $request->getRouteParam('location_id');
         $data = $request->getPost();
 
-        $key = trim((string) ($data['key'] ?? ''));
-        if ($key === '') {
-            $this->kernel->session()->flash('error', $this->kernel->lang()->translate('menu.validation_required'));
-            return Response::redirect("/admin/menus/locations/{$locId}/items/create");
-        }
-
+        // Collect translations early so we can derive a key if the user left it empty
         $translations = [];
         foreach (['de', 'en'] as $locale) {
             $label = trim((string) ($data["label_{$locale}"] ?? ''));
             if ($label !== '') {
                 $translations[$locale] = ['label' => $label, 'tooltip' => trim((string) ($data["tooltip_{$locale}"] ?? ''))];
+            }
+        }
+
+        // If key is empty, try to generate a safe key from the DE or EN label (slugify)
+        $key = trim((string) ($data['key'] ?? ''));
+        if ($key === '') {
+            $seed = $translations['de']['label'] ?? $translations['en']['label'] ?? '';
+            if ($seed !== '') {
+                $key = strtolower($seed);
+                // replace non-alnum with dashes
+                $key = preg_replace('/[^a-z0-9\-_.]+/i', '-', $key);
+                $key = trim($key, '-_.');
+                // ensure it starts with alnum
+                if (!preg_match('/^[a-z0-9]/i', $key)) {
+                    $key = 'item-' . $key;
+                }
+                // fallback small guard
+                if ($key === '') {
+                    $key = 'manual-' . substr(uniqid(), -6);
+                }
+            } else {
+                // No label provided to derive key from — return a helpful error
+                $this->kernel->session()->flash('error', $this->kernel->lang()->translate('menu.validation_label_required'));
+                return Response::redirect("/admin/menus/locations/{$locId}/items/create");
             }
         }
 

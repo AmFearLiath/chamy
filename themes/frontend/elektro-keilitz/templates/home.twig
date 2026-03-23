@@ -1,0 +1,194 @@
+{#
+  Elektro Keilitz – Startseite
+  Enthält: Hero-Slider, Leistungen-Grid, Vertrauens-Sektion, Referenzen, CTA.
+  Alle Texte kommen aus Content Entries / Twig-Variablen – keine Hardcodes.
+#}
+{% extends 'base.twig' %}
+
+{% block title %}{{ home_data.seo_title|default(site_name ~ ' – Meisterbetrieb für moderne Elektrotechnik') }}{% endblock %}
+
+{% block seo_meta %}
+    {{ parent() }}
+    {% if home_data.seo_description is defined and home_data.seo_description %}
+        <meta name="description" content="{{ home_data.seo_description }}">
+    {% endif %}
+{% endblock %}
+
+{% block body_class %}ek-page--home{% endblock %}
+
+{% block body %}
+
+{# ═══ Hero Slider ═══ #}
+{% if slides is defined and slides|length > 0 %}
+<section class="ek-hero-slider" aria-label="{{ t('home.hero_label')|default('Willkommen bei Elektro Keilitz') }}">
+    <div class="ek-hero-slider__track">
+        {% for slide in slides %}
+        <div class="ek-hero-slider__slide{% if loop.first %} is-active{% endif %}" data-theme="{{ slide.theme|default('balanced') }}" aria-hidden="{{ loop.first ? 'false' : 'true' }}">
+            <div class="ek-hero-slider__bg">
+                {% if slide.image is defined and slide.image %}
+                    <img src="{{ slide.image }}" alt="{{ slide.heading|default('') }}" loading="{{ loop.first ? 'eager' : 'lazy' }}" class="ek-hero-slider__img">
+                {% endif %}
+                <div class="ek-hero-slider__overlay"></div>
+            </div>
+            <div class="ek-container ek-hero-slider__content">
+                {% if slide.badge is defined and slide.badge %}
+                    <span class="ek-badge">{{ slide.badge }}</span>
+                {% endif %}
+                <h1 class="ek-hero-slider__title">{{ slide.heading }}</h1>
+                {% if slide.subheading is defined and slide.subheading %}
+                    <p class="ek-hero-slider__subtitle">{{ slide.subheading }}</p>
+                {% endif %}
+                <div class="ek-hero-slider__actions">
+                    {% if slide.cta_primary is defined and slide.cta_primary %}
+                        <a href="{{ slide.cta_primary.href|default('/kontakt') }}" class="ek-btn ek-btn--primary">{{ slide.cta_primary.label }}</a>
+                    {% endif %}
+                    {% if slide.cta_secondary is defined and slide.cta_secondary %}
+                        <a href="{{ slide.cta_secondary.href|default('/#leistungen') }}" class="ek-btn ek-btn--outline">{{ slide.cta_secondary.label }}</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {# Slider Controls #}
+    <div class="ek-hero-slider__controls">
+        <button class="ek-hero-slider__prev" aria-label="{{ t('slider.prev')|default('Vorheriger Slide') }}">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <div class="ek-hero-slider__dots">
+            {% for slide in slides %}
+                <button class="ek-hero-slider__dot{% if loop.first %} is-active{% endif %}" aria-label="Slide {{ loop.index }}" data-slide="{{ loop.index0 }}"></button>
+            {% endfor %}
+        </div>
+        <button class="ek-hero-slider__next" aria-label="{{ t('slider.next')|default('Nächster Slide') }}">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+    </div>
+</section>
+{% endif %}
+
+{# ═══ Leistungen Grid ═══ #}
+{% if services is defined and services|length > 0 %}
+<section class="ek-section" id="leistungen">
+    <div class="ek-container">
+        <div class="ek-section__header">
+            <h2 class="ek-section__title">{{ t('home.services_heading')|default('Unsere Leistungen') }}</h2>
+            <p class="ek-section__intro">{{ t('home.services_intro')|default('Sechs Kernbereiche für moderne Elektrotechnik – mit klaren Prozessen, planbaren Kosten und hochwertiger Ausführung.') }}</p>
+        </div>
+        <div class="ek-services-grid">
+            {% for service in services %}
+            <a href="/leistungen/{{ service.slug }}" class="ek-service-card">
+                {% if service.icon is defined and service.icon %}
+                    <div class="ek-service-card__icon">
+                        {% set iconBase = service.icon %}
+                        {% set pngPath = 'images/icons/' ~ (iconBase matches('/\\.png$/i') ? iconBase : (iconBase ~ '.png')) %}
+                        {% set svgPath = 'images/icons/' ~ (iconBase matches('/\\.svg$/i') ? iconBase : (iconBase ~ '.svg')) %}
+                        {% if asset_exists(pngPath) %}
+                            <img src="{{ theme_asset(pngPath) }}" alt="" aria-hidden="true" width="48" height="48">
+                        {% elseif asset_exists(svgPath) %}
+                            <img src="{{ theme_asset(svgPath) }}" alt="" aria-hidden="true" width="48" height="48">
+                        {% else %}
+                            {% include '_partials/icons/' ~ iconBase ~ '.svg.twig' ignore missing %}
+                        {% endif %}
+                    </div>
+                {% endif %}
+                <h3 class="ek-service-card__title">{{ service.title }}</h3>
+                {% if service.micro_info is defined and service.micro_info %}
+                    <p class="ek-service-card__info">{{ service.micro_info }}</p>
+                {% endif %}
+                <span class="ek-service-card__cta">{{ t('home.learn_more')|default('Mehr erfahren') }} &rarr;</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{# ═══ Warum Wir / Trust ═══ #}
+<section class="ek-section ek-section--alt" id="warum-wir">
+    <div class="ek-container">
+        <div class="ek-section__header">
+            <h2 class="ek-section__title">{{ t('home.trust_heading')|default('Warum Wir?') }}</h2>
+            <p class="ek-section__intro">{{ t('home.trust_intro')|default('Meisterbetrieb mit nachweisbarer Praxiserfahrung, zertifizierten Standards und verlässlicher Ausführung.') }}</p>
+        </div>
+        <div class="ek-trust-grid">
+            {% set trust_items = [
+                { title: t('home.trust_1_title')|default('Meisterbetrieb'), subtitle: t('home.trust_1_sub')|default('Fachbetrieb mit dokumentierter Ausführungsqualität'), icon: 'shield' },
+                { title: t('home.trust_2_title')|default('Über 20 Jahre Projekterfahrung'), subtitle: t('home.trust_2_sub')|default('Regional im Einsatz für Privat, Gewerbe und Bestand'), icon: 'clock' },
+                { title: t('home.trust_3_title')|default('Zertifiziert & geprüft'), subtitle: t('home.trust_3_sub')|default('Normgerecht geplant, geprüft und nachvollziehbar umgesetzt'), icon: 'check' }
+            ] %}
+            {% for item in trust_items %}
+            <div class="ek-trust-card">
+                <div class="ek-trust-card__icon">
+                    {% set iconBase = item.icon %}
+                    {% set pngPath = 'images/icons/' ~ (iconBase matches('/\\.png$/i') ? iconBase : (iconBase ~ '.png')) %}
+                    {% set svgPath = 'images/icons/' ~ (iconBase matches('/\\.svg$/i') ? iconBase : (iconBase ~ '.svg')) %}
+                    {% if asset_exists(pngPath) %}
+                        <img src="{{ theme_asset(pngPath) }}" alt="" aria-hidden="true" width="48" height="48">
+                    {% elseif asset_exists(svgPath) %}
+                        <img src="{{ theme_asset(svgPath) }}" alt="" aria-hidden="true" width="48" height="48">
+                    {% else %}
+                        {% include '_partials/icons/' ~ iconBase ~ '.svg.twig' ignore missing %}
+                    {% endif %}
+                </div>
+                <h3 class="ek-trust-card__title">{{ item.title }}</h3>
+                <p class="ek-trust-card__text">{{ item.subtitle }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{# ═══ Referenzen Showcase ═══ #}
+{% if services is defined and services|length > 0 %}
+<section class="ek-section" id="referenzen">
+    <div class="ek-container">
+        <div class="ek-section__header">
+            <h2 class="ek-section__title">{{ t('home.references_heading')|default('Unsere Referenzen') }}</h2>
+            <p class="ek-section__intro">{{ t('home.references_intro')|default('Projekt- und Fachbereiche aus der Praxis – bildstark, präzise und auf nachhaltige Qualität ausgerichtet.') }}</p>
+        </div>
+        <div class="ek-references-grid">
+            {% set ref_images = {
+                'elektroinstallation': 'ref_01_elektro.png',
+                'photovoltaik': 'ref_02_pv.png',
+                'netzwerktechnik': 'ref_03_netzwerk.png',
+                'smart-home': 'ref_04_smarthome.png',
+                'klimaanlagen-kaeltetechnik': 'ref_05_service.png',
+                'e-mobilitaet-ladetechnik': 'ref_06_emobilitaet.png'
+            } %}
+            {% for service in services %}
+            <a href="/leistungen/{{ service.slug }}" class="ek-reference-card">
+                <div class="ek-reference-card__image">
+                    <img src="{{ theme_asset('images/references/' ~ (ref_images[service.slug]|default('ref_01_elektro.png'))) }}" alt="{{ service.title }}" loading="lazy">
+                </div>
+                <div class="ek-reference-card__body">
+                    <h3 class="ek-reference-card__title">{{ service.title }}</h3>
+                    {% if service.micro_info is defined %}
+                        <p class="ek-reference-card__subtitle">{{ service.micro_info }}</p>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{# ═══ CTA Sektion ═══ #}
+<section class="ek-section ek-section--cta" id="kontakt">
+    <div class="ek-container ek-cta-section">
+        <h2 class="ek-cta-section__title">{{ t('home.cta_heading')|default('Kontaktieren Sie uns') }}</h2>
+        <p class="ek-cta-section__text">{{ t('home.cta_text')|default('Wir beraten Sie persönlich und erstellen ein passgenaues Angebot für Ihr Vorhaben.') }}</p>
+        <div class="ek-cta-section__actions">
+            <a href="/kontakt" class="ek-btn ek-btn--primary ek-btn--lg">{{ t('home.cta_primary')|default('Nachricht senden') }}</a>
+            <a href="tel:+49301234567" class="ek-btn ek-btn--outline ek-btn--lg">{{ t('home.cta_secondary')|default('Tel: +49 30 1234567') }}</a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ theme_asset('js/hero-slider.js') }}"></script>
+{% endblock %}

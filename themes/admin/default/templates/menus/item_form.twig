@@ -26,7 +26,8 @@
 <div class="alert alert-error">{{ msg }}</div>
 {% endfor %}
 
-<form method="post" action="{{ item is defined ? '/admin/menus/items/' ~ item.id ~ '/update' : '/admin/menus/locations/' ~ location.id ~ '/items/store' }}">
+{# Ensure we only generate the update URL when item.id is non-empty; fallback to store otherwise #}
+<form method="post" action="{{ (item is defined and (item.id|default('') != '')) ? ('/admin/menus/items/' ~ item.id ~ '/update') : ('/admin/menus/locations/' ~ location.id ~ '/items/store') }}">
     {{ csrf_field() }}
 
     <div class="form-layout-2col">
@@ -37,10 +38,10 @@
                 <div class="card-body">
                     <div class="form-group">
                         <label for="key" class="form-label">{{ t('menu.field_key')|default('Schlüssel') }} <span class="text-danger">*</span></label>
-                        <input type="text" id="key" name="key" class="form-control" required pattern="[a-z0-9\-_\.]+"
+                           <input type="text" id="key" name="key" class="form-control" pattern="[a-z0-9\-_\.]+"
                                value="{{ item.key|default('') }}"
                                placeholder="z.B. admin.content.pages"
-                               {{ item is defined ? 'readonly' : '' }}>
+                               {{ (item is defined and (item.id|default('') != '')) ? 'readonly' : '' }}>
                         <small class="form-hint">{{ t('menu.key_hint_item')|default('Eindeutiger Schlüssel, z.B. admin.content.artikel') }}</small>
                     </div>
 

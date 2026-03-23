@@ -1,0 +1,140 @@
+{#
+  Elektro Keilitz – Leistungs-Detailseite (service.twig)
+  Strukturierte Darstellung einer einzelnen Leistung mit:
+  Hero, Zielgruppe, Leistungsumfang, Ablauf, FAQ und CTA.
+#}
+{% extends 'base.twig' %}
+
+{% block title %}{{ entry_data.seo_title|default(entry_data.title) }} – {{ site_name|default('Elektro Keilitz') }}{% endblock %}
+
+{% block seo_meta %}
+    {{ parent() }}
+    {% if entry_data.seo_description is defined and entry_data.seo_description %}
+        <meta name="description" content="{{ entry_data.seo_description }}">
+    {% endif %}
+{% endblock %}
+
+{% block body_class %}ek-page--service{% endblock %}
+
+{% block body %}
+
+{# ═══ Service Hero ═══ #}
+<section class="ek-service-hero">
+    <div class="ek-container">
+        <span class="ek-badge">{{ entry_data.title }}</span>
+        <h1 class="ek-service-hero__title">{{ entry_data.hero_heading|default(entry_data.title) }}</h1>
+        {% if entry_data.hero_subheading is defined and entry_data.hero_subheading %}
+            <p class="ek-service-hero__subtitle">{{ entry_data.hero_subheading }}</p>
+        {% endif %}
+        {% if entry_data.hero_bullets is defined and entry_data.hero_bullets %}
+            {% set bullets = entry_data.hero_bullets %}
+            {% if bullets is iterable %}
+            <ul class="ek-service-hero__bullets">
+                {% for bullet in bullets %}
+                    <li>{{ bullet }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        {% endif %}
+    </div>
+</section>
+
+{# ═══ Zielgruppe ═══ #}
+{% if entry_data.target_items is defined and entry_data.target_items %}
+{% set target_items = entry_data.target_items %}
+{% if target_items is iterable and target_items|length > 0 %}
+<section class="ek-section ek-section--alt">
+    <div class="ek-container">
+        <h2 class="ek-section__title">{{ entry_data.target_heading|default(t('service.target_heading')|default('Für wen ist das ideal?')) }}</h2>
+        <ul class="ek-target-list">
+            {% for item in target_items %}
+                <li class="ek-target-list__item">
+                    <svg class="ek-target-list__icon" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 10l3 3 7-7"/></svg>
+                    <span>{{ item }}</span>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</section>
+{% endif %}
+{% endif %}
+
+{# ═══ Leistungsumfang ═══ #}
+{% if entry_data.scope_items is defined and entry_data.scope_items %}
+{% set scope_items = entry_data.scope_items %}
+{% if scope_items is iterable and scope_items|length > 0 %}
+<section class="ek-section">
+    <div class="ek-container">
+        <h2 class="ek-section__title">{{ entry_data.scope_heading|default(t('service.scope_heading')|default('Leistungsumfang')) }}</h2>
+        <div class="ek-scope-grid">
+            {% for item in scope_items %}
+            <div class="ek-scope-card">
+                <div class="ek-scope-card__number">{{ '%02d'|format(loop.index) }}</div>
+                <h3 class="ek-scope-card__title">{{ item.title }}</h3>
+                <p class="ek-scope-card__text">{{ item.description }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endif %}
+
+{# ═══ Ablauf / Prozess ═══ #}
+{% if entry_data.process_steps is defined and entry_data.process_steps %}
+{% set steps = entry_data.process_steps %}
+{% if steps is iterable and steps|length > 0 %}
+<section class="ek-section ek-section--alt">
+    <div class="ek-container">
+        <h2 class="ek-section__title">{{ entry_data.process_heading|default(t('service.process_heading')|default('Ablauf')) }}</h2>
+        <div class="ek-process">
+            {% for step in steps %}
+            <div class="ek-process__step">
+                <div class="ek-process__number">{{ loop.index }}</div>
+                <div class="ek-process__content">
+                    <h3 class="ek-process__title">{{ step.title }}</h3>
+                    <p class="ek-process__text">{{ step.description }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endif %}
+
+{# ═══ FAQ ═══ #}
+{% if entry_data.faq_items is defined and entry_data.faq_items %}
+{% set faq_items = entry_data.faq_items %}
+{% if faq_items is iterable and faq_items|length > 0 %}
+<section class="ek-section">
+    <div class="ek-container">
+        <h2 class="ek-section__title">{{ entry_data.faq_heading|default(t('service.faq_heading')|default('Häufige Fragen')) }}</h2>
+        <div class="ek-faq">
+            {% for faq in faq_items %}
+            <details class="ek-faq__item">
+                <summary class="ek-faq__question">{{ faq.question }}</summary>
+                <div class="ek-faq__answer">
+                    <p>{{ faq.answer }}</p>
+                </div>
+            </details>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endif %}
+
+{# ═══ CTA ═══ #}
+<section class="ek-section ek-section--cta">
+    <div class="ek-container ek-cta-section">
+        <h2 class="ek-cta-section__title">{{ entry_data.cta_heading|default(entry_data.title ~ ' anfragen') }}</h2>
+        <p class="ek-cta-section__text">{{ entry_data.cta_text|default(t('service.cta_text')|default('Beschreiben Sie kurz Ihr Projekt. Wir melden uns mit einer klaren nächsten Empfehlung.')) }}</p>
+        <div class="ek-cta-section__actions">
+            <a href="{{ entry_data.cta_primary_href|default('mailto:kontakt@elektro-keilitz.de') }}" class="ek-btn ek-btn--primary ek-btn--lg">{{ entry_data.cta_primary_label|default(t('service.cta_label')|default('Angebot anfragen')) }}</a>
+            <a href="/" class="ek-btn ek-btn--outline ek-btn--lg">{{ t('service.back_home')|default('Zur Startseite') }}</a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

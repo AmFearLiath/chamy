@@ -8,7 +8,8 @@ on:
 jobs:
   publish-wiki:
     runs-on: ubuntu-latest
-    permissions: {}
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,15 +21,15 @@ jobs:
 
       - name: Generate wiki pages
         run: |
-          TMPDIR=$(mktemp -d)
-          cat > "$TMPDIR/Home.md" <<'EOF'
+          mkdir -p .wiki-tmp
+          cat > .wiki-tmp/Home.md <<'EOF'
 # Chamy Wiki
 
 Welcome to the Chamy project wiki.
 
 See sidebar for navigation.
 EOF
-          cat > "$TMPDIR/_Sidebar.md" <<'EOF'
+          cat > .wiki-tmp/_Sidebar.md <<'EOF'
 - [Home](Home)
 - [Getting Started](Getting-Started)
 - [Architecture](Architecture)
@@ -43,19 +44,27 @@ EOF
 - [FAQ](FAQ)
 EOF
           # add more pages as needed
-          echo "Pages generated in $TMPDIR"
+          echo "Pages generated in .wiki-tmp"
 
       - name: Clone wiki repo
         env:
           WIKI_TOKEN: ${{ secrets.WIKI_PUSH_TOKEN }}
         run: |
-          if [ -z "$WIKI_TOKEN" ]; then echo "WIKI_PUSH_TOKEN secret not set"; exit 1; fi
+          if [ -z "$WIKI_TOKEN" ]; then
+            echo "WIKI_PUSH_TOKEN secret not set - skipping wiki publish"
+            echo "SKIP_WIKI_PUSH=1" >> "$GITHUB_ENV"
+            exit 0
+          fi
           WIKI_URL="https://x-access-token:${WIKI_TOKEN}@github.com/${{ github.repository }}.wiki.git"
           git clone "$WIKI_URL" wiki
 
       - name: Copy pages and push
         run: |
-          cp -r $TMPDIR/* wiki/
+          if [ "${SKIP_WIKI_PUSH}" = "1" ]; then
+            echo "Wiki publish skipped because WIKI_PUSH_TOKEN is not configured"
+            exit 0
+          fi
+          cp -r .wiki-tmp/* wiki/
           cd wiki
           git add --all
           if git commit -m "Publish wiki: $GITHUB_SHA"; then

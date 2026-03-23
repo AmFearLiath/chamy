@@ -1,0 +1,16 @@
+{
+  "id": "elektro-keilitz",
+  "name": "Elektro Keilitz",
+  "version": "1.0.0",
+  "author": "Chamy Migration",
+  "description": "Frontend-Theme für die Elektro Keilitz Website – Meisterbetrieb für moderne Elektrotechnik",
+  "type": "frontend",
+  "supports": ["pages", "services", "articles", "components"],
+  "features": {
+    "dark_mode": true,
+    "light_mode": true,
+    "hero_slider": true,
+    "contact_form": true,
+    "multilingual": true
+  }
+}

@@ -1,0 +1,44 @@
+{#
+  Elektro Keilitz – Einzelne Seite (page.twig)
+  Generisches Seiten-Template für Standardseiten (Impressum, Datenschutz, etc.)
+#}
+{% extends 'base.twig' %}
+
+{% block title %}{{ entry_data.seo_title|default(entry_data.title) }} – {{ site_name|default('Elektro Keilitz') }}{% endblock %}
+
+{% block seo_meta %}
+    {{ parent() }}
+    {% if entry_data.seo_description is defined and entry_data.seo_description %}
+        <meta name="description" content="{{ entry_data.seo_description }}">
+    {% endif %}
+{% endblock %}
+
+{% block body_class %}ek-page--single{% endblock %}
+
+{% block body %}
+{# Hero Section #}
+<section class="ek-page-hero">
+    <div class="ek-container">
+        {% if entry_data.badge is defined and entry_data.badge %}
+            <span class="ek-badge">{{ entry_data.badge }}</span>
+        {% endif %}
+        <h1 class="ek-page-hero__title">{{ entry_data.title }}</h1>
+        {% if entry_data.excerpt is defined and entry_data.excerpt %}
+            <p class="ek-page-hero__subtitle">{{ entry_data.excerpt }}</p>
+        {% endif %}
+    </div>
+</section>
+
+{# Content #}
+<section class="ek-section">
+    <div class="ek-container ek-content">
+        {% if editor_content is defined and editor_content %}
+            {{ editor_content|raw }}
+        {% elseif entry_data.body is defined and entry_data.body %}
+            <div class="ek-prose">
+                {{ entry_data.body|raw }}
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

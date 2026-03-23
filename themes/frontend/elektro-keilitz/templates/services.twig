@@ -1,0 +1,46 @@
+{#
+  Elektro Keilitz – Leistungsübersicht
+  Grid aller Leistungen mit Link zur jeweiligen Detailseite.
+#}
+{% extends 'base.twig' %}
+
+{% block title %}{{ t('services.title')|default('Leistungen') }} – {{ site_name|default('Elektro Keilitz') }}{% endblock %}
+
+{% block body_class %}ek-page--services{% endblock %}
+
+{% block body %}
+<section class="ek-page-hero">
+    <div class="ek-container">
+        <span class="ek-badge">{{ t('services.badge')|default('Unser Angebot') }}</span>
+        <h1 class="ek-page-hero__title">{{ t('services.heading')|default('Unsere Leistungen') }}</h1>
+        <p class="ek-page-hero__subtitle">{{ t('services.intro')|default('Sechs Kernbereiche für moderne Elektrotechnik – mit klaren Prozessen, planbaren Kosten und hochwertiger Ausführung.') }}</p>
+    </div>
+</section>
+
+{% if entries is defined and entries|length > 0 %}
+<section class="ek-section">
+    <div class="ek-container">
+        <div class="ek-services-grid">
+            {% for entry in entries %}
+                {% set data = entry._data|default(entry) %}
+                <a href="/leistungen/{{ data.slug }}" class="ek-service-card ek-service-card--large">
+                    {% if data.icon is defined and data.icon %}
+                        <div class="ek-service-card__icon">
+                            <img src="{{ theme_asset('images/icons/' ~ data.icon) }}" alt="" aria-hidden="true" width="48" height="48">
+                        </div>
+                    {% endif %}
+                    <h2 class="ek-service-card__title">{{ data.title }}</h2>
+                    {% if data.micro_info is defined and data.micro_info %}
+                        <p class="ek-service-card__info">{{ data.micro_info }}</p>
+                    {% endif %}
+                    {% if data.hero_subheading is defined and data.hero_subheading %}
+                        <p class="ek-service-card__desc">{{ data.hero_subheading|slice(0, 160) }}{% if data.hero_subheading|length > 160 %}&hellip;{% endif %}</p>
+                    {% endif %}
+                    <span class="ek-service-card__cta">{{ t('home.learn_more')|default('Mehr erfahren') }} &rarr;</span>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}
