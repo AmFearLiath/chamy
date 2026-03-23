@@ -22,13 +22,12 @@ jobs:
       - name: Generate wiki pages
         run: |
           mkdir -p .wiki-tmp
-          cat > .wiki-tmp/Home.md <<'EOF'
-# Chamy Wiki
-
-Welcome to the Chamy project wiki.
-
-See sidebar for navigation.
-EOF
+          printf '%s\n' \
+            '# Chamy Wiki' \
+            '' \
+            'Welcome to the Chamy project wiki.' \
+            '' \
+            'See sidebar for navigation.' > .wiki-tmp/Home.md
           printf '%s\n' \
             '- [Home](Home)' \
             '- [Getting Started](Getting-Started)' \
