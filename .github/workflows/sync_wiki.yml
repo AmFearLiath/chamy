@@ -29,20 +29,19 @@ Welcome to the Chamy project wiki.
 
 See sidebar for navigation.
 EOF
-          cat > .wiki-tmp/_Sidebar.md <<'EOF'
-- [Home](Home)
-- [Getting Started](Getting-Started)
-- [Architecture](Architecture)
-- [Admin Guide](Admin-Guide)
-- [Developer Guide](Developer-Guide)
-- [Module Reference](Module-Reference)
-- [API Reference](API-Reference)
-- [Tutorials](Tutorials)
-- [Deployment](Deployment)
-- [Security and Ops](Security-and-Ops)
-- [Troubleshooting](Troubleshooting)
-- [FAQ](FAQ)
-EOF
+          printf '%s\n' \
+            '- [Home](Home)' \
+            '- [Getting Started](Getting-Started)' \
+            '- [Architecture](Architecture)' \
+            '- [Admin Guide](Admin-Guide)' \
+            '- [Developer Guide](Developer-Guide)' \
+            '- [Module Reference](Module-Reference)' \
+            '- [API Reference](API-Reference)' \
+            '- [Tutorials](Tutorials)' \
+            '- [Deployment](Deployment)' \
+            '- [Security and Ops](Security-and-Ops)' \
+            '- [Troubleshooting](Troubleshooting)' \
+            '- [FAQ](FAQ)' > .wiki-tmp/_Sidebar.md
           # add more pages as needed
           echo "Pages generated in .wiki-tmp"
 
