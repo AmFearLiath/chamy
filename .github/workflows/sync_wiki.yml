@@ -66,9 +66,11 @@ EOF
           fi
           cp -r .wiki-tmp/* wiki/
           cd wiki
+          echo "Current wiki branch: $(git branch --show-current)"
           git add --all
           if git commit -m "Publish wiki: $GITHUB_SHA"; then
-            git push origin main
+            # Push current checked out branch (wiki repos are often on master, not main)
+            git push origin HEAD
           else
             echo "No wiki changes to commit"
           fi
